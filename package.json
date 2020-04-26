@@ -1,0 +1,65 @@
+{
+  "name": "kch-rgbw-lib",
+  "version": "0.1.0",
+  "description": "RGB/RGBW LED class library",
+  "main": "dist/index.js",
+  "scripts": {
+    "prebuild": "lint",
+    "build": "tsc",
+    "fix": "run-p fix:*",
+    "fix:eslint": "npm run lint:eslint -- --fix",
+    "fix:prettier": "npm run lint:prettier -- --write",
+    "lint": "run-p lint:*",
+    "lint:eslint": "eslint --ext js,ts .",
+    "lint:prettier": "prettier -l \"**/*.{json,md,yml}\"",
+    "lint:type": "tsc --noEmit",
+    "test": "run-s lint test:*",
+    "test:unit": "jest",
+    "tslint": "tslint 'src/**/*.ts'"
+  },
+  "keywords": [
+    "LED",
+    "RGB/HSB/CIE",
+    "Color temperature",
+    "Wavelength",
+  ],
+  "author": "Kiyo Chinzei",
+  "license": "MIT",
+  "contributors": [
+    {
+      "name": "Kiyo Chinzei",
+      "email": "kchinzei@gmail.com"
+    }
+  ],
+  "bundleDependencies": false,
+  "config": {
+    "unsafe-perm": true
+  },
+  "cpu": [
+    "arm",
+    "arm64"
+  ],
+  "dependencies": {
+  },
+  "deprecated": false,
+  "devDependencies": {
+    "@types/jest": "^25.2.1",
+    "@types/node": "^13.11.1",
+    "jest": "^25.3.0",
+    "ts-jest": "^25.3.1",
+    "tslint": "^6.1.1",
+    "typescript": "^3.8.3",
+    "eslint": "^6.8.0",
+    "npm-run-all": "^4.1.5",
+    "prettier": "^2.0.4"
+  },
+  "engines": {
+    "node": ">= 6.4.0"
+  },
+  "homepage": "https://github.com/kchinzei/kch-rgbw-lib",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kchinzei/kch-rgbw-lib.git"
+  },
+  "types": "./declarations/index.d.ts"
+}

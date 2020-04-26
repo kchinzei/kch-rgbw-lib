@@ -1,0 +1,10 @@
+!*.js
+!*.ts
+coverage/**
+declarations/**
+dist/**
+node_modules/**
+__tests__/**
+.eslintrc.js
+jest.config.js
+prettier.config.js
