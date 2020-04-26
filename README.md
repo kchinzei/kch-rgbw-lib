@@ -34,16 +34,16 @@ npm install kch-rgbw-lib
 
 ## References
 
-- [A Beginner’s Guide to (CIE) Colorimetry - Color and Imaging]
-  (https://medium.com/hipster-color-science/a-beginners-guide-to-colorimetry-401f1830b65a)
-- [Blackbody color temperature datafile]
-  (http://www.vendian.org/mncharity/dir3/blackbody/)
+- [A Beginner’s Guide to (CIE) Colorimetry - Color and Imaging](
+  https://medium.com/hipster-color-science/a-beginners-guide-to-colorimetry-401f1830b65a)
+- [Blackbody color temperature datafile](
+  http://www.vendian.org/mncharity/dir3/blackbody/)
   / Mitchell Charity
-- [新しいカラーマネージメントの方法
-  (http://www.enveng.titech.ac.jp/nakamura/story/pdf/colormanagement.pdf)
+- [新しいカラーマネージメントの方法](
+  http://www.enveng.titech.ac.jp/nakamura/story/pdf/colormanagement.pdf)
   / 中村芳樹
-- [AN1562 High Resolution RGB LED Color Mixing Application Note]
-  (http://ww1.microchip.com/downloads/en/AppNotes/00001562B.pdf)
+- [AN1562 High Resolution RGB LED Color Mixing Application Note](
+  http://ww1.microchip.com/downloads/en/AppNotes/00001562B.pdf)
   / Microchip
   
 # License
