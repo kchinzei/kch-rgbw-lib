@@ -23,13 +23,14 @@ THE SOFTWARE.
 */
 
 /*
-  RGB/RGBW LED class library. It provides following functions,
+  RGB/RGBW LED class library.
 
   Make Asayake to Wake Project.
   Kiyo Chinzei
   https://github.com/kchinzei/raspi-pca9685-pwm
 */
 
-export * from './LEDChip.ts';
-export * from './RGBWLED.ts';
-  
+// export * from './LEDChip';
+// export * from './RGBWLED';
+export * from './CIE_colorTemperature';
+export * from './CIE_waveLength';

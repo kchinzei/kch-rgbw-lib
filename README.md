@@ -1,16 +1,16 @@
-Kch RGBW Lib
-============
+# Kch RGBW Lib
 
 RGB/RGBW LED class library. It provides following functions,
+
 - Conversions of
--- RGB/HSB/CIE
--- Color temperature to CIE
--- Wavelength to CI
+  -- RGB/HSB/CIE
+  -- Color temperature to CIE
+  -- Wavelength to CI
 - Fade-in/out array
 - Typical RGB LED properties
-It is intended to use with
-[homebridge-raspi-rgbw-led](https://github.com/kchinzei/homebridge-raspi-rgbw-led)
-project.
+  It is intended to use with
+  [homebridge-raspi-rgbw-led](https://github.com/kchinzei/homebridge-raspi-rgbw-led)
+  project.
 
 ## System Requirements
 
@@ -28,24 +28,18 @@ npm install kch-rgbw-lib
 
 ### Module Constants
 
-
 ### Interface and Class
-
 
 ## References
 
-- [A Beginner’s Guide to (CIE) Colorimetry - Color and Imaging](
-  https://medium.com/hipster-color-science/a-beginners-guide-to-colorimetry-401f1830b65a)
-- [Blackbody color temperature datafile](
-  http://www.vendian.org/mncharity/dir3/blackbody/)
+- [A Beginner’s Guide to (CIE) Colorimetry - Color and Imaging](https://medium.com/hipster-color-science/a-beginners-guide-to-colorimetry-401f1830b65a)
+- [Blackbody color temperature datafile](http://www.vendian.org/mncharity/dir3/blackbody/)
   / Mitchell Charity
-- [新しいカラーマネージメントの方法](
-  http://www.enveng.titech.ac.jp/nakamura/story/pdf/colormanagement.pdf)
+- [新しいカラーマネージメントの方法](http://www.enveng.titech.ac.jp/nakamura/story/pdf/colormanagement.pdf)
   / 中村芳樹
-- [AN1562 High Resolution RGB LED Color Mixing Application Note](
-  http://ww1.microchip.com/downloads/en/AppNotes/00001562B.pdf)
+- [AN1562 High Resolution RGB LED Color Mixing Application Note](http://ww1.microchip.com/downloads/en/AppNotes/00001562B.pdf)
   / Microchip
-  
+
 # License
 
 The MIT License (MIT)

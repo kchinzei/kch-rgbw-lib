@@ -21,7 +21,7 @@
     "LED",
     "RGB/HSB/CIE",
     "Color temperature",
-    "Wavelength",
+    "Wavelength"
   ],
   "author": "Kiyo Chinzei",
   "license": "MIT",
@@ -39,8 +39,7 @@
     "arm",
     "arm64"
   ],
-  "dependencies": {
-  },
+  "dependencies": {},
   "deprecated": false,
   "devDependencies": {
     "@types/jest": "^25.2.1",

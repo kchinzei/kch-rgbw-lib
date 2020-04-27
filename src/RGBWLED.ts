@@ -30,6 +30,7 @@ THE SOFTWARE.
   https://github.com/kchinzei/raspi-pca9685-pwm
 */
 
+import { LEDChip } from './LEDChip';
 
 export interface IRGBWLED {
   name: string;

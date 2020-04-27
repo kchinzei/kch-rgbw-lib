@@ -38,13 +38,13 @@ const maxX = 0.6499;
 const minY = 0.2898;
 const maxY = 0.4198;
 
-export type CIEkxyType = { k: number, x: number, y: number };
-export CIEk57kWhite: CIEkxyType = { k: 5700, x: 0.3302, y: 0.3411 };
-export CIEk65kWhite: CIEkxyType = { k: 6500, x: 0.3155, y: 0.3270 };
+export type CIEkxyType = { k: number; x: number; y: number };
+export const CIEk57kWhite: CIEkxyType = { k: 5700, x: 0.3302, y: 0.3411 };
+export const CIEk65kWhite: CIEkxyType = { k: 6500, x: 0.3155, y: 0.3270 };
 
 const criticalKXY: CIEkxyType = { k: 5517, x: 0.3320, y: 0.1858 };
 
-function checkK(k: number): number {
+export function checkColorTemperature(k: number): number {
   if (k < minK) k = minK;
   if (k > maxK) k = maxK;
   return k;
@@ -67,7 +67,6 @@ function checkY(y: number): number {
   http://www.vendian.org/mncharity/dir3/blackbody/UnstableURLs/bbr_color.html
 */
 const colorTemperatureTable: CIEkxyType[] = [
-  { k: 900,  x: 0.6499, y: 0.3474 }, // Dummy to avoid error when k=1000
   { k: 1000, x: 0.6499, y: 0.3474 },
   { k: 1100, x: 0.6361, y: 0.3594 },
   { k: 1200, x: 0.6226, y: 0.3703 },
@@ -162,24 +161,24 @@ const colorTemperatureTable: CIEkxyType[] = [
   { k: 10100, x: 0.2824, y: 0.2898 } // Dummy to avoid error when k=10000
 ];
 
-export CIEk2x(k: number): number {
-  k = checkK(k);
+export function CIEk2x(k: number): number {
+  k = checkColorTemperature(k);
   const k1 = Math.floor(k / kStep) * kStep;
   const k2 = k1 + kStep;
 
-  const x1 = colorTemperatureTable.x[k1];
-  const x2 = colorTemperatureTable.x[k2];
+  const x1 = colorTemperatureTable[k1].x;
+  const x2 = colorTemperatureTable[k2].x;
 
   return ((k - k1)*x2 + (k2 - k)*x1) / kStep;
 }
 
-export CIEk2y(k: number): number {
-  k = checkK(k);
+export function CIEk2y(k: number): number {
+  k = checkColorTemperature(k);
   const k1 = Math.floor(k / kStep) * kStep;
   const k2 = k1 + kStep;
 
-  const y1 = colorTemperatureTable.y[k1];
-  const y2 = colorTemperatureTable.y[k2];
+  const y1 = colorTemperatureTable[k1].y;
+  const y2 = colorTemperatureTable[k2].y;
 
   return ((k - k1)*y2 + (k2 - k)*y1) / kStep;
 }
@@ -187,7 +186,7 @@ export CIEk2y(k: number): number {
 export function CIExy2k(x: number, y: number): number {
   x = checkX(x);
   y = checkY(y);
-  if (y == criticalKXY.y) {
+  if (y === criticalKXY.y) {
     return criticalKXY.k;
   } else {
     // McCamy's approximation for Correlating Color Temperature
@@ -207,17 +206,17 @@ export function CIEfadeout(x: number, y: number, steps: number, fade?: (r: numbe
   x = checkX(x);
   y = checkY(y);
   if (typeof(fade) === 'undefined') fade = linearFade;
-  
+
   const kStart = CIExy2k(x, y);
   const kEnd = 1000;
 
-  let fadeVals[steps]: CIEkxyType;
+  const fadeVals: CIEkxyType[] = new Array(steps);
 
   for (let i=0; i<steps; i++) {
     const r1 = fade(i / steps);
-    const r0 = 1 - r0;
+    const r0 = 1 - r1;
     const k = kStart*r0 + kEnd*r1;
-    
+
     fadeVals[i].k = k;
     fadeVals[i].x = x*r0 + CIEk2x(k)*r1;
     fadeVals[i].y = y*r0 + CIEk2y(k)*r1;
@@ -230,17 +229,17 @@ export function CIEfadein(x: number, y: number, steps: number, fade?: (r: number
   x = checkX(x);
   y = checkY(y);
   if (typeof(fade) === 'undefined') fade = linearFade;
-  
+
   const kStart = 1000;
   const kEnd = CIExy2k(x, y);
 
-  let fadeVals[steps]: CIEkxyType;
+  const fadeVals: CIEkxyType[] = new Array(steps);
 
   for (let i=0; i<steps; i++) {
     const r1 = fade(i / steps);
-    const r0 = 1 - r0;
+    const r0 = 1 - r1;
     const k = kStart*r0 + kEnd*r1;
-    
+
     fadeVals[i].k = k;
     fadeVals[i].x = CIEk2x(k)*r0 + x*r1;
     fadeVals[i].y = CIEk2y(k)*r0 + y*r1;
