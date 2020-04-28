@@ -23,20 +23,23 @@ THE SOFTWARE.
 */
 
 /*
-  RGB/RGBW LED class library. It provides following functions,
+  RGB/RGBW LED class library
 
   Make Asayake to Wake Project.
   Kiyo Chinzei
-  https://github.com/kchinzei/raspi-pca9685-pwm
+  https://github.com/kchinzei/kch-rgbw-lib
 */
 
 const kStep = 100; // step of temperature in colorTemperatureTable
-const minK = 1000;
-const maxK = 10000;
-const minX = 0.2824;
-const maxX = 0.6499;
-const minY = 0.2898;
-const maxY = 0.4198;
+const kMin = 1000;
+const kMax = 10000;
+const xMin = 0.2824;
+const xMax = 0.6499;
+const yMin = 0.2898;
+const yMax = 0.4198;
+
+// Obtain index to access colorTemperatureTable.
+const kIndex = (k: number) => Math.floor((k - kMin) / kStep);
 
 export type CIEkxyType = { k: number; x: number; y: number };
 export const CIEk57kWhite: CIEkxyType = { k: 5700, x: 0.3302, y: 0.3411 };
@@ -45,26 +48,28 @@ export const CIEk65kWhite: CIEkxyType = { k: 6500, x: 0.3155, y: 0.3270 };
 const criticalKXY: CIEkxyType = { k: 5517, x: 0.3320, y: 0.1858 };
 
 export function checkColorTemperature(k: number): number {
-  if (k < minK) k = minK;
-  if (k > maxK) k = maxK;
+  if (k < kMin) k = kMin;
+  if (k > kMax) k = kMax;
   return k;
 }
 
 function checkX(x: number): number {
-  if (x < minK) x = minX;
-  if (x > maxK) x = maxX;
+  if (x < kMin) x = xMin;
+  if (x > kMax) x = xMax;
   return x;
 }
 
 function checkY(y: number): number {
-  if (y < minY) y = minY;
-  if (y > maxY) y = maxY;
+  if (y < yMin) y = yMin;
+  if (y > yMax) y = yMax;
   return y;
 }
 
 /*
   Color temperature to CIE(x,y) was found in
   http://www.vendian.org/mncharity/dir3/blackbody/UnstableURLs/bbr_color.html
+
+  We assume that k's are with a regular step. Irregular step would need blute force search.
 */
 const colorTemperatureTable: CIEkxyType[] = [
   { k: 1000, x: 0.6499, y: 0.3474 },
@@ -163,24 +168,34 @@ const colorTemperatureTable: CIEkxyType[] = [
 
 export function CIEk2x(k: number): number {
   k = checkColorTemperature(k);
-  const k1 = Math.floor(k / kStep) * kStep;
-  const k2 = k1 + kStep;
+  const i = kIndex(k);
+  const k1 = i * kStep + kMin;
 
-  const x1 = colorTemperatureTable[k1].x;
-  const x2 = colorTemperatureTable[k2].x;
+  if (k === k1) {
+    return colorTemperatureTable[i].x;
+  } else {
+    const k2 = k1 + kStep;
+    const x1 = colorTemperatureTable[i].x;
+    const x2 = colorTemperatureTable[i+1].x;
 
-  return ((k - k1)*x2 + (k2 - k)*x1) / kStep;
+    return ((k - k1)*x2 + (k2 - k)*x1) / kStep;
+  }
 }
 
 export function CIEk2y(k: number): number {
   k = checkColorTemperature(k);
-  const k1 = Math.floor(k / kStep) * kStep;
-  const k2 = k1 + kStep;
+  const i = kIndex(k);
+  const k1 = i * kStep + kMin;
 
-  const y1 = colorTemperatureTable[k1].y;
-  const y2 = colorTemperatureTable[k2].y;
+  if (k === k1) {
+    return colorTemperatureTable[i].y;
+  } else {
+    const k2 = k1 + kStep;
+    const y1 = colorTemperatureTable[i].y;
+    const y2 = colorTemperatureTable[i+1].y;
 
-  return ((k - k1)*y2 + (k2 - k)*y1) / kStep;
+    return ((k - k1)*y2 + (k2 - k)*y1) / kStep;
+  }
 }
 
 export function CIExy2k(x: number, y: number): number {

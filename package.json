@@ -32,13 +32,6 @@
     }
   ],
   "bundleDependencies": false,
-  "config": {
-    "unsafe-perm": true
-  },
-  "cpu": [
-    "arm",
-    "arm64"
-  ],
   "dependencies": {},
   "deprecated": false,
   "devDependencies": {

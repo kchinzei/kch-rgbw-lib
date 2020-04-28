@@ -27,34 +27,37 @@ THE SOFTWARE.
 
   Make Asayake to Wake Project.
   Kiyo Chinzei
-  https://github.com/kchinzei/raspi-pca9685-pwm
+  https://github.com/kchinzei/kch-rgbw-lib
 */
 
 const nmStep = 5; // step of temperature in waveLengthTable
-const minNm = 380;
-const maxNm = 760;
-const minX = 0.003858521;
-const maxX = 0.777777778;
-const minY = 0;
-const maxY = 0.833822666;
+const nmMin = 380;
+const nmMax = 760;
+const xMin = 0.003858521;
+const xMax = 0.777777778;
+const yMin = 0;
+const yMax = 0.833822666;
+
+// Obtain index to access waveLengthTable.
+const nmIndex = (nm: number) => Math.floor((nm - nmMin) / nmStep);
 
 export type CIEnxyType = { nm: number; x: number; y: number };
 
 export function checkWaveLength(nm: number): number {
-  if (nm < minNm) nm = minNm;
-  if (nm > maxNm) nm = maxNm;
+  if (nm < nmMin) nm = nmMin;
+  if (nm > nmMax) nm = nmMax;
   return nm;
 }
 
 export function checkCIEx(x: number): number {
-  if (x < minX) x = minX;
-  if (x > maxX) x = maxX;
+  if (x < xMin) x = xMin;
+  if (x > xMax) x = xMax;
   return x;
 }
 
 export function checkCIEy(y: number): number {
-  if (y < minY) y = minY;
-  if (y > maxY) y = maxY;
+  if (y < yMin) y = yMin;
+  if (y > yMax) y = yMax;
   return y;
 }
 
@@ -145,24 +148,37 @@ const waveLengthTable: CIEnxyType[] = [
 
 export function CIEnm2x(nm: number): number {
   nm = checkWaveLength(nm);
-  const nm1 = Math.floor(nm / nmStep) * nmStep;
-  const nm2 = nm1 + nmStep;
+  const i = nmIndex(nm);
+  const nm1 = i*nmStep + nmMin;
 
-  const x1 = waveLengthTable[nm1].x;
-  const x2 = waveLengthTable[nm2].x;
+  if (nm === nm1) {
+    // No need of interpolation.
+    return waveLengthTable[i].x;
+  } else {
+    // Interpolate
+    const nm2 = nm1 + nmStep;
+    const x1 = waveLengthTable[i].x;
+    const x2 = waveLengthTable[i+1].x;
 
-  return ((nm - nm1)*x2 + (nm2 - nm)*x1) / nmStep;
+    return ((nm - nm1)*x2 + (nm2 - nm)*x1) / nmStep;
+  }
 }
 
 export function CIEnm2y(nm: number): number {
   nm = checkWaveLength(nm);
-  const nm1 = Math.floor(nm / nmStep) * nmStep;
-  const nm2 = nm1 + nmStep;
+  const i = nmIndex(nm);
+  const nm1 = i*nmStep + nmMin;
 
-  const y1 = waveLengthTable[nm1].y;
-  const y2 = waveLengthTable[nm2].y;
-
-  return ((nm - nm1)*y2 + (nm2 - nm)*y1) / nmStep;
+  if (nm === nm1) {
+    // No need of interpolation.
+    return waveLengthTable[i].y;
+  } else {
+    // Interpolate
+    const nm2 = nm1 + nmStep;
+    const y1 = waveLengthTable[i].y;
+    const y2 = waveLengthTable[i+1].y;
+    return ((nm - nm1)*y2 + (nm2 - nm)*y1) / nmStep;
+  }
 }
 
 export function CIExy2nm(x: number, y: number): number {
@@ -190,13 +206,13 @@ export function CIExy2nm(x: number, y: number): number {
   const ax = nmxyMin.x - nmxyMin2.x;
   const ay = nmxyMin.y - nmxyMin2.y;
   const a = ax*ax + ay*ay;
-  if (a === 0) {
-    // nmxyMin and nmxyMin2 looks like a same point.
-    return nmxyMin.nm;
-  } else {
+  if (a !== 0) {
     // Interpolate between nmxyMin and nmxyMin2.
     // Obtain t, where a vector between nmxyMin and nmxyMin2 and a normal from (x,y) meets.
     const t = ((x - nmxyMin.x)*ax + (y - nmxyMin.y)*ay)/a;
     return nmxyMin.nm*(1-t) + nmxyMin2.nm*t;
+  } /* istanbul ignore next */ else {
+    // nmxyMin and nmxyMin2 looks like a same point.
+    return nmxyMin.nm;
   }
 }
