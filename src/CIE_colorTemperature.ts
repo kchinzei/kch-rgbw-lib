@@ -30,13 +30,15 @@ THE SOFTWARE.
   https://github.com/kchinzei/kch-rgbw-lib
 */
 
+import { checkCIExy } from './CIE_waveLength';
+
 const kStep = 100; // step of temperature in colorTemperatureTable
 const kMin = 1000;
-const kMax = 10000;
-const xMin = 0.2824;
-const xMax = 0.6499;
-const yMin = 0.2898;
-const yMax = 0.4198;
+const kMax = 20000;
+//const xMin = 0.2580;
+//const xMax = 0.6499;
+//const yMin = 0.2574;
+//const yMax = 0.4198;
 
 // Obtain index to access colorTemperatureTable.
 const kIndex = (k: number) => Math.floor((k - kMin) / kStep);
@@ -45,27 +47,13 @@ export type CIEkxyType = { k: number; x: number; y: number };
 export const CIEk57kWhite: CIEkxyType = { k: 5700, x: 0.3302, y: 0.3411 };
 export const CIEk65kWhite: CIEkxyType = { k: 6500, x: 0.3155, y: 0.3270 };
 
-const criticalKXY: CIEkxyType = { k: 5517, x: 0.3320, y: 0.1858 };
-
 export function checkColorTemperature(k: number): number {
-  if (k < kMin) k = kMin;
-  if (k > kMax) k = kMax;
+  if (k < kMin) return kMin;
+  if (k > kMax) return kMax;
   return k;
 }
 
-function checkX(x: number): number {
-  if (x < kMin) x = xMin;
-  if (x > kMax) x = xMax;
-  return x;
-}
-
-function checkY(y: number): number {
-  if (y < yMin) y = yMin;
-  if (y > yMax) y = yMax;
-  return y;
-}
-
-/*
+1/*
   Color temperature to CIE(x,y) was found in
   http://www.vendian.org/mncharity/dir3/blackbody/UnstableURLs/bbr_color.html
 
@@ -163,7 +151,107 @@ const colorTemperatureTable: CIEkxyType[] = [
   { k: 9800, x: 0.2835, y: 0.2912 },
   { k: 9900, x: 0.2829, y: 0.2905 },
   { k: 10000, x: 0.2824, y: 0.2898 },
-  { k: 10100, x: 0.2824, y: 0.2898 } // Dummy to avoid error when k=10000
+  { k: 10100, x: 0.2818, y: 0.2891 },
+  { k: 10200, x: 0.2813, y: 0.2884 },
+  { k: 10300, x: 0.2807, y: 0.2878 },
+  { k: 10400, x: 0.2802, y: 0.2871 },
+  { k: 10500, x: 0.2797, y: 0.2865 },
+  { k: 10600, x: 0.2792, y: 0.2859 },
+  { k: 10700, x: 0.2788, y: 0.2853 },
+  { k: 10800, x: 0.2783, y: 0.2847 },
+  { k: 10900, x: 0.2778, y: 0.2841 },
+  { k: 11000, x: 0.2774, y: 0.2836 },
+  { k: 11100, x: 0.2770, y: 0.2830 },
+  { k: 11200, x: 0.2765, y: 0.2825 },
+  { k: 11300, x: 0.2761, y: 0.2819 },
+  { k: 11400, x: 0.2757, y: 0.2814 },
+  { k: 11500, x: 0.2753, y: 0.2809 },
+  { k: 11600, x: 0.2749, y: 0.2804 },
+  { k: 11700, x: 0.2745, y: 0.2799 },
+  { k: 11800, x: 0.2742, y: 0.2794 },
+  { k: 11900, x: 0.2738, y: 0.2789 },
+  { k: 12000, x: 0.2734, y: 0.2785 },
+  { k: 12100, x: 0.2731, y: 0.2780 },
+  { k: 12200, x: 0.2727, y: 0.2776 },
+  { k: 12300, x: 0.2724, y: 0.2771 },
+  { k: 12400, x: 0.2721, y: 0.2767 },
+  { k: 12500, x: 0.2717, y: 0.2763 },
+  { k: 12600, x: 0.2714, y: 0.2758 },
+  { k: 12700, x: 0.2711, y: 0.2754 },
+  { k: 12800, x: 0.2708, y: 0.2750 },
+  { k: 12900, x: 0.2705, y: 0.2746 },
+  { k: 13000, x: 0.2702, y: 0.2742 },
+  { k: 13100, x: 0.2699, y: 0.2738 },
+  { k: 13200, x: 0.2696, y: 0.2735 },
+  { k: 13300, x: 0.2694, y: 0.2731 },
+  { k: 13400, x: 0.2691, y: 0.2727 },
+  { k: 13500, x: 0.2688, y: 0.2724 },
+  { k: 13600, x: 0.2686, y: 0.2720 },
+  { k: 13700, x: 0.2683, y: 0.2717 },
+  { k: 13800, x: 0.2680, y: 0.2713 },
+  { k: 13900, x: 0.2678, y: 0.2710 },
+  { k: 14000, x: 0.2675, y: 0.2707 },
+  { k: 14100, x: 0.2673, y: 0.2703 },
+  { k: 14200, x: 0.2671, y: 0.2700 },
+  { k: 14300, x: 0.2668, y: 0.2697 },
+  { k: 14400, x: 0.2666, y: 0.2694 },
+  { k: 14500, x: 0.2664, y: 0.2691 },
+  { k: 14600, x: 0.2662, y: 0.2688 },
+  { k: 14700, x: 0.2659, y: 0.2685 },
+  { k: 14800, x: 0.2657, y: 0.2682 },
+  { k: 14900, x: 0.2655, y: 0.2679 },
+  { k: 15000, x: 0.2653, y: 0.2676 },
+  { k: 15100, x: 0.2651, y: 0.2673 },
+  { k: 15200, x: 0.2649, y: 0.2671 },
+  { k: 15300, x: 0.2647, y: 0.2668 },
+  { k: 15400, x: 0.2645, y: 0.2665 },
+  { k: 15500, x: 0.2643, y: 0.2663 },
+  { k: 15600, x: 0.2641, y: 0.2660 },
+  { k: 15700, x: 0.2639, y: 0.2657 },
+  { k: 15800, x: 0.2638, y: 0.2655 },
+  { k: 15900, x: 0.2636, y: 0.2652 },
+  { k: 16000, x: 0.2634, y: 0.2650 },
+  { k: 16100, x: 0.2632, y: 0.2648 },
+  { k: 16200, x: 0.2631, y: 0.2645 },
+  { k: 16300, x: 0.2629, y: 0.2643 },
+  { k: 16400, x: 0.2627, y: 0.2641 },
+  { k: 16500, x: 0.2626, y: 0.2638 },
+  { k: 16600, x: 0.2624, y: 0.2636 },
+  { k: 16700, x: 0.2622, y: 0.2634 },
+  { k: 16800, x: 0.2621, y: 0.2632 },
+  { k: 16900, x: 0.2619, y: 0.2629 },
+  { k: 17000, x: 0.2618, y: 0.2627 },
+  { k: 17100, x: 0.2616, y: 0.2625 },
+  { k: 17200, x: 0.2615, y: 0.2623 },
+  { k: 17300, x: 0.2613, y: 0.2621 },
+  { k: 17400, x: 0.2612, y: 0.2619 },
+  { k: 17500, x: 0.2610, y: 0.2617 },
+  { k: 17600, x: 0.2609, y: 0.2615 },
+  { k: 17700, x: 0.2608, y: 0.2613 },
+  { k: 17800, x: 0.2606, y: 0.2611 },
+  { k: 17900, x: 0.2605, y: 0.2609 },
+  { k: 18000, x: 0.2604, y: 0.2607 },
+  { k: 18100, x: 0.2602, y: 0.2606 },
+  { k: 18200, x: 0.2601, y: 0.2604 },
+  { k: 18300, x: 0.2600, y: 0.2602 },
+  { k: 18400, x: 0.2598, y: 0.2600 },
+  { k: 18500, x: 0.2597, y: 0.2598 },
+  { k: 18600, x: 0.2596, y: 0.2597 },
+  { k: 18700, x: 0.2595, y: 0.2595 },
+  { k: 18800, x: 0.2593, y: 0.2593 },
+  { k: 18900, x: 0.2592, y: 0.2592 },
+  { k: 19000, x: 0.2591, y: 0.2590 },
+  { k: 19100, x: 0.2590, y: 0.2588 },
+  { k: 19200, x: 0.2589, y: 0.2587 },
+  { k: 19300, x: 0.2588, y: 0.2585 },
+  { k: 19400, x: 0.2587, y: 0.2584 },
+  { k: 19500, x: 0.2586, y: 0.2582 },
+  { k: 19600, x: 0.2584, y: 0.2580 },
+  { k: 19700, x: 0.2583, y: 0.2579 },
+  { k: 19800, x: 0.2582, y: 0.2577 },
+  { k: 19900, x: 0.2581, y: 0.2576 },
+  { k: 20000, x: 0.2580, y: 0.2574 },
+  { k: 20100, x: 0.2579, y: 0.2573 }
 ];
 
 export function CIEk2x(k: number): number {
@@ -198,67 +286,123 @@ export function CIEk2y(k: number): number {
   }
 }
 
-export function CIExy2k(x: number, y: number): number {
-  x = checkX(x);
-  y = checkY(y);
-  if (y === criticalKXY.y) {
-    return criticalKXY.k;
-  } else {
-    // McCamy's approximation for Correlating Color Temperature
-    // https://www.waveformlighting.com/tech/calculate-color-temperature-cct-from-cie-1931-xy-coordinates
-    const n = (x - criticalKXY.x) / (criticalKXY.y - y);
-    return 437*n*n*n + 3601*n*n + 6861*n + criticalKXY.k;
+export function CIExy2k(x: number, y: number): (number | undefined) {
+  if (checkCIExy(x, y) == false) return undefined;
+
+  // Optimized McCamy's approximation for Correlating Color Temperature
+  // https://www.waveformlighting.com/tech/calculate-color-temperature-cct-from-cie-1931-xy-coordinates
+  // Optimization done by Monte Carlo in 3 range of templeratures.
+
+  // k < 2000k
+  let xCr0 = 0.3333;
+  let yCr0 = 0.2017;
+  // 2000k < k < 10000k
+  let xCr1 = 0.3342;
+  let yCr1 = 0.1882;
+  // 10000k < k
+  let xCr2 = 0.3115;
+  let yCr2 = 0.2119;
+  
+  if (y <= yCr2) {
+    if (x < xCr2) {
+      return kMax;
+    }
+    if ( y <= yCr1) {
+      return kMax;
+    }
   }
+
+  // Calculate using three conditions.
+  // 2000k < k < 10000k
+  let n3 = 498;
+  let n2 = 3586;
+  let n1 = 6846;
+  let n0 = 5502;
+  let n = (x - xCr1) / (yCr1 - y);
+  let k1 = n3*n*n*n + n2*n*n + n1*n + n0;
+  // Escape singular conditions.
+  // (possible glitch if condition occasionaly meets!)
+  if (y == yCr0 || y == yCr2) {
+    return k1;
+  }
+
+  // k < 2000k
+  n3 = 549;
+  n2 = 3011;
+  n1 = 5920;
+  n0 = 5281;
+  n = (x - xCr0) / (yCr0 - y);
+  let k0 = n3*n*n*n + n2*n*n + n1*n + n0;
+
+  // 10000k < k
+  n3 = 498;
+  n2 = 3158;
+  n1 = 6561;
+  n0 = 7120;
+  n = (x - xCr2) / (yCr2 - y);
+  let k2 = n3*n*n*n + n2*n*n + n1*n + n0;
+
+  if (k2 > 10000) {
+    if (k2 > kMax) return kMax;
+    return k2;
+  } else if (k0 < 2000) {
+    return k0;
+  }
+  return k1;
 }
 
 function linearFade(r: number): number {
-  if (r < 0) r = 0;
-  if (r > 1) r = 1;
+  if (r < 0) return 0;
+  if (r > 1) return 1;
   return r;
 }
 
 export function CIEfadeout(x: number, y: number, steps: number, fade?: (r: number) => number): CIEkxyType[] {
-  x = checkX(x);
-  y = checkY(y);
   if (typeof(fade) === 'undefined') fade = linearFade;
+  let fadeVals: CIEkxyType[] = [];
 
-  const kStart = CIExy2k(x, y);
-  const kEnd = 1000;
+  const kStart: (number | undefined) = CIExy2k(x, y);
+  if (typeof(kStart) === 'undefined') {
+    return fadeVals;
+  } else {
+    const kEnd = 1000;
+    fadeVals = new Array(steps);
 
-  const fadeVals: CIEkxyType[] = new Array(steps);
+    for (let i=0; i<steps; i++) {
+      const r1 = fade(i / steps);
+      const r0 = 1 - r1;
+      const k = kStart*r0 + kEnd*r1;
 
-  for (let i=0; i<steps; i++) {
-    const r1 = fade(i / steps);
-    const r0 = 1 - r1;
-    const k = kStart*r0 + kEnd*r1;
+      fadeVals[i].k = k;
+      fadeVals[i].x = x*r0 + CIEk2x(k)*r1;
+      fadeVals[i].y = y*r0 + CIEk2y(k)*r1;
+    }
 
-    fadeVals[i].k = k;
-    fadeVals[i].x = x*r0 + CIEk2x(k)*r1;
-    fadeVals[i].y = y*r0 + CIEk2y(k)*r1;
+    return fadeVals;
   }
-
-  return fadeVals;
 }
 
 export function CIEfadein(x: number, y: number, steps: number, fade?: (r: number) => number): CIEkxyType[] {
-  x = checkX(x);
-  y = checkY(y);
   if (typeof(fade) === 'undefined') fade = linearFade;
+  let fadeVals: CIEkxyType[] = [];
 
-  const kStart = 1000;
-  const kEnd = CIExy2k(x, y);
+  const kEnd: (number | undefined) = CIExy2k(x, y);
+  if (typeof(kEnd) === 'undefined') {
+    return fadeVals;
+  } else {
+    const kStart = 1000;
+    fadeVals = new Array(steps);
 
-  const fadeVals: CIEkxyType[] = new Array(steps);
+    for (let i=0; i<steps; i++) {
+      const r1 = fade(i / steps);
+      const r0 = 1 - r1;
+      const k = kStart*r0 + kEnd*r1;
 
-  for (let i=0; i<steps; i++) {
-    const r1 = fade(i / steps);
-    const r0 = 1 - r1;
-    const k = kStart*r0 + kEnd*r1;
+      fadeVals[i].k = k;
+      fadeVals[i].x = CIEk2x(k)*r0 + x*r1;
+      fadeVals[i].y = CIEk2y(k)*r0 + y*r1;
+    }
 
-    fadeVals[i].k = k;
-    fadeVals[i].x = CIEk2x(k)*r0 + x*r1;
-    fadeVals[i].y = CIEk2y(k)*r0 + y*r1;
+    return fadeVals;
   }
-
-  return fadeVals;
 }

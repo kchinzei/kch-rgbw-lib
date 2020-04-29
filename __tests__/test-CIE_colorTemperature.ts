@@ -30,37 +30,68 @@ THE SOFTWARE.
   https://github.com/kchinzei/kch-rgbw-lib
 */
 
-import { CIEnm2x, CIEnm2y, CIExy2nm } from '../src/index';
+//import { CIEk2x, CIEk2y, CIExy2k, CIEfadeout, CIEfadein } from '../src/index';
+import { CIEk2x, CIEk2y, CIExy2k } from '../src/index';
 
 let i = 1;
 
 describe.each([
-  // [nm, x, y]
-  [600, 0.627036600, 0.372491145], // normal
-  [424, 0.17, 0.006], // nm is not in the table
-  [200, 0.177215190, 0], // nm in UV
-  [800, 0.666666667, 0.333333333], // nm in NIR
-])('[nm: %i => CIE(%f, %f)]', (nm, x, y) => {
-  test(`${i++}. CIEnm2x(${nm}): should return ${x}`, () => {
-    expect(CIEnm2x(nm)).toBeCloseTo(x, 0);
+  // [k, x, y]
+  [5700, 0.3302, 0.3411], // normal
+  [3348, 0.415, 0.40], // k is not in the table
+  [500, 0.6499, 0.3474], // very low k
+  [21000, 0.2580, 0.2574], // very hot k as Sirius
+
+])('[k: %i => CIE(%f, %f)]', (k, x, y) => {
+  test(`${i++}. CIEk2x(${k}): should return ${x}`, () => {
+    expect(CIEk2x(k)).toBeCloseTo(x, 0);
   });
 
-  test(`${i++}. CIEnm2y(${nm}): should return ${y}`, () => {
-    expect(CIEnm2y(nm)).toBeCloseTo(y, 0);
+  test(`${i++}. CIEk2y(${k}): should return ${y}`, () => {
+    expect(CIEk2y(k)).toBeCloseTo(y, 0);
   });
 });
 
 describe.each([
-  // [x, y, nm]
-  [0.7, 0.3, 625], // almost far right end
-  [0.075, 0.83, 520], // almost top end
-  [0.17, 0.006, 424], // almost bottom end
-  [0.0, 0.654823151, 505], // too small x (correct: 0.003858521 = xMin)
-  [0.8, 0.222222222, 740], // too large x (correct: 0.777777778 = xMax)
-  [0.177215190, -0.1, 380], // too small y (correct: 0 = yMin)
-  [0.074339401, 0.84, 520], // too large y (correct: 0.833822666 = yMax)
-])('[CIE(%f, %f) => nm: %i]', (x, y, nm) => {
-  test(`${i++}. CIExy2nm(${x}, ${y}): should return ${nm}`, () => {
-    expect(CIExy2nm(x, y)).toBeCloseTo(nm, 0);
+  // [x, y, k]
+  [0.3155, 0.3270, 6500], // 6500k
+  [0.3302, 0.3411, 5700], // 5700k
+  [0.24, 0.257, 20000], // too small x (correct: 0.2580)
+  [0.2580, 0.24, 20000], // too small y (correct: 0.2574)
+  [0.655, 0.3474, 1000], // too big x (correct: 0.6499)
+  [0.4965, 0.430, 2300], // too big y (correct: 0.4198)
+  [0.1731, 0.0045, 20000], // Near 405 nm
+  [0.15471624, 0.805833413, 7000], // Near 530 nm, same y.
+  [0.7354, 0.264516129, 1000], // Near 700 nm
+])('[CIE(%f, %f) => k: %i]', (x, y, k) => {
+  test(`${i++}. CIExy2k(${x}, ${y}): should return ${k}`, () => {
+    let ret: (number | undefined) = CIExy2k(x, y);
+    if (typeof(ret) === 'undefined') {
+      ret = k = 0;
+    }
+    expect(ret).toBeCloseTo(k, -2);
   });
 });
+
+describe.each([
+  // [x, y, k]
+  [0.0038585, 0.654823151, false], // Near 515 nm
+  [0.07433940, 0.833822666, false], // Near 520 nm
+  [0.7355, 0.264516129, false], // Near 700 nm
+  [0.075, 0.84, false], // Above 520 nm
+  [0.4, 0.1, false],
+  [0.6, 0.2, false],
+])('[CIE(%f, %f) => k: %i]', (x, y, k) => {
+  test(`${i++}. CIExy2k(${x}, ${y}): should return ${k}`, () => {
+    let ret: (number | undefined | boolean) = CIExy2k(x, y);
+    if (typeof(ret) === 'undefined') {
+      ret = k;
+    }
+    expect(ret).toBe(k);
+  });
+});
+
+
+// export function CIEfadeout(x: number, y: number, steps: number, fade?: (r: number) => number): CIEkxyType[] {
+// export function CIEfadein(x: number, y: number, steps: number, fade?: (r: number) => number): CIEkxyType[] {
+

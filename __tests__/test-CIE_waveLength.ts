@@ -30,7 +30,7 @@ THE SOFTWARE.
   https://github.com/kchinzei/kch-rgbw-lib
 */
 
-import { CIEnm2x, CIEnm2y, CIExy2nm } from '../src/index';
+import { CIEnm2x, CIEnm2y, checkCIExy, CIExy2nm } from '../src/index';
 
 let i = 1;
 
@@ -38,8 +38,8 @@ describe.each([
   // [nm, x, y]
   [600, 0.627036600, 0.372491145], // normal
   [424, 0.17, 0.006], // nm is not in the table
-  [200, 0.177215190, 0], // nm in UV
-  [800, 0.666666667, 0.333333333], // nm in NIR
+  [200, 0.173134328, 0.004477612], // nm in UV
+  [800, 0.735483871, 0.264516129], // nm in NIR
 ])('[nm: %i => CIE(%f, %f)]', (nm, x, y) => {
   test(`${i++}. CIEnm2x(${nm}): should return ${x}`, () => {
     expect(CIEnm2x(nm)).toBeCloseTo(x, 0);
@@ -56,11 +56,36 @@ describe.each([
   [0.075, 0.83, 520], // almost top end
   [0.17, 0.006, 424], // almost bottom end
   [0.0, 0.654823151, 505], // too small x (correct: 0.003858521 = xMin)
-  [0.8, 0.222222222, 740], // too large x (correct: 0.777777778 = xMax)
-  [0.177215190, -0.1, 380], // too small y (correct: 0 = yMin)
+  [0.8, 0.2645, 700], // too large x (correct: 0.735483871 = xMax)
+  [0.173134328, 0, 405], // too small y (correct: 0.003858521 = yMin)
   [0.074339401, 0.84, 520], // too large y (correct: 0.833822666 = yMax)
 ])('[CIE(%f, %f) => nm: %i]', (x, y, nm) => {
   test(`${i++}. CIExy2nm(${x}, ${y}): should return ${nm}`, () => {
-    expect(CIExy2nm(x, y)).toBeCloseTo(nm, 0);
+    expect(CIExy2nm(x, y)).toBeCloseTo(nm, -2);
+  });
+});
+
+describe.each([
+  // [x, y, result]
+  [0.3302, 0.3411, true], // 5700k White
+  [0.1731, 0.0045, true], // Near 405 nm
+  [0.0038585, 0.654823151, false], // Near 515 nm
+  [0.07433940, 0.833822666, false], // Near 520 nm
+  [0.15471624, 0.805833413, true], // Near 530 nm, same y.
+  [0.7355, 0.264516129, false], // Near 700 nm
+  [0.7354, 0.264516129, true], // Near 700 nm
+  [0.075, 0.84, false], // Above 520 nm
+  [0.4, 0.1, false],
+  [0.3, 0.1, true],
+  [0.7, 0.25, true],
+  [0.6, 0.2, false],
+  [0.2, 0.2,true],
+  [0.1, 0.2, true],
+  [0.1, 0.4, true],
+  [0.3, 0.4, true],
+  [0.05, 0.8, true]
+])('[CIE(%f, %f) => in: %i]', (x, y, res) => {
+  test(`${i++}. CIExy2nm(${x}, ${y}): should return ${res}`, () => {
+    expect(checkCIExy(x, y) == true).toBe(res == true);
   });
 });

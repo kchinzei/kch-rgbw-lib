@@ -31,11 +31,11 @@ THE SOFTWARE.
 */
 
 const nmStep = 5; // step of temperature in waveLengthTable
-const nmMin = 380;
-const nmMax = 760;
+const nmMin = 405;
+const nmMax = 700;
 const xMin = 0.003858521;
-const xMax = 0.777777778;
-const yMin = 0;
+const xMax = 0.735483871;
+const yMin = 0.003858521;
 const yMax = 0.833822666;
 
 // Obtain index to access waveLengthTable.
@@ -61,16 +61,40 @@ export function checkCIEy(y: number): number {
   return y;
 }
 
+export function checkCIExy(x: number, y: number): boolean {
+  if (x !== checkCIEx(x)) return false;
+  if (y !== checkCIEy(y)) return false;
+  
+  // If (x,y) is inside waveLengthTable.
+  // the crossing number algorithm.
+  // Point near the border of waveTengthTable may incorrectly asessed.
+  // Translated from https://www.nttpc.co.jp/technology/number_algorithm.html
+
+  let crossNum = 0;
+  for (let i=0; i<waveLengthTable.length - 1; i++) {
+    // Rule 1: Upside vertex.
+    if (((waveLengthTable[i].y <= y) && (waveLengthTable[i+1].y > y)) ||
+	// Rule 2: Downside vertex.
+	((waveLengthTable[i].y >  y) && (waveLengthTable[i+1].y <= y))) {
+      // Rule 3: When rule 1 & 2 examined, rule 3 is also examined.
+      // Rule 4: If vertex is rightside of the point.
+      let vt = (y - waveLengthTable[i].y) / (waveLengthTable[i+1].y - waveLengthTable[i].y);
+      // Find the vertex at the same y, and check if x of the vertex and the point.
+      if (x < (waveLengthTable[i].x + (vt * (waveLengthTable[i+1].x - waveLengthTable[i].x)))) {
+	crossNum++;
+      }
+    }
+  }
+
+  return ((crossNum % 2) === 1);
+}
+
+
 /*
   Wave length to CIE(x,y)
   Source: JIS Z8701:1999
 */
 const waveLengthTable: CIEnxyType[] = [
-  { nm: 380, x: 0.177215190, y: 0 },
-  { nm: 385, x: 0.171875000, y: 0.007812500 },
-  { nm: 390, x: 0.172131148, y: 0.004098361 },
-  { nm: 395, x: 0.172727273, y: 0.004545455 },
-  { nm: 400, x: 0.173123487, y: 0.004842615 },
   { nm: 405, x: 0.173134328, y: 0.004477612 },
   { nm: 410, x: 0.172550575, y: 0.004760016 },
   { nm: 415, x: 0.172023941, y: 0.004876967 },
@@ -131,19 +155,7 @@ const waveLengthTable: CIEnxyType[] = [
   { nm: 690, x: 0.734627832, y: 0.265372168 },
   { nm: 695, x: 0.734883721, y: 0.265116279 },
   { nm: 700, x: 0.735483871, y: 0.264516129 },
-  { nm: 705, x: 0.736363636, y: 0.263636364 },
-  { nm: 710, x: 0.734177215, y: 0.265822785 },
-  { nm: 715, x: 0.732142857, y: 0.267857143 },
-  { nm: 720, x: 0.743589744, y: 0.256410256 },
-  { nm: 725, x: 0.740740741, y: 0.259259259 },
-  { nm: 730, x: 0.736842105, y: 0.263157895 },
-  { nm: 735, x: 0.714285714, y: 0.285714286 },
-  { nm: 740, x: 0.777777778, y: 0.222222222 },
-  { nm: 745, x: 0.714285714, y: 0.285714286 },
-  { nm: 750, x: 0.750000000, y: 0.250000000 },
-  { nm: 755, x: 0.666666667, y: 0.333333333 },
-  { nm: 760, x: 0.666666667, y: 0.333333333 },
-  { nm: 765, x: 0.666666667, y: 0.333333333 } // Dummy to avoid error when nm=760
+  { nm: 405, x: 0.173134328, y: 0.004477612 } // Dummy to avoid error when nm=700
 ];
 
 export function CIEnm2x(nm: number): number {
