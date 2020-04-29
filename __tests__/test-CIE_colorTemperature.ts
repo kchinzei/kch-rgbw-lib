@@ -1,3 +1,4 @@
+
 /*
 The MIT License (MIT)
 
@@ -59,9 +60,8 @@ describe.each([
   [0.24, 0.257, 20000], // too small x (correct: 0.2580)
   [0.2580, 0.24, 20000], // too small y (correct: 0.2574)
   [0.655, 0.3474, 1000], // too big x (correct: 0.6499)
-  [0.4965, 0.430, 2300], // too big y (correct: 0.4198)
+  [0.4965, 0.4198, 2300], // too big y (correct: 0.4198)
   [0.1731, 0.0045, 20000], // Near 405 nm
-  [0.15471624, 0.805833413, 7000], // Near 530 nm, same y.
   [0.7354, 0.264516129, 1000], // Near 700 nm
 ])('[CIE(%f, %f) => k: %i]', (x, y, k) => {
   test(`${i++}. CIExy2k(${x}, ${y}): should return ${k}`, () => {

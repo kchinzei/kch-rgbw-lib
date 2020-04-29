@@ -53,7 +53,7 @@ export function checkColorTemperature(k: number): number {
   return k;
 }
 
-1/*
+/*
   Color temperature to CIE(x,y) was found in
   http://www.vendian.org/mncharity/dir3/blackbody/UnstableURLs/bbr_color.html
 
@@ -304,12 +304,11 @@ export function CIExy2k(x: number, y: number): (number | undefined) {
   let yCr2 = 0.2119;
   
   if (y <= yCr2) {
-    if (x < xCr2) {
-      return kMax;
-    }
-    if ( y <= yCr1) {
-      return kMax;
-    }
+    // This area appears very odd for example,
+    // - Very cold in even in blue,
+    // - Singularity around the critical points.
+    // DIV/0 errors at the critical points.
+    return kMax;
   }
 
   // Calculate using three conditions.
@@ -320,11 +319,6 @@ export function CIExy2k(x: number, y: number): (number | undefined) {
   let n0 = 5502;
   let n = (x - xCr1) / (yCr1 - y);
   let k1 = n3*n*n*n + n2*n*n + n1*n + n0;
-  // Escape singular conditions.
-  // (possible glitch if condition occasionaly meets!)
-  if (y == yCr0 || y == yCr2) {
-    return k1;
-  }
 
   // k < 2000k
   n3 = 549;
@@ -343,12 +337,11 @@ export function CIExy2k(x: number, y: number): (number | undefined) {
   let k2 = n3*n*n*n + n2*n*n + n1*n + n0;
 
   if (k2 > 10000) {
-    if (k2 > kMax) return kMax;
-    return k2;
+    return checkColorTemperature(k2);
   } else if (k0 < 2000) {
-    return k0;
+    return checkColorTemperature(k0);
   }
-  return k1;
+  return checkColorTemperature(k1);
 }
 
 function linearFade(r: number): number {
