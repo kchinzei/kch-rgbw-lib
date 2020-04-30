@@ -30,7 +30,7 @@ THE SOFTWARE.
   https://github.com/kchinzei/kch-rgbw-lib
 */
 
-import { CIEnm2x, CIEnm2y, checkCIExy, CIExy2nm } from '../src/index';
+import { CIEnm2x, CIEnm2y, checkCIExy, CIExy2nm, CIEfitxy2nm, CIEnmxyType } from '../src/index';
 
 let i = 1;
 
@@ -75,6 +75,7 @@ describe.each([
   [0.7355, 0.264516129, false], // Near 700 nm
   [0.7354, 0.264516129, true], // Near 700 nm
   [0.075, 0.84, false], // Above 520 nm
+  [0.4, 0.0, false],
   [0.4, 0.1, false],
   [0.3, 0.1, true],
   [0.7, 0.25, true],
@@ -87,5 +88,21 @@ describe.each([
 ])('[CIE(%f, %f) => in: %i]', (x, y, res) => {
   test(`${i++}. CIExy2nm(${x}, ${y}): should return ${res}`, () => {
     expect(checkCIExy(x, y) == true).toBe(res == true);
+  });
+});
+
+describe.each([
+  // [x, y, result]
+  [0.1731, 0.0045, 0.1731, 0.0045, 405.31],
+  [0.4956, 0.5034, 0.4956, 0.5034, 577.50],
+  [0.0750, 0.7750, 0.0486, 0.8180, 516.37],
+  [0.4000, 0.1000, 0.1731, 0.0045, 405.00],
+  [0.0500, 0.2500, 0.0562, 0.2515, 487.70],
+])('[CIE(%f, %f) => CIE(%f, %f) w/ %f nm]', (x, y, rx, ry, rnm) => {
+  test(`${i++}. CIEfitxy2nm(${x}, ${y}): should return (${rx},${ry},${rnm})`, () => {
+    let ret: CIEnmxyType = CIEfitxy2nm(x, y);
+    expect(ret.x).toBeCloseTo(rx, 1);
+    expect(ret.y).toBeCloseTo(ry, 1);
+    expect(ret.nm).toBeCloseTo(rnm, 0);
   });
 });

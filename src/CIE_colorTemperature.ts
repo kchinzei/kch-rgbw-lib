@@ -30,15 +30,15 @@ THE SOFTWARE.
   https://github.com/kchinzei/kch-rgbw-lib
 */
 
-import { checkCIExy } from './CIE_waveLength';
+import { checkCIExy, CIEnmxyType, CIEfitxy2nm } from './CIE_waveLength';
 
 const kStep = 100; // step of temperature in colorTemperatureTable
 const kMin = 1000;
 const kMax = 20000;
-//const xMin = 0.2580;
-//const xMax = 0.6499;
-//const yMin = 0.2574;
-//const yMax = 0.4198;
+// const xMin = 0.2580;
+// const xMax = 0.6499;
+// const yMin = 0.2574;
+// const yMax = 0.4198;
 
 // Obtain index to access colorTemperatureTable.
 const kIndex = (k: number) => Math.floor((k - kMin) / kStep);
@@ -286,23 +286,27 @@ export function CIEk2y(k: number): number {
   }
 }
 
-export function CIExy2k(x: number, y: number): (number | undefined) {
-  if (checkCIExy(x, y) == false) return undefined;
+export function CIExy2k(x: number, y: number): number {
+  if (checkCIExy(x, y) === false) {
+    const nmxy: CIEnmxyType = CIEfitxy2nm(x, y);
+    x = nmxy.x;
+    y = nmxy.y;
+  }
 
   // Optimized McCamy's approximation for Correlating Color Temperature
   // https://www.waveformlighting.com/tech/calculate-color-temperature-cct-from-cie-1931-xy-coordinates
   // Optimization done by Monte Carlo in 3 range of templeratures.
 
   // k < 2000k
-  let xCr0 = 0.3333;
-  let yCr0 = 0.2017;
+  const xCr0 = 0.3333;
+  const yCr0 = 0.2017;
   // 2000k < k < 10000k
-  let xCr1 = 0.3342;
-  let yCr1 = 0.1882;
+  const xCr1 = 0.3342;
+  const yCr1 = 0.1882;
   // 10000k < k
-  let xCr2 = 0.3115;
-  let yCr2 = 0.2119;
-  
+  const xCr2 = 0.3115;
+  const yCr2 = 0.2119;
+
   if (y <= yCr2) {
     // This area appears very odd for example,
     // - Very cold in even in blue,
@@ -318,7 +322,7 @@ export function CIExy2k(x: number, y: number): (number | undefined) {
   let n1 = 6846;
   let n0 = 5502;
   let n = (x - xCr1) / (yCr1 - y);
-  let k1 = n3*n*n*n + n2*n*n + n1*n + n0;
+  const k1 = n3*n*n*n + n2*n*n + n1*n + n0;
 
   // k < 2000k
   n3 = 549;
@@ -326,7 +330,7 @@ export function CIExy2k(x: number, y: number): (number | undefined) {
   n1 = 5920;
   n0 = 5281;
   n = (x - xCr0) / (yCr0 - y);
-  let k0 = n3*n*n*n + n2*n*n + n1*n + n0;
+  const k0 = n3*n*n*n + n2*n*n + n1*n + n0;
 
   // 10000k < k
   n3 = 498;
@@ -334,7 +338,7 @@ export function CIExy2k(x: number, y: number): (number | undefined) {
   n1 = 6561;
   n0 = 7120;
   n = (x - xCr2) / (yCr2 - y);
-  let k2 = n3*n*n*n + n2*n*n + n1*n + n0;
+  const k2 = n3*n*n*n + n2*n*n + n1*n + n0;
 
   if (k2 > 10000) {
     return checkColorTemperature(k2);
@@ -344,58 +348,35 @@ export function CIExy2k(x: number, y: number): (number | undefined) {
   return checkColorTemperature(k1);
 }
 
-function linearFade(r: number): number {
-  if (r < 0) return 0;
-  if (r > 1) return 1;
-  return r;
-}
+const linearFade = (r: number) => (r);
 
 export function CIEfadeout(x: number, y: number, steps: number, fade?: (r: number) => number): CIEkxyType[] {
   if (typeof(fade) === 'undefined') fade = linearFade;
-  let fadeVals: CIEkxyType[] = [];
 
-  const kStart: (number | undefined) = CIExy2k(x, y);
-  if (typeof(kStart) === 'undefined') {
-    return fadeVals;
-  } else {
-    const kEnd = 1000;
-    fadeVals = new Array(steps);
+  const kStart = CIExy2k(x, y);
+  const kEnd = 1000;
+  const fadeVals: CIEkxyType[] = new Array(steps);
 
-    for (let i=0; i<steps; i++) {
-      const r1 = fade(i / steps);
-      const r0 = 1 - r1;
-      const k = kStart*r0 + kEnd*r1;
+  for (let i=0; i<steps; i++) {
+    const r1 = fade(i / steps);
+    const r0 = 1 - r1;
+    const k = kStart*r0 + kEnd*r1;
 
-      fadeVals[i].k = k;
-      fadeVals[i].x = x*r0 + CIEk2x(k)*r1;
-      fadeVals[i].y = y*r0 + CIEk2y(k)*r1;
-    }
-
-    return fadeVals;
+    fadeVals[i] = { k, x: x*r0 + CIEk2x(k)*r1, y: y*r0 + CIEk2y(k)*r1 };
   }
+
+  return fadeVals;
 }
 
 export function CIEfadein(x: number, y: number, steps: number, fade?: (r: number) => number): CIEkxyType[] {
-  if (typeof(fade) === 'undefined') fade = linearFade;
-  let fadeVals: CIEkxyType[] = [];
+  const fadeArray: CIEkxyType[] = CIEfadeout(x, y, steps, fade);
 
-  const kEnd: (number | undefined) = CIExy2k(x, y);
-  if (typeof(kEnd) === 'undefined') {
-    return fadeVals;
-  } else {
-    const kStart = 1000;
-    fadeVals = new Array(steps);
-
-    for (let i=0; i<steps; i++) {
-      const r1 = fade(i / steps);
-      const r0 = 1 - r1;
-      const k = kStart*r0 + kEnd*r1;
-
-      fadeVals[i].k = k;
-      fadeVals[i].x = CIEk2x(k)*r0 + x*r1;
-      fadeVals[i].y = CIEk2y(k)*r0 + y*r1;
-    }
-
-    return fadeVals;
+  // Reverse
+  const iCount = Math.floor(steps/2);
+  for (let i=0; i<iCount; i++) {
+    const tmp: CIEkxyType = fadeArray[i];
+    fadeArray[i] = fadeArray[iCount-1-i];
+    fadeArray[iCount-1-i] = tmp;
   }
+  return fadeArray;
 }

@@ -31,8 +31,7 @@ THE SOFTWARE.
   https://github.com/kchinzei/kch-rgbw-lib
 */
 
-//import { CIEk2x, CIEk2y, CIExy2k, CIEfadeout, CIEfadein } from '../src/index';
-import { CIEk2x, CIEk2y, CIExy2k } from '../src/index';
+import { CIEk2x, CIEk2y, CIExy2k, CIEfadein, CIEkxyType } from '../src/index';
 
 let i = 1;
 
@@ -63,35 +62,41 @@ describe.each([
   [0.4965, 0.4198, 2300], // too big y (correct: 0.4198)
   [0.1731, 0.0045, 20000], // Near 405 nm
   [0.7354, 0.264516129, 1000], // Near 700 nm
+  [0.0038585, 0.654823151, 13370], // Near 515 nm
+  [0.07433940, 0.833822666, 10110], // Near 520 nm
+  [0.7355, 0.264516129, 1000], // Near 700 nm
+  [0.075, 0.84, 10110], // Above 520 nm
+  [0.4, 0.1, 20000],
+  [0.6, 0.2, 1000],
 ])('[CIE(%f, %f) => k: %i]', (x, y, k) => {
   test(`${i++}. CIExy2k(${x}, ${y}): should return ${k}`, () => {
-    let ret: (number | undefined) = CIExy2k(x, y);
-    if (typeof(ret) === 'undefined') {
-      ret = k = 0;
-    }
+    let ret: number = CIExy2k(x, y);
     expect(ret).toBeCloseTo(k, -2);
   });
 });
 
 describe.each([
-  // [x, y, k]
-  [0.0038585, 0.654823151, false], // Near 515 nm
-  [0.07433940, 0.833822666, false], // Near 520 nm
-  [0.7355, 0.264516129, false], // Near 700 nm
-  [0.075, 0.84, false], // Above 520 nm
-  [0.4, 0.1, false],
-  [0.6, 0.2, false],
-])('[CIE(%f, %f) => k: %i]', (x, y, k) => {
-  test(`${i++}. CIExy2k(${x}, ${y}): should return ${k}`, () => {
-    let ret: (number | undefined | boolean) = CIExy2k(x, y);
-    if (typeof(ret) === 'undefined') {
-      ret = k;
-    }
-    expect(ret).toBe(k);
+  [0.3155, 0.3270, 50, 6500], // 6500k
+])('[CIE(%f, %f, %i) => k: %i]', (x, y, s, k) => {
+  test(`${i++}. CIEfadeout(${x}, ${y}): should return array of ${s}`, () => {
+    const ret: CIEkxyType[] = CIEfadein(x, y, s);
+    const len = ret.length;
+    expect(len).toBe(s);
+    expect(ret[len-1].x).toBeCloseTo(x, -2);
+    expect(ret[len-1].y).toBeCloseTo(y, -2);
   });
 });
 
-
-// export function CIEfadeout(x: number, y: number, steps: number, fade?: (r: number) => number): CIEkxyType[] {
-// export function CIEfadein(x: number, y: number, steps: number, fade?: (r: number) => number): CIEkxyType[] {
+describe.each([
+  [0.3155, 0.3270, 50, 6500], // 6500k
+])('[CIE(%f, %f, %i) => k: %i]', (x, y, s, k) => {
+  test(`${i++}. CIEfadeout(${x}, ${y}): should return array of ${s}`, () => {
+    const exponential = (r: number) => (1 - Math.exp(-4*r));
+    const ret: CIEkxyType[] = CIEfadein(x, y, s, exponential);
+    const len = ret.length;
+    expect(len).toBe(s);
+    expect(ret[len-1].x).toBeCloseTo(x, -2);
+    expect(ret[len-1].y).toBeCloseTo(y, -2);
+  });
+});
 
