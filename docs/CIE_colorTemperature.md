@@ -35,6 +35,9 @@ color temperature in K.
 Return correlated color temperature (CCT) corresponding to CIE (x, y).
 Optimized McCamy's approximation is used. Note that returned CCT is
 physically meaningful only when (x, y) is on or near the white light.
+In particular, the area between blue and red is very inaccurate as shown
+in the color mapping of the returned temperature.
+![CIExy2k](./figs/CIExy2k.png "Mapping by CIExy2k()")
 Although CCT by McCamy's approximation is known that it's isotherms are
 [less accurate than other methods](https://cran.r-project.org/web/packages/spacesXYZ/vignettes/isotherms.pdf),
 it gives the smallest error in [1000, 7000] k according to my experiment.
