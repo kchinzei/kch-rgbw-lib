@@ -357,18 +357,20 @@ export function CIEfadeout(x: number, y: number, steps: number, fade?: (r: numbe
   const kEnd = 1000;
   const fadeVals: CIEkxyType[] = new Array(steps);
 
-  for (let i=0; i<steps; i++) {
+  for (let i=0; i<steps-1; i++) {
     const r1 = fade(i / steps);
     const r0 = 1 - r1;
     const k = kStart*r0 + kEnd*r1;
 
     fadeVals[i] = { k, x: x*r0 + CIEk2x(k)*r1, y: y*r0 + CIEk2y(k)*r1 };
   }
+  fadeVals[steps-1] = { k: kEnd, x: CIEk2x(kEnd), y: CIEk2y(kEnd) };
 
   return fadeVals;
 }
 
 export function CIEfadein(x: number, y: number, steps: number, fade?: (r: number) => number): CIEkxyType[] {
+  // FixMe: fade should be reversed also.
   const fadeArray: CIEkxyType[] = CIEfadeout(x, y, steps, fade);
 
   // Reverse

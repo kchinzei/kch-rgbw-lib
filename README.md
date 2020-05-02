@@ -1,14 +1,16 @@
 # Kch RGBW Lib
 
-RGB/RGBW LED class library. It provides following functions,
+RGB/RGBW LED class library in typescript. It provides following functions,
 
-- Conversions of
-  -- RGB/HSB/CIE
-  -- Color temperature to CIE
-  -- Wavelength to CI
+- Conversions between
+  - RGB <=> HSB
+  - CIE => RGB(W) using LED's properties
+  - Color temperature <=> CIE (experimental)
+  - Wavelength <=> CIE
 - Fade-in/out array
 - Typical RGB LED properties
-  It is intended to use with
+
+It is intended to use with
   [homebridge-raspi-rgbw-led](https://github.com/kchinzei/homebridge-raspi-rgbw-led)
   project.
 
@@ -26,9 +28,10 @@ npm install kch-rgbw-lib
 
 ## API
 
-### Module Constants
-
-### Interface and Class
+- [CIE_colorTemperature](./docs/CIE_colorTemperature.md)
+  : Functions for color temperature of black body.
+- [CIE_waveLength](./docs/CIE_waveLength.md)
+  : Functions for CIE 1931 colorspace.
 
 ## References
 

@@ -1,0 +1,81 @@
+# CIE_colorTemperature
+
+It is a part of [kch-rgbw-lib](https://github.com/kchinzei/kch-rgbw-lib).
+See [README.md](https://github.com/kchinzei/kch-rgbw-lib/blob/master/README.md)
+for general information.
+
+### Code snippet
+
+In TypeScript/ES2015:
+```TypeScript
+import { checkColorTemperature, CIEk2x, CIEk2y, CIExy2k } from 'kch-rgbw-lib';
+import { CIEfitxy2nm, CIEnmxyType } from 'kch-rgbw-lib';
+
+## API
+
+### Module Constants and types
+
+```typescript
+// Color temperature (of white)
+type CIEkxyType = { k: number; x: number; y: number };
+const CIEk57kWhite: CIEkxyType; // 5700 k white
+const CIEk65kWhite: CIEkxyType; // 6500 k white
+```
+
+### Functions
+##### checkColorTemperature(k: number): number
+Truncate the given value within its range.
+
+##### CIEk2x(k: number): number
+##### CIEk2y(k: number): number
+Return CIE-x or CIE-y value of back body corresponding to the given
+color temperature in K.
+
+##### CIExy2k(x: number, y: number): number
+Return correlated color temperature (CCT) corresponding to CIE (x, y).
+Optimized McCamy's approximation is used. Note that returned CCT is
+physically meaningful only when (x, y) is on or near the white light.
+Although CCT by McCamy's approximation is known that it's isotherms are
+[less accurate than other methods](https://cran.r-project.org/web/packages/spacesXYZ/vignettes/isotherms.pdf),
+it gives the smallest error in [1000, 7000] k according to my experiment.
+
+##### CIEfadeout(x: number, y: number, steps: number, fade?: (r: number) => number): CIEkxyType[]
+##### CIEfadein(x: number, y: number, steps: number, fade?: (r: number) => number): CIEkxyType[]
+Return array of CIEkxyType, filling with interpolated points starting/ending
+at (x, y). `CIEfadeout()` ends / `CIEfadein()` starts at the point where
+color temperature is 1000 k.
+`fade()` is a function used to interpolate between the start and end points.
+`fade()` is called repeatedly with changing `r` from 0 to 1, like:
+```typescript
+const p: CIEkxyType[] = new Array(steps);
+for (let i=0; i<steps; i++) {
+  const r = fade(i / steps);
+  (interpolate start (x,y) and end (x,y) by r)
+  (interpolate colorTemperature of (x,y) and 1000 by r)
+  p[i] = { interpolated x, y, k };
+}
+```
+It is intended to mimicking lamp gradually turning off/on.
+
+Note: when (x,y) is far from the black body curve, it behaves odd,
+due to the limitation of `CIExy2k()`.
+
+# License
+
+The MIT License (MIT)
+Copyright (c) K. Chinzei (kchinzei@gmail.com)
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
