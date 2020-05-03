@@ -7,6 +7,7 @@ for general information.
 ### Code snippet
 
 In TypeScript/ES2015:
+
 ```TypeScript
 import { checkWaveLength, checkCIEx, checkCIEy, checkCIExy,
          CIEnm2x, CIEnm2y, CIExy2nm } from 'kch-rgbw-lib';
@@ -25,25 +26,35 @@ type CIEnmxyType = { nm: number; x: number; y: number };
 ### Functions
 
 ##### checkWaveLength(nm: number): number
+
 ##### checkCIEx(x: number): number
+
 ##### checkCIEy(y: number): number
+
 Truncate the given value within its range.
 
 ##### checkCIExy(x: number, y: number): boolean
+
 Examine if (x, y) is within CIE 1931 area.
 
 ##### CIEnm2x(nm: number): number
+
 ##### CIEnm2y(nm: number): number
+
 Return CIE-x or CIE-y value corresponding to the given wavelength in nm.
 
 ##### function CIExy2nm(x: number, y: number): number
+
 Return wavelength that corresponds to CIE (x, y), in nanometer [nm].
 When (x, y) is not on the CIE 1931 curve, it returns the projected point to the
 curve. Note that the returned wavelength is meaningful only when (x, y)
 is on or the curve. It internally calls CIEfitxy2nm().
+
 ###### function CIEfitxy2nm(x: number, y: number): CIEnmxyType
+
 Return the nearest point on the CIE 1931 curve with the point's wavelength.
 ![CIEfitxy2nm](./figs/CIExy2nm.png "Mapping by CIEfitxy2nm()")
+
 - Whenever possible, it returns the @rpjected point on the curve (points 1-4).
 - It can determine the projection even the input is outside the curve.
 - Eventually it appears not exactly on the curve due to the interpolation (4).

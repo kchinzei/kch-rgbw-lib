@@ -11,8 +11,8 @@ RGB/RGBW LED class library in typescript. It provides following functions,
 - Typical RGB LED properties
 
 It is intended to use with
-  [homebridge-raspi-rgbw-led](https://github.com/kchinzei/homebridge-raspi-rgbw-led)
-  project.
+[homebridge-raspi-rgbw-led](https://github.com/kchinzei/homebridge-raspi-rgbw-led)
+project.
 
 ## System Requirements
 

@@ -27,11 +27,11 @@ THE SOFTWARE.
 
   Make Asayake to Wake Project.
   Kiyo Chinzei
-  https://github.com/kchinzei/raspi-pca9685-pwm
+  https://github.com/kchinzei/kch-rgbw-lib
 */
 
 import { checkWaveLength, checkCIEx, checkCIEy, CIEnm2x, CIEnm2y, CIExy2nm } from './CIE_waveLength';
-import { checkColorTemperature, CIEk2x, CIEk2y }  from './CIE_colorTemperature';
+import { checkColorTemperature, CIEk2x, CIEk2y, CIExy2k}  from './CIE_colorTemperature';
 
 function checkBrightness(b: number, max: number): number {
   if (b < 0) b = 0;
@@ -46,7 +46,7 @@ function checkMaxBrightness(b: number): number {
 }
 
 export type LEDChipTypes =
-  'LED_R' | 'LED_G' | 'LED_B' | 'LED_W' | 'LED_WW' | 'LED_CW' | 'LED_UV' | undefined ;
+  'LED_R' | 'LED_G' | 'LED_B' | 'LED_W' | 'LED_UV' | 'LED_Amber' | 'LED_Other' | undefined ;
 
 export interface ILEDChip {
   readonly LEDChipType: LEDChipTypes;
@@ -82,33 +82,33 @@ export class LEDChip implements ILEDChip {
   get name(): string { return this._name; }
   set name(n: string) { this._name = n; }
 
-  setMaxBrightness(b: number): void { this._maxBrightness = checkMaxBrightness(b); }
-  setX(x: number): void { this._x = checkCIEx(x); }
-  setY(y: number): void { this._y = checkCIEy(y); }
+  public setMaxBrightness(b: number): void { this._maxBrightness = checkMaxBrightness(b); }
+  public setX(x: number): void { this._x = checkCIEx(x); }
+  public setY(y: number): void { this._y = checkCIEy(y); }
 
-  setLEDChipType(t: LEDChipTypes): void { this._LEDChipType = t; }
+  public setLEDChipType(t: LEDChipTypes): void { this._LEDChipType = t; }
 
-  setWaveLength(w: number | undefined): void {
+  public setWaveLength(w: number | undefined): void {
     switch (this.LEDChipType) {
+      case 'LED_W':
+        this._waveLength = undefined;
+        break;
       case 'LED_R':
       case 'LED_G':
       case 'LED_B':
       case 'LED_UV':
+      default:
         if (typeof(w) === 'undefined')
           this._waveLength = w;
         else
           this._waveLength = checkWaveLength(w);
         break;
-      default:
-        this._waveLength = undefined;
     }
   }
 
-  setColorTemperature(t: number | undefined): void {
+  public setColorTemperature(t: number | undefined): void {
     switch (this.LEDChipType) {
       case 'LED_W':
-      case 'LED_WW':
-      case 'LED_CW':
         if (typeof(t) === 'undefined')
           this._colorTemperature = t;
         else
@@ -121,55 +121,80 @@ export class LEDChip implements ILEDChip {
 
   /*
     Different pairs of parameters work as following:
-    constructor(LEDChipType, waveLength, maxBrightness); // c1; Color LEDs by wave length
-    constructor(LEDChipType, colorTemperature, maxBrightness); // c2; White LEDs by tempetarure
-    constructor(LEDChipType, x, y, maxBrightness); // c3; If you know CIE(xy)
-    constructor(); // c4; empty initialization.
+    c1: constructor(LEDChipType, name, waveLength, maxBrightness); // Color LEDs by wave length
+    c2: constructor(LEDChipType, name, colorTemperature, maxBrightness); // White LEDs by tempetarure
+    c3: constructor(LEDChipType, name, x, y, maxBrightness); // If you know CIE(xy). It's most precise.
+    c4: constructor(); // empty initialization.
   */
-  constructor(LEDChipType?: LEDChipTypes, arg1?: number, arg2?: number, arg3?: number) {
-    this._LEDChipType = undefined;
+  constructor(LEDChipType?: LEDChipTypes, name?: string, arg1?: number, arg2?: number, arg3?: number) {
+    this._LEDChipType = LEDChipType;
     this._waveLength = undefined;
     this._colorTemperature = undefined;
-    this._maxBrightness = 1.0;
+    this._maxBrightness = 0;
     this._x = 0;
     this._y = 0;
     this._brightness = 0;
-    this._name = '';
+    this._name = typeof(name) === 'string'? name:'';
 
-    if (typeof(LEDChipType) !== 'undefined' && typeof(arg1) !== 'undefined' && typeof(arg2) !== 'undefined') {
-      switch (LEDChipType) {
-        case 'LED_R':
-        case 'LED_G':
-        case 'LED_B':
-        case 'LED_UV':
-          this.setLEDChipType(LEDChipType);
-          this.setColorTemperature(0);
-          if (typeof(arg3) === 'undefined') {
+    if (typeof(LEDChipType) === 'undefined') {
+      /* istanbul ignore else */
+      if (typeof(arg1) === 'undefined' &&
+	  typeof(arg2) === 'undefined' &&
+	  typeof(arg3) === 'undefined' &&
+	  typeof(name) === 'undefined') {
+        // case c4
+        return;
+      }
+    } else {
+      if (typeof(arg3) !== 'undefined') {
+        // case c3
+        this.setX(arg1 as number);
+        this.setY(arg2 as number);
+        this.setMaxBrightness(arg3);
+        switch (LEDChipType) {
+          case 'LED_W':
+            this.setColorTemperature(CIExy2k(this.x, this.y));
+	    break;
+	  default:
+	    this.setWaveLength(CIExy2nm(this.x, this.y));
+	    break;
+        }
+        return;
+      } else if (typeof(arg1) !== 'undefined' && typeof(arg2) !== 'undefined') {
+        this.setMaxBrightness(arg2);
+        switch (LEDChipType) {
+          case 'LED_W':
+            // c2: colorTemperature given in arg1.
+            this.setColorTemperature(arg1);
+            this.setX(CIEk2x(arg1));
+            this.setY(CIEk2y(arg1));
+            break;
+	  default:
             // c1: waveLength specified in arg1
             this.setWaveLength(arg1);
-            this.setMaxBrightness(arg2);
             this.setX(CIEnm2x(arg1));
             this.setY(CIEnm2y(arg1));
-          } else {
-            // c3: CIE(x,y) given in arg1, arg2.
-            this.setMaxBrightness(arg3);
-            this.setX(arg1);
-            this.setY(arg2);
-            this.setWaveLength(CIExy2nm(arg1, arg2));
-          }
-          break;
-        case 'LED_W':
-        case 'LED_WW':
-        case 'LED_CW':
-          // c2: colorTemperature given in arg1.
-          this.setLEDChipType(LEDChipType);
-          this.setWaveLength(0);
-          this.setColorTemperature(arg1);
-          this.setMaxBrightness(arg2);
-          this.setX(CIEk2x(arg1));
-          this.setY(CIEk2y(arg1));
-          break;
+            break;
+        }
+        return;
       }
     }
+    // Never should come here. Perhaps you didn't follow above c1-c4.
+    throw new Error('Class LEDChip: Unexpected contructor parameters');
   }
 };
+
+// CREE MCE4CT-A2-0000-00A4AAAB1 and measurement found in AN1857 by MicroChip.
+// http://ww1.microchip.com/downloads/jp/AppNotes/jp572250.pdf
+export const LEDChipTypR: LEDChip = new LEDChip('LED_R', 'Typical R', 0.6857, 0.3143, 30.6);
+export const LEDChipTypG: LEDChip = new LEDChip('LED_G', 'Typical G', 0.2002, 0.6976, 67.2);
+export const LEDChipTypB: LEDChip = new LEDChip('LED_B', 'Typical B', 0.1417, 0.0618, 8.2);
+export const LEDChipTypW: LEDChip = new LEDChip('LED_W', 'Typical W', 0.3816, 0.3678, 80);
+
+// These values are from RGBW Chip LC-S5050-04004-RGBW, Epistar
+export const LEDChipEpistarR: LEDChip = new LEDChip('LED_R',  'LC-S5050-04004-RGBW, Epistar', 625, 2.5);
+export const LEDChipEpistarG: LEDChip = new LEDChip('LED_G',  'LC-S5050-04004-RGBW, Epistar', 520, 3.5);
+export const LEDChipEpistarB: LEDChip = new LEDChip('LED_B',  'LC-S5050-04004-RGBW, Epistar', 470, 1.5);
+export const LEDChipEpistarWW: LEDChip = new LEDChip('LED_W', 'LC-S5050-04004-RGBW, Epistar', 2600, 6.5);
+export const LEDChipEpistarCW: LEDChip = new LEDChip('LED_W', 'LC-S5050-04004-RGBW, Epistar', 6500, 6.5);
+

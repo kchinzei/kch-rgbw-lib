@@ -7,15 +7,17 @@ for general information.
 ### Code snippet
 
 In TypeScript/ES2015:
+
 ```TypeScript
 import { checkColorTemperature, CIEk2x, CIEk2y, CIExy2k } from 'kch-rgbw-lib';
 import { CIEfitxy2nm, CIEnmxyType } from 'kch-rgbw-lib';
+```
 
 ## API
 
 ### Module Constants and types
 
-```typescript
+```TypeScript
 // Color temperature (of white)
 type CIEkxyType = { k: number; x: number; y: number };
 const CIEk57kWhite: CIEkxyType; // 5700 k white
@@ -23,15 +25,20 @@ const CIEk65kWhite: CIEkxyType; // 6500 k white
 ```
 
 ### Functions
+
 ##### checkColorTemperature(k: number): number
+
 Truncate the given value within its range.
 
 ##### CIEk2x(k: number): number
+
 ##### CIEk2y(k: number): number
+
 Return CIE-x or CIE-y value of back body corresponding to the given
 color temperature in K.
 
 ##### CIExy2k(x: number, y: number): number
+
 Return correlated color temperature (CCT) corresponding to CIE (x, y).
 Optimized McCamy's approximation is used. Note that returned CCT is
 physically meaningful only when (x, y) is on or near the white light.
@@ -43,12 +50,15 @@ Although CCT by McCamy's approximation is known that it's isotherms are
 it gives the smallest error in [1000, 7000] k according to my experiment.
 
 ##### CIEfadeout(x: number, y: number, steps: number, fade?: (r: number) => number): CIEkxyType[]
+
 ##### CIEfadein(x: number, y: number, steps: number, fade?: (r: number) => number): CIEkxyType[]
+
 Return array of CIEkxyType, filling with interpolated points starting/ending
 at (x, y). `CIEfadeout()` ends / `CIEfadein()` starts at the point where
 color temperature is 1000 k.
 `fade()` is a function used to interpolate between the start and end points.
 `fade()` is called repeatedly with changing `r` from 0 to 1, like:
+
 ```typescript
 const p: CIEkxyType[] = new Array(steps);
 for (let i=0; i<steps; i++) {
@@ -58,6 +68,7 @@ for (let i=0; i<steps; i++) {
   p[i] = { interpolated x, y, k };
 }
 ```
+
 It is intended to mimicking lamp gradually turning off/on.
 
 Note: when (x,y) is far from the black body curve, it behaves odd,

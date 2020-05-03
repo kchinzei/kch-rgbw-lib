@@ -27,10 +27,10 @@ THE SOFTWARE.
 
   Make Asayake to Wake Project.
   Kiyo Chinzei
-  https://github.com/kchinzei/raspi-pca9685-pwm
+  https://github.com/kchinzei/kch-rgbw-lib
 */
 
-// export * from './LEDChip';
+export * from './LEDChip';
 // export * from './RGBWLED';
 export * from './CIE_colorTemperature';
 export * from './CIE_waveLength';

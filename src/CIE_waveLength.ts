@@ -252,6 +252,7 @@ export function CIEfitxy2nm(x: number, y: number): CIEnmxyType {
     We prefer interpolation is interpolation, not extrapolation, ie. t = [0,1].
     If both are extrapolation, smaller abs(t) is preferable.
   */
+  const ret: CIEnmxyType = {nm: waveLengthTable[iMin].nm, x:waveLengthTable[iMin].x, y:waveLengthTable[iMin].y};
   let t0: number = t[0];
   let i0 = iMins[0][0];
   let i1 = iMins[0][1];
@@ -276,11 +277,9 @@ export function CIEfitxy2nm(x: number, y: number): CIEnmxyType {
       i1 = iMins[1][1];
     } else {
       // Both t[0] t[1] are extrapolation. Use iMin point.
-      return waveLengthTable[iMin];
+      return ret;
     }
   }
-
-  const ret: CIEnmxyType = waveLengthTable[iMin];
   ret.nm = waveLengthTable[i0].nm*(1-t0) + waveLengthTable[i1].nm*t0;
   ret.x  = waveLengthTable[i0].x *(1-t0) + waveLengthTable[i1].x*t0;
   ret.y  = waveLengthTable[i0].y *(1-t0) + waveLengthTable[i1].y*t0;
