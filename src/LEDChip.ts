@@ -33,18 +33,6 @@ THE SOFTWARE.
 import { checkWaveLength, checkCIEx, checkCIEy, CIEnm2x, CIEnm2y, CIExy2nm } from './CIE_waveLength';
 import { checkColorTemperature, CIEk2x, CIEk2y, CIExy2k}  from './CIE_colorTemperature';
 
-function checkBrightness(b: number, max: number): number {
-  if (b < 0) b = 0;
-  if (b > max) b = max;
-  return b;
-}
-
-function checkMaxBrightness(b: number): number {
-  // It can be any nonzero positive.
-  if (b <= 0) b = 1.0;
-  return b;
-}
-
 export type LEDChipTypes =
   'LED_R' | 'LED_G' | 'LED_B' | 'LED_W' | 'LED_UV' | 'LED_Amber' | 'LED_Other' | undefined ;
 
@@ -198,3 +186,14 @@ export const LEDChipEpistarB: LEDChip = new LEDChip('LED_B',  'LC-S5050-04004-RG
 export const LEDChipEpistarWW: LEDChip = new LEDChip('LED_W', 'LC-S5050-04004-RGBW, Epistar', 2600, 6.5);
 export const LEDChipEpistarCW: LEDChip = new LEDChip('LED_W', 'LC-S5050-04004-RGBW, Epistar', 6500, 6.5);
 
+function checkBrightness(b: number, max: number): number {
+  if (b < 0) b = 0;
+  if (b > max) b = max;
+  return b;
+}
+
+function checkMaxBrightness(b: number): number {
+  // It can be any nonzero positive.
+  if (b <= 0) b = 1.0;
+  return b;
+}

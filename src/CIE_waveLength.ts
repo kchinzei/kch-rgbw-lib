@@ -62,25 +62,29 @@ export function checkCIEy(y: number): number {
 }
 
 export function checkCIExy(x: number, y: number): boolean {
+  return checkCIExyInList(x, y, waveLengthTable);
+}
+
+export function checkCIExyInList(x: number, y: number, xyList: CIEnmxyType[]): boolean {
   if (x !== checkCIEx(x)) return false;
   if (y !== checkCIEy(y)) return false;
 
-  // If (x,y) is inside waveLengthTable.
+  // If (x,y) is inside xyList.
   // the crossing number algorithm.
-  // Point near the border of waveTengthTable may incorrectly asessed.
+  // Point near the border of xyList may incorrectly assessed.
   // Translated from https://www.nttpc.co.jp/technology/number_algorithm.html
 
   let crossNum = 0;
-  for (let i=0; i<waveLengthTable.length - 1; i++) {
+  for (let i=0; i<xyList.length - 1; i++) {
     // Rule 1: Upside vertex.
-    if (((waveLengthTable[i].y <= y) && (waveLengthTable[i+1].y > y)) ||
+    if (((xyList[i].y <= y) && (xyList[i+1].y > y)) ||
 	// Rule 2: Downside vertex.
-	((waveLengthTable[i].y >  y) && (waveLengthTable[i+1].y <= y))) {
+	((xyList[i].y >  y) && (xyList[i+1].y <= y))) {
       // Rule 3: When rule 1 & 2 examined, rule 3 is also examined.
       // Rule 4: If vertex is rightside of the point.
-      const vt = (y - waveLengthTable[i].y) / (waveLengthTable[i+1].y - waveLengthTable[i].y);
+      const vt = (y - xyList[i].y) / (xyList[i+1].y - xyList[i].y);
       // Find the vertex at the same y, and check if x of the vertex and the point.
-      if (x < (waveLengthTable[i].x + (vt * (waveLengthTable[i+1].x - waveLengthTable[i].x)))) {
+      if (x < (xyList[i].x + (vt * (xyList[i+1].x - xyList[i].x)))) {
         crossNum++;
       }
     }
@@ -198,20 +202,24 @@ export function CIExy2nm(x: number, y: number): number {
   return ret.nm;
 }
 
+export function CIEfitxy2nm(x: number, y: number): CIEnmxyType {
+  return CIEfitxy2List(x, y, waveLengthTable);
+}
+
 /*
-  Project (x, y) to the polygon made of points in waveLengthTable,
+  Project (x, y) to the polygon made of points in xyList,
   return the projected (= interpolated) (x, y) and the wavelength.
   checkCIExy(interpotaled point) should be true, but numerical error may exist.
   It does not interpolate between UV and NIR (meaningless).
 */
-export function CIEfitxy2nm(x: number, y: number): CIEnmxyType {
+export function CIEfitxy2List(x: number, y: number, xyList: CIEnmxyType[]): CIEnmxyType {
   // Not smart but working solution... check every distance!
   // Find the nearest point.
   let dMin = 100; // enough large
   let iMin = 0;
-  for (let i=0; i<waveLengthTable.length - 1; i++) {
+  for (let i=0; i<xyList.length - 1; i++) {
     // We don't use the final point, which is same as the first point.
-    const nmxy: CIEnmxyType = waveLengthTable[i];
+    const nmxy: CIEnmxyType = xyList[i];
     const d = (nmxy.x - x)*(nmxy.x - x) + (nmxy.y - y)*(nmxy.y - y);
     if (d < dMin) {
       dMin = d;
@@ -220,9 +228,9 @@ export function CIEfitxy2nm(x: number, y: number): CIEnmxyType {
   }
 
   /*
-    Interpolate between waveLengthTable[iMin] and two neighbor points.
+    Interpolate between xyList[iMin] and two neighbor points.
     Interplated point [xp] is a projection of input point [x] onto
-    a line defined by two points [x0, x1] in waveLengthTable.
+    a line defined by two points [x0, x1] in xyList.
     By denoting  line vector [a] = [x1 - x0], normal vector [n] = [xp - x],
       [a][n] = 0
       [xp] = t[a] + [x0] = s[n] + xp
@@ -232,13 +240,13 @@ export function CIEfitxy2nm(x: number, y: number): CIEnmxyType {
   const iMins: number[][] = [[iMin, iMin - 1], [iMin, iMin + 1]];
   if (iMins[0][1] === -1) // iMin was 0.
     iMins[0][1] = 1;
-  if (iMins[1][1] === (waveLengthTable.length - 1)) // End of array is not used.
-    iMins[1][1] = waveLengthTable.length - 3; // point before iMax.
+  if (iMins[1][1] === (xyList.length - 1)) // End of array is not used.
+    iMins[1][1] = xyList.length - 3; // point before iMax.
   for (let i=0; i<2; i++) {
-    const x0 = waveLengthTable[iMins[i][0]].x;
-    const y0 = waveLengthTable[iMins[i][0]].y;
-    const x1 = waveLengthTable[iMins[i][1]].x;
-    const y1 = waveLengthTable[iMins[i][1]].y;
+    const x0 = xyList[iMins[i][0]].x;
+    const y0 = xyList[iMins[i][0]].y;
+    const x1 = xyList[iMins[i][1]].x;
+    const y1 = xyList[iMins[i][1]].y;
 
     const ax = x1 - x0;
     const ay = y1 - y0;
@@ -252,7 +260,7 @@ export function CIEfitxy2nm(x: number, y: number): CIEnmxyType {
     We prefer interpolation is interpolation, not extrapolation, ie. t = [0,1].
     If both are extrapolation, smaller abs(t) is preferable.
   */
-  const ret: CIEnmxyType = {nm: waveLengthTable[iMin].nm, x:waveLengthTable[iMin].x, y:waveLengthTable[iMin].y};
+  const ret: CIEnmxyType = {nm: xyList[iMin].nm, x:xyList[iMin].x, y:xyList[iMin].y};
   let t0: number = t[0];
   let i0 = iMins[0][0];
   let i1 = iMins[0][1];
@@ -280,9 +288,9 @@ export function CIEfitxy2nm(x: number, y: number): CIEnmxyType {
       return ret;
     }
   }
-  ret.nm = waveLengthTable[i0].nm*(1-t0) + waveLengthTable[i1].nm*t0;
-  ret.x  = waveLengthTable[i0].x *(1-t0) + waveLengthTable[i1].x*t0;
-  ret.y  = waveLengthTable[i0].y *(1-t0) + waveLengthTable[i1].y*t0;
+  ret.nm = xyList[i0].nm*(1-t0) + xyList[i1].nm*t0;
+  ret.x  = xyList[i0].x *(1-t0) + xyList[i1].x*t0;
+  ret.y  = xyList[i0].y *(1-t0) + xyList[i1].y*t0;
 
   return ret;
 }
