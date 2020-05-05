@@ -31,12 +31,10 @@ THE SOFTWARE.
 */
 
 import { checkCIExyInList, CIEfitxy2List, CIEnmxyType } from './CIE_waveLength';
-import { rgb2XYZ, hsv2rgb, rgb2hsv, XYZ2rgb, XYZ2xyY } from './colorspace';
+import { cSpace } from './cSpace';
 import { LEDChip } from './LEDChip';
 
-const initX = 0.9505; // D65 White https://en.wikipedia.org/wiki/SRGB
-const initY = 1;
-const initZ = 1.0890;
+const D65White: number[] = [ 0.9505, 1, 1.0890 ] ; // D65 White in CIE XYZ; https://en.wikipedia.org/wiki/SRGB
 
 // Values from https://en.wikipedia.org/wiki/SRGB
 /*
@@ -57,8 +55,7 @@ export interface IRGBWLED {
   readonly bLED: LEDChip;
   readonly xLED: LEDChip | undefined; // Other LED such as white, amber
 
-  readonly x: number; // CIE 1931 XYZ space
-  readonly y: number;
+  readonly color: cSpace;
   readonly brightness: number; // [0,1]
 };
 
@@ -68,9 +65,7 @@ export class RGBWLED implements IRGBWLED {
   private _bLED: LEDChip;
   private _xLED: LEDChip | undefined;
   private _name: string;
-  private _X: number;
-  private _Y: number;
-  private _Z: number;
+  private _xyz: cSpace;
   private _b: number;
   private _LEDcontour: CIEnmxyType[];
 
@@ -82,27 +77,29 @@ export class RGBWLED implements IRGBWLED {
   set name(s: string) { this._name = s; }
   get brightness(): number { return this._b; }
   set brightness(b: number) { this._b = checkBrightness(b); }
-  get x(): number { return this._X/(this._X + this._Y + this._Z); }
-  get y(): number { return this._Y/(this._X + this._Y + this._Z); }
-
-  public setHSV(hsv: number[]): boolean {
-    return this.setXYZ(rgb2XYZ(hsv2rgb(hsv)));
-  }
-
-  public getHSV(): number[] {
-    return rgb2hsv(XYZ2rgb(this.getXYZ()));
-  }
-
-  public setXYZ(XYZ: number[]): boolean {
-    const xyY: number[] = XYZ2xyY(XYZ);
-    const xy: CIEnmxyType = CIEfitxy2List(xyY[0], xyY[0], this._LEDcontour);
-    this.updateLEDs(xy.x, xy.y);
+  get color(): cSpace { return this._xyz; }
+  public setColor(c: cSpace): boolean {
+    const xyY: cSpace = c.xyY();
+    const xy: CIEnmxyType = CIEfitxy2List(xyY.a[0], xyY.a[0], this._LEDcontour);
+    this.updateLEDs(xy.x, xy.y, xyY.a[2]);
 
     return true;
   }
 
+  public setHSV(hsv: number[]): boolean {
+     return this.setColor(new cSpace('hsv', hsv));
+  }
+
+  public getHSV(): number[] {
+    return this._xyz.hsv().a;
+  }
+
+  public setXYZ(XYZ: number[]): boolean {
+    return this.setColor(new cSpace('XYZ', XYZ));
+  }
+
   public getXYZ(): number[] {
-    return [ this._X, this._Y, this._Z ];
+    return this._xyz.a;
   }
 
   constructor(rLED: LEDChip, gLED: LEDChip, bLED: LEDChip, xLED?: LEDChip) {
@@ -111,14 +108,15 @@ export class RGBWLED implements IRGBWLED {
     this._bLED = bLED;
     this._xLED = xLED;
     this._name = '';
-    this._X = initX;
-    this._Y = initY;
-    this._Z = initZ;
+    this._xyz = new cSpace('XYZ', D65White);
     this._b = 0;
     this._LEDcontour = makeLEDcontour(rLED, gLED, bLED, xLED);
   }
 
-  private updateLEDs(x: number, y:number): void {
+  private updateLEDs(x: number, y:number, Y: number): void {
+    const xyY: cSpace = new cSpace('xyY', [x, y, Y]);
+    this._xyz.copy(xyY);
+    // TBC it's not smart at all!
   }
 }
 
