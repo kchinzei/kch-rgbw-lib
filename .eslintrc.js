@@ -34,7 +34,13 @@ module.exports = {
     ],
     "@typescript-eslint/indent": [
       "error",
-      2
+      2,
+      {
+        "VariableDeclarator": "first" ,
+        "ObjectExpression": "first",
+        "ArrayExpression": "first",
+        "SwitchCase": 1
+      }
     ],
     "@typescript-eslint/interface-name-prefix": "off",
     "@typescript-eslint/member-delimiter-style": [

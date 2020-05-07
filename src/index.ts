@@ -30,7 +30,7 @@ THE SOFTWARE.
   https://github.com/kchinzei/kch-rgbw-lib
 */
 
-export from './cSpace';
+export * from './CSpace';
 export * from './LEDChip';
 // export * from './RGBWLED';
 export * from './CIE_colorTemperature';

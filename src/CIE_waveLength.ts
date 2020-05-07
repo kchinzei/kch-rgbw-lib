@@ -35,7 +35,7 @@ const nmMin = 405;
 const nmMax = 700;
 const xMin = 0.003858521;
 const xMax = 0.735483871;
-const yMin = 0.003858521;
+const yMin = 0.004477612;
 const yMax = 0.833822666;
 
 // Obtain index to access waveLengthTable.
@@ -61,9 +61,7 @@ export function checkCIEy(y: number): number {
   return y;
 }
 
-export function checkCIExy(x: number, y: number): boolean {
-  return checkCIExyInList(x, y, waveLengthTable);
-}
+export const checkCIExy = (x: number, y: number) => checkCIExyInList(x, y, waveLengthTable);
 
 export function checkCIExyInList(x: number, y: number, xyList: CIEnmxyType[]): boolean {
   if (x !== checkCIEx(x)) return false;
@@ -202,9 +200,7 @@ export function CIExy2nm(x: number, y: number): number {
   return ret.nm;
 }
 
-export function CIEfitxy2nm(x: number, y: number): CIEnmxyType {
-  return CIEfitxy2List(x, y, waveLengthTable);
-}
+export const CIEfitxy2nm = (x: number, y: number) => CIEfitxy2List(x, y, waveLengthTable);
 
 /*
   Project (x, y) to the polygon made of points in xyList,
