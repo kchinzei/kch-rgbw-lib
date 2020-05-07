@@ -30,7 +30,7 @@ THE SOFTWARE.
   https://github.com/kchinzei/kch-rgbw-lib
 */
 
-import { checkCIExy, CIEfitxy2nm, CIEnmxyType } from './CIE_waveLength';
+import { checkCIEx, checkCIEy } from './CIE_waveLength';
 
 export type CSpaceTypes =
   'rgb' | 'hsv' | 'XYZ' | 'xyY' | 'xy' | undefined ;
@@ -46,6 +46,7 @@ export class CSpace implements ICSpace {
 
   get a(): number[] { return this._a; }
   set a(arr: number[]) {
+    // Here is the bottleneck of value check of user-given parameters
     if (arr.length >= 3) {
       switch (this._type) {
         case 'rgb':
@@ -64,13 +65,13 @@ export class CSpace implements ICSpace {
           this._a[2] = checkPositive(arr[2]);
           break;
         case 'xyY':
-          this._a[0] = checkN(arr[0]);
-          this._a[1] = checkN(arr[1]);
+          this._a[0] = checkCIEx(arr[0]);
+          this._a[1] = checkCIEy(arr[1]);
           this._a[2] = checkPositive(arr[2]);
           break;
         case 'xy':
-          this._a[0] = checkN(arr[0]);
-          this._a[1] = checkN(arr[1]);
+          this._a[0] = checkCIEx(arr[0]);
+          this._a[1] = checkCIEy(arr[1]);
           this._a[2] = arr[2];
           break;
       }
@@ -127,8 +128,7 @@ export class CSpace implements ICSpace {
       }
     }
     if (typeof(p0) === 'object' && (p0 instanceof CSpace)) {
-      const tmp: CSpace = p0;
-      this.copy(tmp);
+      this.copy(p0);
       return;
     }
     // Never should come here. Wrong combination of parameters.
@@ -180,10 +180,9 @@ export class CSpace implements ICSpace {
 
     // XYZ >> xyY
     // https://en.wikipedia.org/wiki/CIE_1931_color_space#CIE_xy_chromaticity_diagram_and_the_CIE_xyY_color_space
-    // No hard check of X, Y, Z (maybe > 1)
-    const X = checkPositive(tmp._a[0]);
-    const Y = checkPositive(tmp._a[1]);
-    const Z = checkPositive(tmp._a[2]);
+    const X = tmp._a[0];
+    const Y = tmp._a[1];
+    const Z = tmp._a[2];
     const sumXYZ = X + Y + Z;
 
     if (sumXYZ === 0) {
@@ -211,15 +210,10 @@ export class CSpace implements ICSpace {
         break;
       case 'xyY':
         // xyY >> XYZ
-        // https://en.wikipedia.org/wiki/CIE_1931_color_space#CIE_xy_chromaticity_diagram_and_the_CIE_xyY_color_space
-        let x = tmp._a[0];
-        let y = tmp._a[1];
-        Y = checkPositive(tmp._a[2]);
-        if (checkCIExy(x, y) === false) {
-          const xynm: CIEnmxyType = CIEfitxy2nm(x, y);
-          x = xynm.x;
-          y = xynm.y;
-        }
+        // https://en.wikipedia.org/wiki/CIE_1931_color_space
+        const x = tmp._a[0];
+        const y = tmp._a[1];
+        Y = tmp._a[2];
         if (y > 0) {
           X = Y/y*x;
           Z = Y/y*(1 - x - y);
@@ -227,13 +221,13 @@ export class CSpace implements ICSpace {
         break;
       case 'hsv':
         tmp = tmp.rgb();
-        // break;
+        // Use rgb >> XYZ
       case 'rgb':
         // rgb >> XYZ
         // https://en.wikipedia.org/wiki/SRGB
-        const r = gamma1Mod(checkN(this._a[0]));
-        const g = gamma1Mod(checkN(this._a[1]));
-        const b = gamma1Mod(checkN(this._a[2]));
+        const r = gamma1Mod(checkN(tmp._a[0]));
+        const g = gamma1Mod(checkN(tmp._a[1]));
+        const b = gamma1Mod(checkN(tmp._a[2]));
 
         X = 0.41239080*r + 0.35758434*g + 0.18048079*b;
         Y = 0.21263901*r + 0.71516868*g + 0.07219232*b;
@@ -243,9 +237,9 @@ export class CSpace implements ICSpace {
         throw new Error(`Class CSpace: ${this._type} >> XYZ not implemented`);
     }
     tmp._type = 'XYZ';
-    tmp._a[0] = X;
-    tmp._a[1] = Y;
-    tmp._a[2] = Z;
+    tmp._a[0] = checkPositive(X);
+    tmp._a[1] = checkPositive(Y);
+    tmp._a[2] = checkPositive(Z);
     return tmp;
   }
 
@@ -263,13 +257,13 @@ export class CSpace implements ICSpace {
         break;
       case 'xyY':
         tmp = tmp.XYZ();
-        // break;
+        // Use XYZ >> rgb
       case 'XYZ':
         // XYZ >> rgb
         // https://en.wikipedia.org/wiki/SRGB
-        const X = checkPositive(tmp._a[0]);
-        const Y = checkPositive(tmp._a[1]);
-        const Z = checkPositive(tmp._a[2]);
+        const X = tmp._a[0];
+        const Y = tmp._a[1];
+        const Z = tmp._a[2];
 
         r = gammaMod( 3.24096994*X - 1.53738318*Y - 0.49861076*Z);
         g = gammaMod(-0.96924364*X + 1.87596750*Y + 0.04155506*Z);
@@ -278,9 +272,9 @@ export class CSpace implements ICSpace {
       case 'hsv':
         // hsv >> rgb
         // https://en.wikipedia.org/wiki/HSL_and_HSV#HSV_to_RGB
-        const h = checkH(tmp._a[0]);
-        const s = checkN(tmp._a[1]);
-        const v = checkN(tmp._a[2]);
+        const h = tmp._a[0];
+        const s = tmp._a[1];
+        const v = tmp._a[2];
 
         const c = s*v;
         const h60 = h / 60;
@@ -299,9 +293,9 @@ export class CSpace implements ICSpace {
       default:
         throw new Error(`Class CSpace: ${this._type} >> rgb not implemented`);
     }
-    tmp._a[0] = r;
-    tmp._a[1] = g;
-    tmp._a[2] = b;
+    tmp._a[0] = checkN(r);
+    tmp._a[1] = checkN(g);
+    tmp._a[2] = checkN(b);
     tmp._type = 'rgb';
     return tmp;
   }
@@ -329,9 +323,9 @@ export class CSpace implements ICSpace {
 
     // rgb >> hsv
     // https://en.wikipedia.org/wiki/HSL_and_HSV#From_RGB
-    const r = checkN(this._a[0]);
-    const g = checkN(this._a[1]);
-    const b = checkN(this._a[2]);
+    const r = tmp._a[0];
+    const g = tmp._a[1];
+    const b = tmp._a[2];
 
     let xmin = r;
     if (g < xmin) xmin = g;
@@ -354,8 +348,8 @@ export class CSpace implements ICSpace {
     else s = c / v;
 
     tmp._a[0] = checkH(h);
-    tmp._a[1] = s;
-    tmp._a[2] = v;
+    tmp._a[1] = checkN(s);
+    tmp._a[2] = checkN(v);
     tmp._type = 'hsv';
     return tmp;
   }

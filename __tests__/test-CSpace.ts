@@ -99,9 +99,15 @@ describe.each([
   ['rgb',  0.3,  0.4, -0.1,  0.3,  0.4,  0.0],
   ['rgb',  0.0,  0.0,  0.0,  0.0,  0.0,  0.0],
 
+  ['hsv',   50,  0.4,  0.5,   50,  0.4,  0.5], // normal
+  ['hsv',  100,  0.4,  0.5,  100,  0.4,  0.5], // normal
+  ['hsv',  150,  0.4,  0.5,  150,  0.4,  0.5], // normal
   ['hsv',  200,  0.4,  0.5,  200,  0.4,  0.5], // normal
+  ['hsv',  250,  0.4,  0.5,  250,  0.4,  0.5], // normal
+  ['hsv',  300,  0.4,  0.5,  300,  0.4,  0.5], // normal
+  ['hsv',  350,  0.4,  0.5,  350,  0.4,  0.5], // normal
   ['hsv',  400,  0.4,  0.5,   40,  0.4,  0.5],
-  ['hsv',  -40,  0.4,  0.5,  320,  0.4,  0.5],
+  ['hsv',  -50,  0.4,  0.5,  310,  0.4,  0.5],
   ['hsv',  200,  1.2,  0.5,  200,  1.0,  0.5],
   ['hsv',  200, -0.4,  0.5,  200,  0.0,  0.5],
   ['hsv',  200,  0.4,  1.2,  200,  0.4,  1.0],
@@ -125,27 +131,46 @@ describe.each([
   [0.3,  0.3,  0.4, 'rgb', 'rgb'], 
   [0.3,  0.3,  0.4, 'rgb', 'hsv'], 
   [0.3,  0.3,  0.4, 'rgb', 'XYZ'], 
-  [0.3,  0.3,  0.4, 'rgb', 'xyY'], 
+  [0.0,  0.0,  0.1, 'rgb', 'XYZ'], 
+  [0.0,  0.1,  0.0, 'rgb', 'XYZ'], 
+  [0.1,  0.0,  0.0, 'rgb', 'XYZ'], 
+  [0.3,  0.3,  0.4, 'rgb', 'xyY'], //!
   [150,  0.3,  0.4, 'hsv', 'rgb'], 
   [150,  0.3,  0.4, 'hsv', 'hsv'], 
   [150,  0.3,  0.4, 'hsv', 'XYZ'], 
-  [150,  0.3,  0.4, 'hsv', 'xyY'], 
+  [150,  0.3,  0.4, 'hsv', 'xyY'], //!
   [0.3,  0.3,  0.4, 'XYZ', 'rgb'], 
+  [0.0,  0.0,  0.0, 'XYZ', 'rgb'], 
+  [0.1,  0.1,  0.0, 'XYZ', 'rgb'], 
+  [0.0,  0.1,  0.0, 'XYZ', 'rgb'], //!
+  [0.0,  0.0,  0.1, 'XYZ', 'rgb'], 
+  [0.6,  0.8,  1.0, 'XYZ', 'rgb'], 
   [0.3,  0.3,  0.4, 'XYZ', 'hsv'], 
   [0.3,  0.3,  0.4, 'XYZ', 'XYZ'], 
   [0.3,  0.3,  0.4, 'XYZ', 'xyY'], 
-  [0.3,  0.3,  0.4, 'xyY', 'rgb'], 
-  [0.3,  0.3,  0.4, 'xyY', 'hsv'], 
+  [0.3,  0.3,  0.4, 'xyY', 'rgb'], //!
+  [0.3,  0.3,  0.4, 'xyY', 'hsv'], //!
   [0.3,  0.3,  0.4, 'xyY', 'XYZ'], 
   [0.3,  0.3,  0.4, 'xyY', 'xyY']
 ])('', (a0, a1, a2, t1, t2) => {
   test(`${i++}. ${t1}(${a0}, ${a1}, ${a2}) => ${t2} => ${t1} should return original`, () => {
-    let c: CSpace  = new CSpace(t1 as CSpaceTypes, [a0, a1, a2]);
+    const a: number[] = [a0, a1, a2];
+    let c: CSpace  = new CSpace(t1 as CSpaceTypes, a);
     c = c.conv(t2).conv(t1);
     const r: number[] = c.a;
-    expect(r[0]).toBeCloseTo(a0);
-    expect(r[1]).toBeCloseTo(a1);
-    expect(r[2]).toBeCloseTo(a2);
+
+    /* Relative error, if possible */
+    for (let j=0; j<3; j++) {
+      expect(r[j]).toBeCloseTo(a[j], 1);
+/*
+      const sum = Math.abs(r[j] + a[j]);
+      const dif = Math.abs(r[j] - a[j]);
+      if (sum !== 0)
+	expect(dif/sum).toBeLessThanOrEqual(0.1);
+      else
+	expect(dif).toBeLessThanOrEqual(0.025);
+*/
+    }
   });
 });
 
