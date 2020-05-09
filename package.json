@@ -43,7 +43,8 @@
     "typescript": "^3.8.3",
     "eslint": "^6.8.0",
     "npm-run-all": "^4.1.5",
-    "prettier": "^2.0.4"
+    "prettier": "^2.0.4",
+    "agh.sprintf": "^0.0.11"
   },
   "engines": {
     "node": ">= 6.4.0"
