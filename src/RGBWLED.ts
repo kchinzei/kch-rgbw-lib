@@ -53,7 +53,7 @@ export interface IRGBWLED {
   readonly rLED: LEDChip;
   readonly gLED: LEDChip;
   readonly bLED: LEDChip;
-  readonly xLED: LEDChip | undefined; // Other LED such as white, amber
+  readonly xLED: LEDChip | undefined; // Extra LED such as white, amber
 
   readonly color: CSpace;
   readonly brightness: number; // [0,1]
@@ -78,28 +78,10 @@ export class RGBWLED implements IRGBWLED {
   get brightness(): number { return this._b; }
   set brightness(b: number) { this._b = checkBrightness(b); }
   get color(): CSpace { return this._xyz; }
-  public setColor(c: CSpace): boolean {
+  public setColor(c: CSpace): void {
     const xyY: CSpace = c.xyY();
     const xy: CIEnmxyType = CIEfitxy2List(xyY.a[0], xyY.a[0], this._LEDcontour);
     this.updateLEDs(xy.x, xy.y, xyY.a[2]);
-
-    return true;
-  }
-
-  public setHSV(hsv: number[]): boolean {
-    return this.setColor(new CSpace('hsv', hsv));
-  }
-
-  public getHSV(): number[] {
-    return this._xyz.hsv().a;
-  }
-
-  public setXYZ(XYZ: number[]): boolean {
-    return this.setColor(new CSpace('XYZ', XYZ));
-  }
-
-  public getXYZ(): number[] {
-    return this._xyz.a;
   }
 
   constructor(rLED: LEDChip, gLED: LEDChip, bLED: LEDChip, xLED?: LEDChip) {
