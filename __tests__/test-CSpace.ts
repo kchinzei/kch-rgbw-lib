@@ -80,6 +80,16 @@ test(`${i++}. Setting array[1] to 'rgb' should fail`, () => {
   }).toThrow();
 });
 
+test(`${i++}. copy using a bad CSpace should fail`, () => {
+  expect(() => {
+    const c: CSpace = new CSpace('xyY', [0.3, 0.4, 1]);
+    const a = c.a;
+    a.length = 1; // Mariciously tampered matrix...
+    const d: CSpace = new CSpace();
+    d.copy(c); // Fail!
+  }).toThrow();
+});
+
 
 
 /*
@@ -226,39 +236,6 @@ describe.each([
 
 describe.each([
   [ 0.2,  0.3,  0.2, 0.3], // normal
-])('', (q0, q1, a0, a1) => {
-  test(`${i++}. 'xy'(${q0}, ${q1}) should return (${a0}, ${a1})`, () => {
-    const q: number[] = [q0, q1];
-    const c: CSpace  = new CSpace('xy', q);
-    const a: number[] = c.a;
-    expect(a[0]).toBe(a0);
-    expect(a[1]).toBe(a1);
-  });
-
-  test(`${i++}. Setting 'xy' then (${q0}, ${q1}) using setter should similarly work.`, () => {
-    const q: number[] = [q0, q1];
-    const c: CSpace  = new CSpace();
-    c.type = 'xy';
-    expect(c.type).toBe('xy');
-    c.a = q;
-    const a: number[] = c.a;
-    expect(a[0]).toBe(a0);
-    expect(a[1]).toBe(a1);
-  });
-
-  test(`${i++}. Setting (${q0}, ${q1}) then 'xy' using setter should also work.`, () => {
-    const q: number[] = [q0, q1];
-    const c: CSpace  = new CSpace();
-    c.a = q;
-    const a: number[] = c.a;
-    c.type = 'xy';
-    expect(c.type).toBe('xy');
-    expect(a[0]).toBe(a0);
-    expect(a[1]).toBe(a1);
-  });
-});
-
-describe.each([
   [ 0.9,  0.3,  0.735483871, 0.3],
   [-0.1,  0.3,  0.003858521, 0.3],
   [ 0.2,  0.9,  0.2, 0.833822666],
@@ -284,24 +261,13 @@ describe.each([
     expect(a[1]).toBe(a1);
   });
 
-  test(`${i++}. Setting (${q0}, ${q1}) then 'xy' using setter should also work.`, () => {
-    const q: number[] = [q0, q1];
-    const c: CSpace  = new CSpace();
-    // Setting a[] when type is undefined does not check the range of input.
-    c.a = q;
-    // Setting type does not change the range of input.
-    const a: number[] = c.a;
-    c.type = 'xy' as CSpaceTypes;
-    expect(c.type).toBe('xy');
-    // Resulting that the values are different from normally set.
-    if (q0 !== a0)
-      expect(a[0]).not.toBe(a0);
-    else
-      expect(a[0]).toBe(a0);
-    if (q1 !== a1)
-      expect(a[1]).not.toBe(a1);
-    else
-      expect(a[1]).toBe(a1);
+  test(`${i++}. Setting (${q0}, ${q1}) then 'xy' fails.`, () => {
+    expect(() => {
+      const q: number[] = [q0, q1];
+      const c: CSpace  = new CSpace();
+      c.a = q;
+      c.type = 'xy' as CSpaceTypes;
+    }).toThrow();
   });
 });
 

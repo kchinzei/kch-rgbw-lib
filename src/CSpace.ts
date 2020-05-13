@@ -46,66 +46,20 @@ export class CSpace implements ICSpace {
 
   get a(): number[] { return this._a; }
   set a(arr: number[]) {
-    // Here is the bottleneck of value check of user-given parameters
-    if (arr.length >= 3) {
-      if (typeof(this._type) === 'undefined') {
-        for (let i=0; i<3; i++)
-          this._a[i] = arr[i];
-        return;
-      }
-      switch (this._type) {
-        case 'rgb':
-          this._a[0] = checkN(arr[0]);
-          this._a[1] = checkN(arr[1]);
-          this._a[2] = checkN(arr[2]);
-          return;
-        case 'hsv':
-          this._a[0] = checkH(arr[0]);
-          this._a[1] = checkN(arr[1]);
-          this._a[2] = checkN(arr[2]);
-          return;
-        case 'XYZ':
-          this._a[0] = checkPositive(arr[0]);
-          this._a[1] = checkPositive(arr[1]);
-          this._a[2] = checkPositive(arr[2]);
-          return;
-        case 'xyY':
-          this._a[0] = checkCIEx(arr[0]);
-          this._a[1] = checkCIEy(arr[1]);
-          this._a[2] = checkPositive(arr[2]);
-          return;
-        case 'xy':
-          this._a[0] = checkCIEx(arr[0]);
-          this._a[1] = checkCIEy(arr[1]);
-          this._a[2] = arr[2];
-          return;
-      }
-    } else if (arr.length === 2) {
-      if (typeof(this._type) === 'undefined') {
-        for (let i=0; i<2; i++)
-          this._a[i] = arr[i];
-        return;
-      }
-      switch (this._type) {
-        case 'xy':
-          this._a[0] = checkCIEx(arr[0]);
-          this._a[1] = checkCIEy(arr[1]);
-          return;
-      }
-    }
-    // Never should come here. Wrong combination of parameters.
-    throw new Error('Class CSpace: Unexpected setter a() parameter.');
+    if (copyArray(arr, this.a, this.type) === false)
+      throw new Error('Class CSpace: Unexpected setter a() parameter.');
+    checkValues(this.a, this.type);
   }
 
   get type(): CSpaceTypes { return this._type; }
   set type(typeTo: CSpaceTypes) {
     // This function changes the type from undefined to else without checking the value of a[] is valid as a colorspace.
     // No other function behaves so.
-    if (typeof(this._type) === 'undefined' || typeof(typeTo) === 'undefined') {
+    if (typeof(this.type) === 'undefined' || typeof(typeTo) === 'undefined') {
       this._type = typeTo;
       return;
     }
-    if (this._type !== typeTo) {
+    if (this.type !== typeTo) {
       let tmp: CSpace;
       switch (typeTo) {
         case 'rgb':
@@ -140,11 +94,8 @@ export class CSpace implements ICSpace {
     }
     if (typeof(p0) === 'string' && typeof(p1) === 'object') {
       this._type = p0;
-      if (p0 === 'xy' && p1.length === 2) {
-        this.a = p1;
-        return;
-      } else if (p1.length >= 3) {
-        this.a = p1;
+      if (copyArray(p1, this._a, this.type)) {
+        checkValues(this._a, this.type);
         return;
       }
     }
@@ -159,18 +110,18 @@ export class CSpace implements ICSpace {
   public copy(from: CSpace): CSpace {
     // Deep copy.
     // This function preserves the allocation of .a[]
-    this._type = from._type;
-    for (let i=0; i<3; i++)
-      this._a[i] = from._a[i];
+    this._type = from.type;
+    if (copyArray(from.a, this.a, this.type) === false)
+      throw new Error('Class CSpace.a(): attempt to copy incompatible size/type of array');
     return this;
   }
 
   public xy(): CSpace {
     let tmp: CSpace = new CSpace(this);
 
-    if (typeof(tmp._type) === 'undefined')
+    if (typeof(tmp.type) === 'undefined')
       return tmp;
-    switch (tmp._type) {
+    switch (tmp.type) {
       case 'xy':
         return tmp;
       default:
@@ -183,9 +134,9 @@ export class CSpace implements ICSpace {
   public xyY(): CSpace {
     let tmp: CSpace = new CSpace(this);
 
-    if (typeof(tmp._type) === 'undefined')
+    if (typeof(tmp.type) === 'undefined')
       return tmp;
-    switch (tmp._type) {
+    switch (tmp.type) {
       case 'xyY':
         return tmp;
 
@@ -198,7 +149,7 @@ export class CSpace implements ICSpace {
       case 'XYZ':
         break;
       default:
-        throw new Error(`Class CSpace: ${this._type} >> xyY not implemented`);
+        throw new Error(`Class CSpace: ${this.type} >> xyY not implemented`);
     }
 
     // XYZ >> xyY
@@ -225,9 +176,9 @@ export class CSpace implements ICSpace {
     let Y = 0;
     let Z = 0;
 
-    if (typeof(tmp._type) === 'undefined')
+    if (typeof(tmp.type) === 'undefined')
       return tmp;
-    switch (tmp._type) {
+    switch (tmp.type) {
       case 'XYZ':
         return tmp;
 
@@ -259,7 +210,7 @@ export class CSpace implements ICSpace {
         Z = 0.01933082*r + 0.11919478*g + 0.95053215*b;
         break;
       default:
-        throw new Error(`Class CSpace: ${this._type} >> XYZ not implemented`);
+        throw new Error(`Class CSpace: ${this.type} >> XYZ not implemented`);
     }
     tmp._type = 'XYZ';
     tmp._a[0] = checkPositive(X);
@@ -274,9 +225,9 @@ export class CSpace implements ICSpace {
     let g = 0;
     let b = 0;
 
-    if (typeof(tmp._type) === 'undefined')
+    if (typeof(tmp.type) === 'undefined')
       return tmp;
-    switch (tmp._type) {
+    switch (tmp.type) {
       case 'rgb':
         return tmp;
 
@@ -316,7 +267,7 @@ export class CSpace implements ICSpace {
         b += m;
         break;
       default:
-        throw new Error(`Class CSpace: ${this._type} >> rgb not implemented`);
+        throw new Error(`Class CSpace: ${this.type} >> rgb not implemented`);
     }
     tmp._a[0] = checkN(r);
     tmp._a[1] = checkN(g);
@@ -328,9 +279,9 @@ export class CSpace implements ICSpace {
   public hsv(): CSpace {
     let tmp: CSpace = new CSpace(this);
 
-    if (typeof(tmp._type) === 'undefined')
+    if (typeof(tmp.type) === 'undefined')
       return tmp;
-    switch (tmp._type) {
+    switch (tmp.type) {
       case 'hsv':
         return tmp;
 
@@ -343,7 +294,7 @@ export class CSpace implements ICSpace {
       case 'rgb':
         break;
       default:
-        throw new Error(`Class CSpace: ${this._type} >> hsv not implemented`);
+        throw new Error(`Class CSpace: ${this.type} >> hsv not implemented`);
     }
 
     // rgb >> hsv
@@ -426,4 +377,45 @@ function checkN(n: number): number {
 function checkPositive(n: number): number {
   if (n < 0) return 0;
   return n;
+}
+
+function checkValues(arr: number[], typ: CSpaceTypes): number[] {
+  switch (typ) {
+    case 'rgb':
+      arr[0] = checkN(arr[0]);
+      arr[1] = checkN(arr[1]);
+      arr[2] = checkN(arr[2]);
+      break;
+    case 'hsv':
+      arr[0] = checkH(arr[0]);
+      arr[1] = checkN(arr[1]);
+      arr[2] = checkN(arr[2]);
+      break;
+    case 'XYZ':
+      arr[0] = checkPositive(arr[0]);
+      arr[1] = checkPositive(arr[1]);
+      arr[2] = checkPositive(arr[2]);
+      break;
+    case 'xyY':
+      arr[0] = checkCIEx(arr[0]);
+      arr[1] = checkCIEy(arr[1]);
+      arr[2] = checkPositive(arr[2]);
+      break;
+    case 'xy':
+      arr[0] = checkCIEx(arr[0]);
+      arr[1] = checkCIEy(arr[1]);
+      break;
+  }
+  return arr;
+}
+
+function copyArray(from: number[], to: number[], typ: CSpaceTypes): boolean {
+  const jLen = Math.min(from.length, 3);
+  if ((jLen === 2 && typ === 'xy') || jLen === 3) {
+    for (let j=0; j<jLen; j++) {
+      to[j] = from[j];
+    }
+    return true;
+  }
+  return false;
 }
