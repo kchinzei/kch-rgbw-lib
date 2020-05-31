@@ -57,7 +57,7 @@ export interface IRGBWLED {
 
   readonly color: CSpace;
   readonly brightness: number; // [0,1]
-};
+}
 
 export class RGBWLED implements IRGBWLED {
   private _rLED: LEDChip;

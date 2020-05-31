@@ -45,7 +45,7 @@ export interface ILEDChip {
   readonly y: number;
   brightness: number;
   name: string;
-};
+}
 
 export class LEDChip implements ILEDChip {
   private _LEDChipType: LEDChipTypes;
@@ -170,7 +170,7 @@ export class LEDChip implements ILEDChip {
     // Never should come here. Perhaps you didn't follow above c1-c4.
     throw new Error('Class LEDChip: Unexpected contructor parameters');
   }
-};
+}
 
 // CREE MCE4CT-A2-0000-00A4AAAB1 and measurement found in AN1857 by MicroChip.
 // http://ww1.microchip.com/downloads/jp/AppNotes/jp572250.pdf

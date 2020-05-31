@@ -3,11 +3,10 @@
 RGB/RGBW LED class library in typescript. It provides following functions,
 
 - Conversions between
-  - RGB <=> HSB
-  - CIE => RGB(W) using LED's properties
+  - RGB, HSV and CIE 1931 Chromacity (XYZ, xyY) colorspace
+  - Optimized xyY => RGB(W) using LED's properties
   - Color temperature <=> CIE (experimental)
   - Wavelength <=> CIE
-- Fade-in/out array
 - Typical RGB LED properties
 
 It is intended to use with
@@ -28,6 +27,8 @@ npm install kch-rgbw-lib
 
 ## API
 
+- [CSpace](./docs/CSpace.md)
+  : Color conversion class.
 - [CIE_colorTemperature](./docs/CIE_colorTemperature.md)
   : Functions for color temperature of black body.
 - [CIE_waveLength](./docs/CIE_waveLength.md)

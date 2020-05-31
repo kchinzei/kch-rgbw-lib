@@ -22,7 +22,31 @@ module.exports = {
     "@typescript-eslint/adjacent-overload-signatures": "error",
     "@typescript-eslint/array-type": "error",
     "@typescript-eslint/ban-types": "error",
-    "@typescript-eslint/class-name-casing": "error",
+    "@typescript-eslint/naming-convention": [
+      "warn",
+      {
+        "selector": 'default',
+        "format": ['camelCase'],
+      },
+      {
+        "selector": 'variable',
+        format: ['camelCase', 'UPPER_CASE'],
+        "leadingUnderscore": "allow",
+        "trailingUnderscore": "allow"
+      },
+      {
+        "selector": 'typeLike',
+        format: ['PascalCase'],
+      },
+      {
+        "selector": "typeAlias",
+        "format": ["PascalCase"]
+      },
+      {
+        "selector": "property",
+        "format": null
+      },
+    ],
     "@typescript-eslint/consistent-type-assertions": "error",
     "@typescript-eslint/explicit-function-return-type": [
       "off",

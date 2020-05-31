@@ -200,7 +200,7 @@ export function CIExy2nm(x: number, y: number): number {
   return ret.nm;
 }
 
-export const CIEfitxy2nm = (x: number, y: number) => CIEfitxy2List(x, y, waveLengthTable);
+export const CIEfitxy2nm = (x: number, y: number): CIEnmxyType => CIEfitxy2List(x, y, waveLengthTable);
 
 /*
   Project (x, y) to the polygon made of points in xyList,

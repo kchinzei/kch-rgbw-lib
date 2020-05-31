@@ -30,7 +30,7 @@ THE SOFTWARE.
   https://github.com/kchinzei/kch-rgbw-lib
 */
 
-import { checkCIEx, checkCIEy } from './CIE_waveLength';
+import { checkWaveLength, checkCIEx, checkCIEy } from './CIE_waveLength';
 
 export type CSpaceTypes =
   'rgb' | 'hsv' | 'XYZ' | 'xyY' | 'xy' | undefined ;
@@ -38,7 +38,7 @@ export type CSpaceTypes =
 export interface ICSpace {
   type: CSpaceTypes;
   a: number[];
-};
+}
 
 export class CSpace implements ICSpace {
   private _type: CSpaceTypes;
@@ -85,7 +85,7 @@ export class CSpace implements ICSpace {
     }
   }
 
-  constructor(p0?: (CSpaceTypes | CSpace), p1?: number[]) {
+  constructor(p0?: (CSpaceTypes | CSpace), p1?: (number[] | number)) {
     this._type = undefined;
     this._a = [0, 0, 0];
 
@@ -98,6 +98,13 @@ export class CSpace implements ICSpace {
         checkValues(this._a, this.type);
         return;
       }
+    }
+    if (typeof(p0) === 'string' && typeof(p1) === 'number') {
+      const tmp: CSpace = new CSpace();
+      tmp.type = 'XYZ';
+      xyzFromWavelength(tmp.a, p1);
+      this.copy(tmp.conv(p0));
+      return;
     }
     if (typeof(p0) === 'object' && (p0 instanceof CSpace)) {
       this.copy(p0);
@@ -149,7 +156,7 @@ export class CSpace implements ICSpace {
       case 'XYZ':
         break;
       default:
-        throw new Error(`Class CSpace: ${this.type} >> xyY not implemented`);
+        throw new Error(`Class CSpace: ${this.type as string} >> xyY not implemented`);
     }
 
     // XYZ >> xyY
@@ -210,7 +217,7 @@ export class CSpace implements ICSpace {
         Z = 0.01933082*r + 0.11919478*g + 0.95053215*b;
         break;
       default:
-        throw new Error(`Class CSpace: ${this.type} >> XYZ not implemented`);
+        throw new Error(`Class CSpace: ${this.type as string} >> XYZ not implemented`);
     }
     tmp._type = 'XYZ';
     tmp._a[0] = checkPositive(X);
@@ -267,7 +274,7 @@ export class CSpace implements ICSpace {
         b += m;
         break;
       default:
-        throw new Error(`Class CSpace: ${this.type} >> rgb not implemented`);
+        throw new Error(`Class CSpace: ${this.type as string} >> rgb not implemented`);
     }
     tmp._a[0] = checkN(r);
     tmp._a[1] = checkN(g);
@@ -294,7 +301,7 @@ export class CSpace implements ICSpace {
       case 'rgb':
         break;
       default:
-        throw new Error(`Class CSpace: ${this.type} >> hsv not implemented`);
+        throw new Error(`Class CSpace: ${this.type as string} >> hsv not implemented`);
     }
 
     // rgb >> hsv
@@ -330,7 +337,6 @@ export class CSpace implements ICSpace {
     return tmp;
   }
 
-  // This one is originally intended for 'jest' purpose.
   conv(typeStr: string): CSpace {
     switch(typeStr) {
       case 'rgb': return this.rgb();
@@ -418,4 +424,25 @@ function copyArray(from: number[], to: number[], typ: CSpaceTypes): boolean {
     return true;
   }
   return false;
+}
+
+/*
+  The CIE XYZ color matching functions
+  https://en.wikipedia.org/wiki/CIE_1931_color_space
+  THIS EQUATION HAS SOME DISPARITY FROM KNOWN WAVELENGTH => xyY CONVERSION.
+*/
+function gaussian(x: number, alpha: number, mu: number, sigma1: number, sigma2: number): number {
+  const squareRoot = (x - mu) / (x < mu ? sigma1 : sigma2);
+  return alpha * Math.exp( -(squareRoot * squareRoot)/2 );
+}
+
+function xyzFromWavelength(xyz: number[], wavelength: number): void {
+  wavelength = checkWaveLength(wavelength) * 10; // We need it in Ångström
+  xyz[0] = gaussian(wavelength,  1.056, 5998, 379, 310)
+         + gaussian(wavelength,  0.362, 4420, 160, 267)
+         + gaussian(wavelength, -0.065, 5011, 204, 262);
+  xyz[1] = gaussian(wavelength,  0.821, 5688, 469, 405)
+         + gaussian(wavelength,  0.286, 5309, 163, 311);
+  xyz[2] = gaussian(wavelength,  1.217, 4370, 118, 360)
+         + gaussian(wavelength,  0.681, 4590, 260, 138);
 }

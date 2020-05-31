@@ -40,6 +40,9 @@ test(`${i++}. inistantiate should success`, () => {
     let c: CSpace = new CSpace();
     c = new CSpace('xyY', [0.3, 0.4, 1]);
     c = new CSpace('xy', [0.3, 0.4]);
+    c = new CSpace('XYZ', [0.3, 0.3, 0.6]);
+    c = new CSpace('hsv', [100, 0.2, 0.3]);
+    c = new CSpace('rgb', 450);
     c = new CSpace(c);
     const t: CSpaceTypes = undefined;
     c.type = t;
@@ -48,7 +51,7 @@ test(`${i++}. inistantiate should success`, () => {
 
 test(`${i++}. inistantiate CSpace 'XYZ' using array[2] should fail`, () => {
   expect(() => {
-    const c: CSpace = new CSpace('XYZ', [0.3, 0.4]);
+    const c: CSpace = new CSpace('XYZ', [0.3, 0.4]); // XYZ needs 3 parameters.
     c.type = 'xy';
   }).toThrow();
 });
@@ -56,7 +59,7 @@ test(`${i++}. inistantiate CSpace 'XYZ' using array[2] should fail`, () => {
 test(`${i++}. Setting array[2] to 'rgb' should fail`, () => {
   expect(() => {
     const c: CSpace = new CSpace('rgb', [0.3, 0.4, 0.5]);
-    c.a = [0.3, 0.4];
+    c.a = [0.3, 0.4]; // rgb needs 3 parameters.
   }).toThrow();
 });
 
@@ -68,15 +71,15 @@ test(`${i++}. inistantiate CSpace 'xy' using array[3] should be acceptable w/o v
 
 test(`${i++}. inistantiate CSpace 'xy' using array[1] should fail`, () => {
   expect(() => {
-    const c = new CSpace('xy', [0.3]);
+    const c = new CSpace('xy', [0.3]); // 'xy' needs 2 parameters.
     c.a[0] = 0;
   }).toThrow();
 });
 
-test(`${i++}. Setting array[1] to 'rgb' should fail`, () => {
+test(`${i++}. Setting array[1] to 'xy' should fail`, () => {
   expect(() => {
     const c: CSpace = new CSpace('xy', [0.3, 0.4]);
-    c.a = [0.3];
+    c.a = [0.3]; // 'xy' needs 2 parameters.
   }).toThrow();
 });
 
@@ -84,7 +87,7 @@ test(`${i++}. copy using a bad CSpace should fail`, () => {
   expect(() => {
     const c: CSpace = new CSpace('xyY', [0.3, 0.4, 1]);
     const a = c.a;
-    a.length = 1; // Mariciously tampered matrix...
+    a.length = 1; // Mariciously tampered array...
     const d: CSpace = new CSpace();
     d.copy(c); // Fail!
   }).toThrow();
@@ -265,8 +268,8 @@ describe.each([
     expect(() => {
       const q: number[] = [q0, q1];
       const c: CSpace  = new CSpace();
-      c.a = q;
-      c.type = 'xy' as CSpaceTypes;
+      c.a = q; // type = undefined can accept any length of array.
+      c.type = 'xy' as CSpaceTypes; // but you cannot do it to other types.
     }).toThrow();
   });
 });
@@ -278,16 +281,16 @@ describe.each([
 */
 
 describe.each([
-  ['rgb', 'rgb', 140/255, 200/255, 100/255, 140  /255, 200  /255, 100 /255, 5], // tribial
-  ['rgb', 'hsv',   0.0,     0.0,     0.0,     0,           0.0,      0.0,   5], // extreme
-  ['rgb', 'hsv',   1.0,     1.0,     1.0,     0,           0.0,      1.0,   5], // extreme
-  ['rgb', 'hsv', 140/255, 200/255, 100/255,  96,        50  /100, 78.4/100, 3],
+  ['rgb', 'rgb', 140/255, 200/255, 100/255, 140/255,   200/255,  100/255,   5], // tribial
+  ['rgb', 'hsv',   0.0,     0.0,     0.0,     0,         0.0,      0.0,     5], // extreme
+  ['rgb', 'hsv',   1.0,     1.0,     1.0,     0,         0.0,      1.0,     5], // extreme
+  ['rgb', 'hsv', 140/255, 200/255, 100/255,  96,        50/100,   78.4/100, 3],
   ['rgb', 'hsv',   0.2,     0.1,     0.3,   270,         0.6667,   0.3,     3],
   ['rgb', 'hsv',   0.2,     0.3,     0.1,    90,         0.6667,   0.3,     3],
   ['rgb', 'hsv',   0.3,     0.2,     0.1,    30,         0.6667,   0.3,     3],
-  ['hsv', 'hsv',  96,      50/100,  78/100,  96,        50  /100, 78  /100, 5], // tribial
-  ['hsv', 'rgb',   0,       0.0,     0.0,     0.0,         0.0,      0.0,   5], // extreme
-  ['hsv', 'rgb',   0,       0.0,     1.0,     1.0,         1.0,      1.0,   5], // extreme
+  ['hsv', 'hsv',  96,      50/100,  78/100,  96,        50/100,   78/100,   5], // tribial
+  ['hsv', 'rgb',   0,       0.0,     0.0,     0.0,       0.0,      0.0,     5], // extreme
+  ['hsv', 'rgb',   0,       0.0,     1.0,     1.0,       1.0,      1.0,     5], // extreme
   ['hsv', 'rgb',  50,      50/100,  78/100,   0.78,      0.715,    0.39,    3],
   ['hsv', 'rgb',  96,      50/100,  78/100, 139.2/255, 198.9/255, 99.5/255, 3],
   ['hsv', 'rgb', 150,      50/100,  78/100,   0.39,      0.78,     0.585,   3],
@@ -295,7 +298,7 @@ describe.each([
   ['hsv', 'rgb', 250,      50/100,  78/100,   0.455,     0.39,     0.78,    3],
   ['hsv', 'rgb', 300,      50/100,  78/100,   0.78,      0.39,     0.78,    3],
   ['hsv', 'rgb', 350,      50/100,  78/100,   0.78,      0.39,     0.455,   3],
-  ['XYZ', 'rgb',  25/100,  40/100,  15/100,  97.4/255, 189.9/255, 85  /255, 3],
+  ['XYZ', 'rgb',  25/100,  40/100,  15/100,  97.4/255, 189.9/255, 85/255,   3],
   ['XYZ', 'xyY',   0.0,     0.0,     0.0,     0.0,       0.0,      0.0,     5], // extreme
   ['xyY', 'XYZ',   0.0,     0.0,     0.0,     0.0,       0.0,      0.0,     5], // extreme
   ['rgb', 'XYZ',  92/255, 191/255,  84/255,  24.6/100,  40.2/100, 14.8/100, 3],
@@ -411,7 +414,7 @@ describe.each([
     expect(() => {
       const q: number[] = [q0, q1, q2];
       const c: CSpace  = new CSpace(t1 as CSpaceTypes, q);
-      c.xy().conv(t1);
+      c.xy().conv(t1); // You cannot transform from xy to any other.
     }).toThrow();
   });
 });

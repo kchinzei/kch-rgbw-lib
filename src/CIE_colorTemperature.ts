@@ -355,7 +355,7 @@ export function CIEfadeout(x: number, y: number, steps: number, fade?: (r: numbe
 
   const kStart = CIExy2k(x, y);
   const kEnd = 1000;
-  const fadeVals: CIEkxyType[] = new Array(steps);
+  const fadeVals: CIEkxyType[] = new Array(steps) as CIEkxyType[];
 
   for (let i=0; i<steps-1; i++) {
     const r1 = fade(i / steps);
