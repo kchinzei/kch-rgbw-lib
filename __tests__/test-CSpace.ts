@@ -274,6 +274,24 @@ describe.each([
   });
 });
 
+/*
+  Tests of value ranges of set/get q (of 'xy').
+ */
+describe.each([
+  // [type, q0, q1, q2, a0, a1, a2]
+  ['xy',   0.2,  0.3,  1.5, 0.2, 0.3,  1.5], // do not truncate unused q2
+  ['xy',   0.2,  0.3, -0.1, 0.2, 0.3, -0.1], // do not truncate unused q2
+])('', (typ, q0, q1, q2, a0, a1, a2) => {
+  test(`${i++}. ${typ}(${q0}, ${q1}, ${q2}) should return (${a0}, ${a1}, ${a2}) (Using set/get .q)`, () => {
+    const q: number[] = [q0, q1, 0];
+    const c: CSpace  = new CSpace(typ as CSpaceTypes, q);
+    c.q = q2;
+    const a: number[] = c.a;
+    expect(a[0]).toBe(a0);
+    expect(a[1]).toBe(a1);
+    expect(c.q).toBe(a2);
+  });
+});
 
 /*
   Tests of conversions.

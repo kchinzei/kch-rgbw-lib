@@ -36,19 +36,64 @@ export type CSpaceTypes =
   'rgb' | 'hsv' | 'XYZ' | 'xyY' | 'xy' | undefined ;
 
 export interface ICSpace {
+  // Value check interface
   type: CSpaceTypes;
   a: number[];
+
+  // toll-free quick access: CAUTION! no value check!
+  r: number;
+  g: number;
+  b: number;
+  h: number;
+  s: number;
+  v: number;
+  X: number;
+  Y: number;
+  Z: number;
+  x: number;
+  y: number;
+  q: number; // Bonus for a[2] of 'xy' ~~ you can use as a free storage.
 }
 
 export class CSpace implements ICSpace {
   private _type: CSpaceTypes;
   private _a: number[];
 
-  get a(): number[] { return this._a; }
+  get r(): number { return this._a[0]; }
+  set r(a: number) { this._a[0] = a; }
+  get g(): number { return this._a[1]; }
+  set g(a: number) { this._a[1] = a; }
+  get b(): number { return this._a[2]; }
+  set b(a: number) { this._a[2] = a; }
+  get h(): number { return this._a[0]; }
+  set h(a: number) { this._a[0] = a; }
+  get s(): number { return this._a[1]; }
+  set s(a: number) { this._a[1] = a; }
+  get v(): number { return this._a[2]; }
+  set v(a: number) { this._a[2] = a; }
+  get X(): number { return this._a[0]; }
+  set X(a: number) { this._a[0] = a; }
+  get Y(): number { return this.type === 'XYZ'? this._a[1] : this._a[2]; }
+  set Y(a: number) { if (this.type === 'XYZ') this._a[1] = a; else this._a[2] = a; }
+  get Z(): number { return this._a[2]; }
+  set Z(a: number) { this._a[2] = a; }
+  get x(): number { return this._a[0]; }
+  set x(a: number) { this._a[0] = a; }
+  get y(): number { return this._a[1]; }
+  set y(a: number) { this._a[1] = a; }
+  get q(): number { return this._a[2]; }
+  set q(a: number) { this._a[2] = a; }
+
+  get a(): number[] {
+    const tmp: number[] = new Array(this._a.length) as number[];
+    for (let i=0; i<this._a.length; i++)
+      tmp[i] = this._a[i];
+    return tmp;
+  }
   set a(arr: number[]) {
-    if (copyArray(arr, this.a, this.type) === false)
+    if (copyArray(arr, this._a, this.type) === false)
       throw new Error('Class CSpace: Unexpected setter a() parameter.');
-    checkValues(this.a, this.type);
+    checkValues(this._a, this.type);
   }
 
   get type(): CSpaceTypes { return this._type; }
@@ -102,7 +147,7 @@ export class CSpace implements ICSpace {
     if (typeof(p0) === 'string' && typeof(p1) === 'number') {
       const tmp: CSpace = new CSpace();
       tmp.type = 'XYZ';
-      xyzFromWavelength(tmp.a, p1);
+      xyzFromWavelength(tmp._a, p1);
       this.copy(tmp.conv(p0));
       return;
     }
@@ -118,7 +163,7 @@ export class CSpace implements ICSpace {
     // Deep copy.
     // This function preserves the allocation of .a[]
     this._type = from.type;
-    if (copyArray(from.a, this.a, this.type) === false)
+    if (copyArray(from._a, this._a, this.type) === false)
       throw new Error('Class CSpace.a(): attempt to copy incompatible size/type of array');
     return this;
   }
@@ -161,19 +206,19 @@ export class CSpace implements ICSpace {
 
     // XYZ >> xyY
     // https://en.wikipedia.org/wiki/CIE_1931_color_space#CIE_xy_chromaticity_diagram_and_the_CIE_xyY_color_space
-    const X = tmp._a[0];
-    const Y = tmp._a[1];
-    const Z = tmp._a[2];
+    const X = tmp.X;
+    const Y = tmp.Y;
+    const Z = tmp.Z;
     const sumXYZ = X + Y + Z;
 
-    if (sumXYZ === 0) {
-      tmp._a[0] = tmp._a[1] = tmp._a[2] = 0;
-    } else {
-      tmp._a[0] = X/sumXYZ;
-      tmp._a[1] = Y/sumXYZ;
-      tmp._a[2] = Y;
-    }
     tmp._type = 'xyY';
+    if (sumXYZ === 0) {
+      tmp.x = tmp.y = tmp.Y = 0;
+    } else {
+      tmp.x = X/sumXYZ;
+      tmp.y = Y/sumXYZ;
+      tmp.Y = Y;
+    }
     return tmp;
   }
 
@@ -192,9 +237,9 @@ export class CSpace implements ICSpace {
       case 'xyY':
         // xyY >> XYZ
         // https://en.wikipedia.org/wiki/CIE_1931_color_space
-        const x = tmp._a[0];
-        const y = tmp._a[1];
-        Y = tmp._a[2];
+        const x = tmp.x;
+        const y = tmp.y;
+        Y = tmp.Y;
         /* istanbul ignore next */
         // We know that y won't be 0, but DIV/0 should never happen.
         if (y > 0) {
@@ -208,9 +253,9 @@ export class CSpace implements ICSpace {
       case 'rgb':
         // rgb >> XYZ
         // https://en.wikipedia.org/wiki/SRGB
-        const r = gamma1Mod(checkN(tmp._a[0]));
-        const g = gamma1Mod(checkN(tmp._a[1]));
-        const b = gamma1Mod(checkN(tmp._a[2]));
+        const r = gamma1Mod(checkN(tmp.r));
+        const g = gamma1Mod(checkN(tmp.g));
+        const b = gamma1Mod(checkN(tmp.b));
 
         X = 0.41239080*r + 0.35758434*g + 0.18048079*b;
         Y = 0.21263901*r + 0.71516868*g + 0.07219232*b;
@@ -220,9 +265,9 @@ export class CSpace implements ICSpace {
         throw new Error(`Class CSpace: ${this.type as string} >> XYZ not implemented`);
     }
     tmp._type = 'XYZ';
-    tmp._a[0] = checkPositive(X);
-    tmp._a[1] = checkPositive(Y);
-    tmp._a[2] = checkPositive(Z);
+    tmp.X = checkPositive(X);
+    tmp.Y = checkPositive(Y);
+    tmp.Z = checkPositive(Z);
     return tmp;
   }
 
@@ -244,9 +289,9 @@ export class CSpace implements ICSpace {
       case 'XYZ':
         // XYZ >> rgb
         // https://en.wikipedia.org/wiki/SRGB
-        const X = tmp._a[0];
-        const Y = tmp._a[1];
-        const Z = tmp._a[2];
+        const X = tmp.X;
+        const Y = tmp.Y;
+        const Z = tmp.Z;
 
         r = gammaMod( 3.24096994*X - 1.53738318*Y - 0.49861076*Z);
         g = gammaMod(-0.96924364*X + 1.87596750*Y + 0.04155506*Z);
@@ -255,9 +300,9 @@ export class CSpace implements ICSpace {
       case 'hsv':
         // hsv >> rgb
         // https://en.wikipedia.org/wiki/HSL_and_HSV#HSV_to_RGB
-        const h = tmp._a[0];
-        const s = tmp._a[1];
-        const v = tmp._a[2];
+        const h = tmp.h;
+        const s = tmp.s;
+        const v = tmp.v;
 
         const c = s*v;
         const h60 = h / 60;
@@ -276,10 +321,10 @@ export class CSpace implements ICSpace {
       default:
         throw new Error(`Class CSpace: ${this.type as string} >> rgb not implemented`);
     }
-    tmp._a[0] = checkN(r);
-    tmp._a[1] = checkN(g);
-    tmp._a[2] = checkN(b);
     tmp._type = 'rgb';
+    tmp.r = checkN(r);
+    tmp.g = checkN(g);
+    tmp.b = checkN(b);
     return tmp;
   }
 
@@ -306,9 +351,9 @@ export class CSpace implements ICSpace {
 
     // rgb >> hsv
     // https://en.wikipedia.org/wiki/HSL_and_HSV#From_RGB
-    const r = tmp._a[0];
-    const g = tmp._a[1];
-    const b = tmp._a[2];
+    const r = tmp.r;
+    const g = tmp.g;
+    const b = tmp.b;
 
     let xmin = r;
     if (g < xmin) xmin = g;
@@ -330,10 +375,10 @@ export class CSpace implements ICSpace {
     if (c === 0) s = 0;
     else s = c / v;
 
-    tmp._a[0] = checkH(h);
-    tmp._a[1] = checkN(s);
-    tmp._a[2] = checkN(v);
     tmp._type = 'hsv';
+    tmp.h = checkH(h);
+    tmp.s = checkN(s);
+    tmp.v = checkN(v);
     return tmp;
   }
 

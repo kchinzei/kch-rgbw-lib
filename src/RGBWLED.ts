@@ -53,26 +53,26 @@ export interface IRGBWLED {
   readonly rLED: LEDChip;
   readonly gLED: LEDChip;
   readonly bLED: LEDChip;
-  readonly xLED: LEDChip | undefined; // Extra LED such as white, amber
-
+  readonly xLED: LEDChip; // Extra LED such as white, amber
+  readonly LED: LEDChip[];
+  readonly nLED: number;
   readonly color: CSpace;
   readonly brightness: number; // [0,1]
 }
 
 export class RGBWLED implements IRGBWLED {
-  private _rLED: LEDChip;
-  private _gLED: LEDChip;
-  private _bLED: LEDChip;
-  private _xLED: LEDChip | undefined;
+  private _LED: LEDChip[];
   private _name: string;
   private _xyz: CSpace;
   private _b: number;
   private _LEDcontour: CIEnmxyType[];
 
-  get rLED(): LEDChip { return this._rLED; }
-  get gLED(): LEDChip { return this._gLED; }
-  get bLED(): LEDChip { return this._bLED; }
-  get xLED(): LEDChip|undefined { return this._xLED; }
+  get rLED(): LEDChip { return this.LED[0]; }
+  get gLED(): LEDChip { return this.LED[1]; }
+  get bLED(): LEDChip { return this.LED[2]; }
+  get xLED(): LEDChip { return this.LED[3]; }
+  get LED(): LEDChip[] { return this._LED; }
+  get nLED(): number { return (typeof(this.LED[3]) === 'undefined')? 3 : this.LED.length; }
   get name(): string { return this._name; }
   set name(s: string) { this._name = s; }
   get brightness(): number { return this._b; }
@@ -80,19 +80,26 @@ export class RGBWLED implements IRGBWLED {
   get color(): CSpace { return this._xyz; }
   public setColor(c: CSpace): void {
     const xyY: CSpace = c.xyY();
-    const xy: CIEnmxyType = CIEfitxy2List(xyY.a[0], xyY.a[0], this._LEDcontour);
+    const xy: CIEnmxyType = CIEfitxy2List(xyY.a[0], xyY.a[1], this._LEDcontour);
     this.updateLEDs(xy.x, xy.y, xyY.a[2]);
   }
 
   constructor(rLED: LEDChip, gLED: LEDChip, bLED: LEDChip, xLED?: LEDChip) {
-    this._rLED = rLED;
-    this._gLED = gLED;
-    this._bLED = bLED;
-    this._xLED = xLED;
+    this._LED = new Array(4) as LEDChip[];
+    this._LED[0] = rLED;
+    this._LED[1] = gLED;
+    this._LED[2] = bLED;
+    if (typeof(xLED) === 'object') this._LED[3] = xLED;
     this._name = '';
     this._xyz = new CSpace('XYZ', D65White);
     this._b = 0;
-    this._LEDcontour = makeLEDcontour(rLED, gLED, bLED, xLED);
+    this._LEDcontour = makeLEDcontour(this.LED);
+  }
+
+  public addLED(led: LEDChip) {
+    this.LED.push(led);
+    this._LEDcontour = makeLEDcontour(this.LED);
+    // this.updateLEDs(xy.x, xy.y, xyY.a[2]);
   }
 
   private updateLEDs(x: number, y: number, Y: number): void {
@@ -108,59 +115,59 @@ function checkBrightness(b: number): number {
   return b;
 }
 
-function makeLEDcontour(rLED: LEDChip, gLED: LEDChip, bLED: LEDChip, xLED?: LEDChip): CIEnmxyType[] {
+function makeLEDcontour(LED: LEDChip[]): CIEnmxyType[] {
   // Populate LEDcountour
-  const aTmp: CIEnmxyType[] = [ {x: rLED.x, y: rLED.y, nm: 0},
-                                {x: gLED.x, y: gLED.y, nm: 0},
-                                {x: bLED.x, y: bLED.y, nm: 0},
-                                {x: rLED.x, y: rLED.y, nm: 0} ];
-  if (typeof(xLED) === 'undefined')  {
-    return aTmp;
-  } else {
-    // if xLED is outside trianble of RGB?
-    if (checkCIExyInList(xLED.x, xLED.y, aTmp)) {
-      // Inside the triangle
-      return aTmp;
-    } else {
-      // xLED is outside the triangle. How we should order them?
-      // Change the order of xLED in RGB triangle, and select the order that maximize
+  const aTmp: CIEnmxyType[] = [ {x: LED[0].x, y: LED[0].y, nm: 0},
+                                {x: LED[1].x, y: LED[1].y, nm: 0},
+                                {x: LED[2].x, y: LED[2].y, nm: 0},
+                                {x: LED[0].x, y: LED[0].y, nm: 0} ]; // <== Last one is LED[0]. It's intentional.
+  // if LED[3>] is outside triangle of RGB?
+  for (let l=3; l<LED.length; l++) {
+    if (!checkCIExyInList(LED[l].x, LED[l].y, aTmp)) {
+      // Outside the polygon
+      // How we should order them?
+      // Change the order of LED[l] in RGB polygon, and select the order that maximize
       // the polygon area.
-      const areas: number[] = [ 0, 0, 0　];
-      const xled: CIEnmxyType = {x: xLED.x, y: xLED.y, nm: 0};
-      aTmp.splice(2, 0, xled); // at the end
-      for (let i=0; i<3; i++) {
+      const areas: number[] = new Array(l) as number[];
+      for (let i=0; i<l; i++)
+        areas[i] = 0;
+      const xled: CIEnmxyType = {x: LED[l].x, y: LED[l].y, nm: 0};
+      aTmp.splice(0, 0, xled); // Insert xled after the first element of aTmp
+      for (let i=0; i<l; i++) {
         // Sum area.
-        for (let j=0; j<2; j++) {
+        for (let j=0; j<l-1; j++) {
+          // Obtain outer vector using LED[0] as the origin.
+          // It's positive when vertices are in ccw order.
           const x0 = aTmp[j+1].x - aTmp[0].x;
           const x1 = aTmp[j+2].x - aTmp[0].x;
           const y0 = aTmp[j+1].y - aTmp[0].y;
           const y1 = aTmp[j+2].y - aTmp[0].y;
-          // Obtain outer vector r,g,b,x using r as the origin.
-          // It's positive when vertices are in ccw order.
           areas[i] += (x0*y1 - x1*y0);
         }
-        // Swap xLED...
-        const tmp: CIEnmxyType = aTmp[3-i];
-        aTmp[3-i] = aTmp[2-i];
-        aTmp[2-i] = tmp;
-        // At the end of i-loop, aTmp is ordered as
-        // xLED, rLED, gLED, bLED.
+        // Put xLED one after, when xLED is not at l-1.
+        if (i < l-2) {
+          const tmp: CIEnmxyType = aTmp[i+1];
+          aTmp[i+1] = aTmp[i+2];
+          aTmp[i+2] = tmp;
+          // At the end of i-loop, aTmp is ordered as
+          // rLED, gLED, bLED, ... xLED, rLED
+          // [0],  [1],  [2],  ... [l-1], [l]
+        }
       }
       // Find max areas
       let iMax = 0;
       let aMax = 0;
-      for (let i=0; i<3; i++) {
+      for (let i=0; i<l; i++) {
         if (aMax < areas[i]) {
           aMax = areas[i];
           iMax = i;
         }
       }
-      // Move xLED to according to iMax.
-      for (let i=0; i<3-iMax; i++) {
-        const tmp: CIEnmxyType = aTmp[i];
-        aTmp[i] = aTmp[i+1];
-        aTmp[i+1] = tmp;
+      // Move xLED to aTmp[iMax+1]. All following ones go one behind.
+      for (let i=l-1; i>iMax+1; i--) {
+        aTmp[i] = aTmp[i-1];
       }
+      aTmp[iMax+1] = xled;
     }
   }
   return aTmp;
