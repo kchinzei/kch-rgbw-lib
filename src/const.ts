@@ -23,15 +23,44 @@ THE SOFTWARE.
 */
 
 /*
-  RGB/RGBW LED class library.
+  RGB/RGBW LED class library. It provides following functions,
 
   Make Asayake to Wake Project.
   Kiyo Chinzei
   https://github.com/kchinzei/kch-rgbw-lib
 */
 
-export * from './CSpace';
-export * from './waveLength';
-export * from './colorTemperature';
-export * from './LEDChip';
-// export * from './RGBWLED';
+export const nmMin = 405;
+export const nmMax = 700;
+
+export function checkWaveLength(nm: number): number {
+  if (nm < nmMin) nm = nmMin;
+  if (nm > nmMax) nm = nmMax;
+  return nm;
+}
+
+export const xMin = 0.003858521;
+export const xMax = 0.735483871;
+export const yMin = 0.004477612;
+export const yMax = 0.833822666;
+
+export function checkCIEx(x: number): number {
+  if (x < xMin) x = xMin;
+  if (x > xMax) x = xMax;
+  return x;
+}
+
+export function checkCIEy(y: number): number {
+  if (y < yMin) y = yMin;
+  if (y > yMax) y = yMax;
+  return y;
+}
+
+export const kMin = 1000;
+export const kMax = 20000;
+
+export function checkColorTemperature(k: number): number {
+  if (k < kMin) return kMin;
+  if (k > kMax) return kMax;
+  return k;
+}

@@ -30,7 +30,7 @@ THE SOFTWARE.
   https://github.com/kchinzei/kch-rgbw-lib
 */
 
-import { checkWaveLength, checkCIEx, checkCIEy } from './CIE_waveLength';
+import { checkCIEx, checkCIEy, checkWaveLength } from './const';
 
 export type CSpaceTypes =
   'rgb' | 'hsv' | 'XYZ' | 'xyY' | 'xy' | undefined ;
@@ -40,7 +40,7 @@ export interface ICSpace {
   type: CSpaceTypes;
   a: number[];
 
-  // toll-free quick access: CAUTION! no value check!
+  // (almost) toll-free quick access: CAUTION! no value check!
   r: number;
   g: number;
   b: number;
@@ -86,6 +86,7 @@ export class CSpace implements ICSpace {
 
   get a(): number[] {
     const tmp: number[] = new Array(this._a.length) as number[];
+    // TODO use ...
     for (let i=0; i<this._a.length; i++)
       tmp[i] = this._a[i];
     return tmp;
@@ -163,6 +164,8 @@ export class CSpace implements ICSpace {
     // Deep copy.
     // This function preserves the allocation of .a[]
     this._type = from.type;
+    // The next error check actually would never happen.
+    /* istanbul ignore next */
     if (copyArray(from._a, this._a, this.type) === false)
       throw new Error('Class CSpace.a(): attempt to copy incompatible size/type of array');
     return this;
@@ -395,6 +398,30 @@ export class CSpace implements ICSpace {
   }
 }
 
+export interface ICSpaceR { // Readonly CSpace
+  readonly type: CSpaceTypes;
+  readonly a: number[];
+
+  readonly r: number;
+  readonly g: number;
+  readonly b: number;
+  readonly h: number;
+  readonly s: number;
+  readonly v: number;
+  readonly X: number;
+  readonly Y: number;
+  readonly Z: number;
+  readonly x: number;
+  readonly y: number;
+  readonly q: number;
+}
+
+export class CSpaceR extends CSpace implements ICSpaceR {
+  constructor(p0?: (CSpaceTypes | CSpace), p1?: (number[] | number)) {
+    super(p0, p1);
+  }
+}
+
 // Apply reverse of gamma for sRGB
 function gamma1Mod(u: number): number {
   u = checkN(u);
@@ -463,6 +490,7 @@ function checkValues(arr: number[], typ: CSpaceTypes): number[] {
 function copyArray(from: number[], to: number[], typ: CSpaceTypes): boolean {
   const jLen = Math.min(from.length, 3);
   if ((jLen === 2 && typ === 'xy') || jLen === 3) {
+    // TODO use ...
     for (let j=0; j<jLen; j++) {
       to[j] = from[j];
     }
@@ -476,11 +504,6 @@ function copyArray(from: number[], to: number[], typ: CSpaceTypes): boolean {
   https://en.wikipedia.org/wiki/CIE_1931_color_space
   THIS EQUATION HAS SOME DISPARITY FROM KNOWN WAVELENGTH => xyY CONVERSION.
 */
-function gaussian(x: number, alpha: number, mu: number, sigma1: number, sigma2: number): number {
-  const squareRoot = (x - mu) / (x < mu ? sigma1 : sigma2);
-  return alpha * Math.exp( -(squareRoot * squareRoot)/2 );
-}
-
 function xyzFromWavelength(xyz: number[], wavelength: number): void {
   wavelength = checkWaveLength(wavelength) * 10; // We need it in Ångström
   xyz[0] = gaussian(wavelength,  1.056, 5998, 379, 310)
@@ -490,4 +513,9 @@ function xyzFromWavelength(xyz: number[], wavelength: number): void {
          + gaussian(wavelength,  0.286, 5309, 163, 311);
   xyz[2] = gaussian(wavelength,  1.217, 4370, 118, 360)
          + gaussian(wavelength,  0.681, 4590, 260, 138);
+
+  function gaussian(x: number, alpha: number, mu: number, sigma1: number, sigma2: number): number {
+    const squareRoot = (x - mu) / (x < mu ? sigma1 : sigma2);
+    return alpha * Math.exp( -(squareRoot * squareRoot)/2 );
+  }
 }

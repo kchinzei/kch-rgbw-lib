@@ -30,11 +30,11 @@ THE SOFTWARE.
   https://github.com/kchinzei/kch-rgbw-lib
 */
 
-import { checkCIExyInList, CIEfitxy2List, CIEnmxyType } from './CIE_waveLength';
-import { CSpace } from './CSpace';
+import { CSpace, CSpaceR } from './CSpace';
+import { checkCIExyInList, CIEfitxy2List } from './waveLength';
 import { LEDChip } from './LEDChip';
 
-const D65White: number[] = [ 0.9505, 1, 1.0890 ] ; // D65 White in CIE XYZ; https://en.wikipedia.org/wiki/SRGB
+const D65White: number[] = [ 0.3155, 0.3270, 0 ] ; // D65 White; https://en.wikipedia.org/wiki/SRGB
 
 // Values from https://en.wikipedia.org/wiki/SRGB
 /*
@@ -50,62 +50,72 @@ const sRGBWy = 0.3290;
 
 export interface IRGBWLED {
   name: string;
+  color: CSpace;
+  brightness: number; // [0,1]
   readonly rLED: LEDChip;
   readonly gLED: LEDChip;
   readonly bLED: LEDChip;
   readonly xLED: LEDChip; // Extra LED such as white, amber
   readonly LED: LEDChip[];
   readonly nLED: number;
-  readonly color: CSpace;
-  readonly brightness: number; // [0,1]
 }
 
-export class RGBWLED implements IRGBWLED {
+export class RGBWLED extends CSpaceR implements IRGBWLED {
   private _LED: LEDChip[];
   private _name: string;
-  private _xyz: CSpace;
-  private _b: number;
-  private _LEDcontour: CIEnmxyType[];
+  private _maxB: number;
+  private _LEDcontour: CSpace[];
 
+  get LED(): LEDChip[] { return this._LED; }
   get rLED(): LEDChip { return this.LED[0]; }
   get gLED(): LEDChip { return this.LED[1]; }
   get bLED(): LEDChip { return this.LED[2]; }
   get xLED(): LEDChip { return this.LED[3]; }
-  get LED(): LEDChip[] { return this._LED; }
-  get nLED(): number { return (typeof(this.LED[3]) === 'undefined')? 3 : this.LED.length; }
+  get nLED(): number { return this.LED.length; }
   get name(): string { return this._name; }
   set name(s: string) { this._name = s; }
-  get brightness(): number { return this._b; }
-  set brightness(b: number) { this._b = checkBrightness(b); }
-  get color(): CSpace { return this._xyz; }
-  public setColor(c: CSpace): void {
-    const xyY: CSpace = c.xyY();
-    const xy: CIEnmxyType = CIEfitxy2List(xyY.a[0], xyY.a[1], this._LEDcontour);
-    this.updateLEDs(xy.x, xy.y, xyY.a[2]);
+  get brightness(): number { return this.Y / this._maxB; }
+  set brightness(b: number) {
+    const xyY: CSpace = new CSpace(this);
+    xyY.Y = checkBrightness(b) * this._maxB;
+    this.updateLEDs(xyY);
+  }
+  get color(): CSpace {
+    const c: CSpace = new CSpace(this);
+    return c;
+  }
+  set color(c: CSpace) {
+    const xyY: CSpace = CIEfitxy2List(c.xyY(), this._LEDcontour);
+    if (c.type !== 'xyY' && c.type !== 'XYZ')
+      xyY.Y = this.brightness;
+    this.updateLEDs(xyY);
   }
 
   constructor(rLED: LEDChip, gLED: LEDChip, bLED: LEDChip, xLED?: LEDChip) {
-    this._LED = new Array(4) as LEDChip[];
+    super('xyY', D65White);
+    const nLED = (typeof(xLED) === 'object')? 4:3;
+    this._LED = new Array(nLED) as LEDChip[];
     this._LED[0] = rLED;
     this._LED[1] = gLED;
     this._LED[2] = bLED;
-    if (typeof(xLED) === 'object') this._LED[3] = xLED;
+    if (nLED === 4)
+      this._LED[3] = xLED as LEDChip;
+    this._maxB = 0;
+    for (const l of this._LED)
+      this._maxB = l.maxBrightness;
     this._name = '';
-    this._xyz = new CSpace('XYZ', D65White);
-    this._b = 0;
-    this._LEDcontour = makeLEDcontour(this.LED);
+    this._LEDcontour = makeColorContour(this.LED);
   }
 
-  public addLED(led: LEDChip) {
+  public addLED(led: LEDChip): void {
     this.LED.push(led);
-    this._LEDcontour = makeLEDcontour(this.LED);
-    // this.updateLEDs(xy.x, xy.y, xyY.a[2]);
+    this._maxB += led.maxBrightness;
+    this._LEDcontour = makeColorContour(this.LED);
+    this.updateLEDs(this);
   }
 
-  private updateLEDs(x: number, y: number, Y: number): void {
-    const xyY: CSpace = new CSpace('xyY', [x, y, Y]);
-    this._xyz.copy(xyY);
-    // TBC it's not smart at all!
+  private updateLEDs(c: CSpace): void {
+    // TODO
   }
 }
 
@@ -115,43 +125,46 @@ function checkBrightness(b: number): number {
   return b;
 }
 
-function makeLEDcontour(LED: LEDChip[]): CIEnmxyType[] {
-  // Populate LEDcountour
-  const aTmp: CIEnmxyType[] = [ {x: LED[0].x, y: LED[0].y, nm: 0},
-                                {x: LED[1].x, y: LED[1].y, nm: 0},
-                                {x: LED[2].x, y: LED[2].y, nm: 0},
-                                {x: LED[0].x, y: LED[0].y, nm: 0} ]; // <== Last one is LED[0]. It's intentional.
-  // if LED[3>] is outside triangle of RGB?
-  for (let l=3; l<LED.length; l++) {
-    if (!checkCIExyInList(LED[l].x, LED[l].y, aTmp)) {
+/*
+  Color contour is a list of CSpace that defines the range of color that can be represented
+  by the compisite of colors in the list.
+*/
+function makeColorContour(cList: CSpace[]): CSpace[] {
+  /* istanbul ignore next */
+  if (cList.length < 3)
+    throw new Error('makeColorContour() needs at least 3 items in cList[]');
+
+  // Populate initial triangle.
+  const cTmp: CSpace[] = [cList[0], cList[1], cList[2], cList[0]];
+  // Examine the order of initial three.
+  const ccw = (crossproduct(cList[0], cList[1], cList[2]) > 0)? 1 : -1;
+
+  // if cList[3>] is outside polygon
+  for (let l=3; l<cList.length; l++) {
+    const xC = cList[l];
+    if (!checkCIExyInList(xC, cTmp)) {
       // Outside the polygon
       // How we should order them?
-      // Change the order of LED[l] in RGB polygon, and select the order that maximize
+      // Change the order of cList[l] in polygon, and select the order that maximize
       // the polygon area.
       const areas: number[] = new Array(l) as number[];
       for (let i=0; i<l; i++)
         areas[i] = 0;
-      const xled: CIEnmxyType = {x: LED[l].x, y: LED[l].y, nm: 0};
-      aTmp.splice(0, 0, xled); // Insert xled after the first element of aTmp
+      cTmp.splice(0, 0, xC); // Insert xC after the first element of cTmp
       for (let i=0; i<l; i++) {
         // Sum area.
         for (let j=0; j<l-1; j++) {
-          // Obtain outer vector using LED[0] as the origin.
-          // It's positive when vertices are in ccw order.
-          const x0 = aTmp[j+1].x - aTmp[0].x;
-          const x1 = aTmp[j+2].x - aTmp[0].x;
-          const y0 = aTmp[j+1].y - aTmp[0].y;
-          const y1 = aTmp[j+2].y - aTmp[0].y;
-          areas[i] += (x0*y1 - x1*y0);
+          // Obtain cross product using LED[0] as the origin.
+          areas[i] += ccw * crossproduct(cTmp[0], cTmp[j+1], cTmp[j+2]);
         }
-        // Put xLED one after, when xLED is not at l-1.
+        // Put xC one after, when xC is not at l-1.
         if (i < l-2) {
-          const tmp: CIEnmxyType = aTmp[i+1];
-          aTmp[i+1] = aTmp[i+2];
-          aTmp[i+2] = tmp;
-          // At the end of i-loop, aTmp is ordered as
-          // rLED, gLED, bLED, ... xLED, rLED
-          // [0],  [1],  [2],  ... [l-1], [l]
+          const tmp = cTmp[i+1];
+          cTmp[i+1] = cTmp[i+2];
+          cTmp[i+2] = tmp;
+          // At the end of i-loop, cTmp is ordered as
+          //  R,   G,   B,  ...  X,     R
+          // [0], [1], [2], ... [l-1], [l]
         }
       }
       // Find max areas
@@ -163,12 +176,20 @@ function makeLEDcontour(LED: LEDChip[]): CIEnmxyType[] {
           iMax = i;
         }
       }
-      // Move xLED to aTmp[iMax+1]. All following ones go one behind.
+      // Move X to cTmp[iMax+1]. All following ones go one behind.
       for (let i=l-1; i>iMax+1; i--) {
-        aTmp[i] = aTmp[i-1];
+        cTmp[i] = cTmp[i-1];
       }
-      aTmp[iMax+1] = xled;
+      cTmp[iMax+1] = xC;
     }
   }
-  return aTmp;
+  return cTmp;
+
+  function crossproduct(p0: CSpace, p1: CSpace, p2: CSpace): number {
+    const x1 = p1.x - p0.x;
+    const x2 = p2.x - p0.x;
+    const y1 = p1.y - p0.y;
+    const y2 = p2.y - p0.y;
+    return x1*y2 - x2*y1;
+  }
 }

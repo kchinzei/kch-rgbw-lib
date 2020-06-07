@@ -31,6 +31,7 @@ THE SOFTWARE.
 */
 
 import { CSpace, CSpaceTypes } from '../src/index';
+
 // const agh = require('agh.sprintf');
 
 let i = 1;
@@ -86,11 +87,11 @@ test(`${i++}. Setting array[1] to 'xy' should fail`, () => {
 test(`${i++}. copy using a bad CSpace should fail`, () => {
   expect(() => {
     const c: CSpace = new CSpace('xyY', [0.3, 0.4, 1]);
-    const a = c.a;
-    a.length = 1; // Mariciously tampered array...
+    const a: number[] = c.a;
+    a.length = 1; // Since a[] is a deep copy of c._a, it does not affect c
     const d: CSpace = new CSpace();
-    d.copy(c); // Fail!
-  }).toThrow();
+    d.copy(c); // Success
+  }).not.toThrow();
 });
 
 
@@ -353,6 +354,7 @@ describe.each([
 
     // This should do similar to .conv() but changes itself.
     c.type = t2 as CSpaceTypes;
+    a = c.a;
     for (let j=0; j<3; j++) {
       expect(a[j]).toBeCloseTo(ans[j], numDigits);
     }

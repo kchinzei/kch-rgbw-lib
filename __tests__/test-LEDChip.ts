@@ -64,6 +64,7 @@ test(`${i++}. instantiate w/ wrong combination of parameters should throw except
   }).toThrow();
 });
 
+/*
 test(`${i++}. instantiate w/o parameter, then populate using setters`, () => {
   expect(() => {
     const led: LEDChip = new LEDChip();
@@ -82,6 +83,7 @@ test(`${i++}. instantiate w/o parameter, then populate using setters`, () => {
     led.brightness = 0.5;
   }).not.toThrow();
 });
+*/
 
 test(`${i++}. getters should work`, () => {
   const led: LEDChip = new LEDChip('LED_G', 'Green', 0.2, 0.7, 100);
@@ -97,28 +99,22 @@ test(`${i++}. getters should work`, () => {
 });
 
 test(`${i++}. inistantiate abnormal values should truncate.`, () => {
-  const led: LEDChip = new LEDChip();
-  let ledtype: LEDChipTypes = 'LED_W';
+  let ledtype: LEDChipTypes = 'LED_R';
 
-  led.setMaxBrightness(0);
+  let led: LEDChip = new LEDChip(ledtype, 'red', 650, 0);
   expect(led.maxBrightness).toBeCloseTo(1);
-
-  led.setLEDChipType(ledtype);
-  led.setWaveLength(600); // White LED shouln't have wavelength
-  expect(led.waveLength).toBe(undefined);
-  led.setColorTemperature(100); // Too low
-  expect(led.colorTemperature).toBeCloseTo(1000);
-  led.setColorTemperature(30000); // Too high
-  expect(led.colorTemperature).toBeCloseTo(20000);
-
-  ledtype = 'LED_UV';
-  led.setLEDChipType(ledtype);
-  led.setColorTemperature(6000); // Color LED shouldn't have temp
   expect(led.colorTemperature).toBe(undefined);
-  led.setWaveLength(100); // Too short
+  led = new LEDChip(ledtype, 'red', 100, 1.0); // Too short
   expect(led.waveLength).toBeCloseTo(405);
-  led.setWaveLength(800); // Too long
+  led = new LEDChip(ledtype, 'red', 800, 1.0); // Too long
   expect(led.waveLength).toBeCloseTo(700);
+
+  ledtype = 'LED_W';
+  led = new LEDChip(ledtype, 'white', 100, 1.0); // Too low
+  expect(led.waveLength).toBe(undefined);
+  expect(led.colorTemperature).toBeCloseTo(1000);
+  led = new LEDChip(ledtype, 'white', 30000, 1.0); // Too high
+  expect(led.colorTemperature).toBeCloseTo(20000);
 
   led.brightness = -1;
   expect(led.brightness).toBeCloseTo(0);
