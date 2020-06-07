@@ -50,6 +50,14 @@ export interface ICSpace {
 };
 
 export class CSpace implements ICSpace;
+
+export interface ICSpaceR {
+  readonly type: CSpaceTypes;
+  readonly a: number[];
+};
+
+export class CSpaceR implements ICSpaceR;
+
 ```
 
 Class CSpace manages a colorspace.
@@ -85,6 +93,16 @@ Return a copy array of a[]. It's safe to modify or destroy the returned array.
 
 Return `type`.
 
+##### .r .g .b
+##### .h .s .v
+##### .X .Y .Z
+##### .x .y .Y
+##### .x .y .q
+
+Return corresponding value in .a[].
+It's intended as (almost) toll-free access, where there is no type check except for .Y).
+You should use them when you are sure about the type.
+
 ### Setter
 
 ##### .a = arr: number[]
@@ -102,6 +120,16 @@ When `type` is 'xy', it behaves as
 
 Set the `type` of this CSpace to given `typ`.
 Internally it uses the color transformation functions.
+
+##### .r .g .b = val
+##### .h .s .v = val
+##### .X .Y .Z = val
+##### .x .y .Y = val
+##### .x .y .q = val
+
+Set corresponding value to .a[].
+It's intended as (almost) toll-free access, where there is no type check . (except for .Y) or value range check.
+You should use them when you are sure about the type.
 
 ### Member functions
 

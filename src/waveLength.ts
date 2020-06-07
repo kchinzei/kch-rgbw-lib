@@ -305,9 +305,10 @@ export function CIEfitxy2List(xy: CSpace, xyList?: CSpace[]): CSpace {
     }
   }
 
-  ret.q = xyList[i0].q *(1-t0) + xyList[i1].q * t0; // xyY also works.
   ret.x = xyList[i0].x *(1-t0) + xyList[i1].x * t0;
   ret.y = xyList[i0].y *(1-t0) + xyList[i1].y * t0;
+  if (xyList === waveLengthTable)
+    ret.q = xyList[i0].q *(1-t0) + xyList[i1].q * t0; // wave length.
   if (isInside) {
     ret.x = x;
     ret.y = y;

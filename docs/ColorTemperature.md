@@ -1,4 +1,4 @@
-# CIE_colorTemperature
+ColorTemperature
 
 It is a part of [kch-rgbw-lib](https://github.com/kchinzei/kch-rgbw-lib).
 See [README.md](https://github.com/kchinzei/kch-rgbw-lib/blob/master/README.md)
@@ -9,26 +9,13 @@ for general information.
 In TypeScript/ES2015:
 
 ```TypeScript
-import { checkColorTemperature, CIEk2x, CIEk2y, CIExy2k } from 'kch-rgbw-lib';
-import { CIEfitxy2nm, CIEnmxyType } from 'kch-rgbw-lib';
+import { CSpace, CSpaceTypes } from 'kch-rgbw-lib';
+import { CIEk2x, CIEk2y, CIExy2k, CIEfadeout, CIEfadein } from 'kch-rgbw-lib';
 ```
 
 ## API
 
-### Module Constants and types
-
-```TypeScript
-// Color temperature (of white)
-type CIEkxyType = { k: number; x: number; y: number };
-const CIEk57kWhite: CIEkxyType; // 5700 k white
-const CIEk65kWhite: CIEkxyType; // 6500 k white
-```
-
 ### Functions
-
-##### checkColorTemperature(k: number): number
-
-Truncate the given value within its range.
 
 ##### CIEk2x(k: number): number
 
@@ -37,9 +24,11 @@ Truncate the given value within its range.
 Return CIE-x or CIE-y value of back body corresponding to the given
 color temperature in K.
 
-##### CIExy2k(x: number, y: number): number
+##### CIExy2k(xy: CSpace): number
 
 Return correlated color temperature (CCT) corresponding to CIE (x, y).
+`xy` should be in 'xy' or 'xyY' of `CSpaceTypes`.
+Other types will throw an exception.
 Optimized McCamy's approximation is used. Note that returned CCT is
 physically meaningful only when (x, y) is on or near the white light.
 In particular, the area between blue and red is very inaccurate as shown
@@ -49,18 +38,21 @@ Although CCT by McCamy's approximation is known that it's isotherms are
 [less accurate than other methods](https://cran.r-project.org/web/packages/spacesXYZ/vignettes/isotherms.pdf),
 it gives the smallest error in [1000, 7000] k according to my experiment.
 
-##### CIEfadeout(x: number, y: number, steps: number, fade?: (r: number) => number): CIEkxyType[]
+##### CIEfadeout(xy0: CSpace, steps: number, fade?: (r: number) => number): CSpace[]
 
-##### CIEfadein(x: number, y: number, steps: number, fade?: (r: number) => number): CIEkxyType[]
+##### CIEfadein(xy:0 CSpace, steps: number, fade?: (r: number) => number): CSpace[]
 
-Return array of CIEkxyType, filling with interpolated points starting/ending
-at (x, y). `CIEfadeout()` ends / `CIEfadein()` starts at the point where
-color temperature is 1000 k.
+Return array of CSpace, filling with interpolated points starting/ending
+at xy0.
+`xy0` should be in 'xy' or 'xyY' of `CSpaceTypes`.
+Other types will throw an exception.
+`CIEfadeout()` ends / `CIEfadein()` starts at the point where
+color temperature is 1000 K.
 `fade()` is a function used to interpolate between the start and end points.
 `fade()` is called repeatedly with changing `r` from 0 to 1, like:
 
 ```typescript
-const p: CIEkxyType[] = new Array(steps);
+const p: CSpace[] = new Array(steps) as CSpace[];
 for (let i=0; i<steps; i++) {
   const r = fade(i / steps);
   (interpolate start (x,y) and end (x,y) by r)
