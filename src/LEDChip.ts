@@ -35,8 +35,10 @@ import { CSpaceR } from './CSpace';
 import { CIEnm2x, CIEnm2y, CIExy2nm } from './waveLength';
 import { CIEk2x, CIEk2y, CIExy2k}  from './colorTemperature';
 
+const initName = (s: string|undefined) => (typeof(s) === 'string')? s : '';
+
 export type LEDChipTypes =
-  'LED_R' | 'LED_G' | 'LED_B' | 'LED_W' | 'LED_UV' | 'LED_Amber' | 'LED_Other' | undefined ;
+  'LED_R' | 'LED_G' | 'LED_B' | 'LED_W' | 'LED_Other' ;
 
 export interface ILEDChip {
   readonly LEDChipType: LEDChipTypes;
@@ -68,32 +70,28 @@ export class LEDChip extends CSpaceR implements ILEDChip {
     this._brightness = checkBrightness(b, this.maxBrightness);
   }
   get name(): string { return this._name; }
-  /* istanbul ignore next */
   set name(n: string) { this._name = n; }
 
   /*
     Different pairs of parameters work as following:
-    c1: constructor(LEDChipType, name, waveLength, maxBrightness); // Color LEDs by wave length
-    c2: constructor(LEDChipType, name, colorTemperature, maxBrightness); // White LEDs by tempetarure
-    c3: constructor(LEDChipType, name, x, y, maxBrightness); // If you know CIE(xy). It's most precise.
-
-    // We need them?
-    c4: constructor(LEDChip); // Copy constructor.
-    c5: constructor(); // empty initialization.
+    c1: constructor(LEDChipType, waveLength, maxBrightness, name?); // Color LEDs by wave length
+    c2: constructor(LEDChipType, colorTemperature, maxBrightness, name?); // White LEDs by tempetarure
+    c3: constructor(LEDChipType, x, y, maxBrightness, name?); // If you know CIE(xy). It's most precise.
+    c4: constructor(LEDChipType, name?); // Typical ones.
+    c5: constructor(LEDChip); // Copy constructor.
   */
-  constructor(LEDChipType?: LEDChipTypes, name?: string, arg1?: number, arg2?: number, arg3?: number) {
-    if (typeof(LEDChipType) !== 'undefined') {
+  constructor(typeOrLED: (LEDChipTypes | LEDChip), arg1?: number, arg2?: number, arg3?: number, name?: string) {
+    if (typeof(typeOrLED) !== 'object') {
       if (typeof(arg3) !== 'undefined') {
         // case c3
         super('xy', [checkCIEx(arg1 as number), checkCIEy(arg2 as number)]);
-        this._LEDChipType = LEDChipType;
+        this._LEDChipType = typeOrLED;
         this._waveLength = undefined;
         this._colorTemperature = undefined;
         this._brightness = 0;
-        /* istanbul ignore next */
-        this._name = typeof(name) === 'string'? name : '';
+        this._name = initName(name);
         this._maxBrightness = checkMaxBrightness(arg3);
-        switch (LEDChipType) {
+        switch (typeOrLED) {
           case 'LED_W':
             this._colorTemperature = CIExy2k(this);
 	    break;
@@ -103,7 +101,7 @@ export class LEDChip extends CSpaceR implements ILEDChip {
         }
         return;
       } else if (typeof(arg1) !== 'undefined' && typeof(arg2) !== 'undefined') {
-        switch (LEDChipType) {
+        switch (typeOrLED) {
           case 'LED_W':
             // c2: colorTemperature given in arg1.
             const t: number = checkColorTemperature(arg1);
@@ -119,32 +117,66 @@ export class LEDChip extends CSpaceR implements ILEDChip {
             this._waveLength = w;
             break;
         }
-        this._LEDChipType = LEDChipType;
+        this._LEDChipType = typeOrLED;
         this._brightness = 0;
-        /* istanbul ignore next */
-        this._name = typeof(name) === 'string'? name : '';
+        this._name = initName(name);
         this._maxBrightness = checkMaxBrightness(arg2);
         return;
+      } else if (typeof(arg1) === 'undefined') {
+        const type: LEDChipTypes = typeOrLED;
+        let l!: LEDChip;
+        switch (type) {
+          case 'LED_R':
+            l = LEDChipTypR;
+            break;
+          case 'LED_G':
+            l = LEDChipTypG;
+            break;
+          case 'LED_B':
+            l = LEDChipTypB;
+            break;
+          case 'LED_W':
+            l = LEDChipTypW;
+            break;
+        }
+        super(l);
+        this._LEDChipType = l.LEDChipType;
+        this._waveLength = l.waveLength;
+        this._colorTemperature = l.colorTemperature;
+        this._maxBrightness = l.maxBrightness;
+        this._brightness = l.brightness;
+        this._name = l.name;
+        return;
       }
+    } else {
+      const l: LEDChip = typeOrLED;
+      super(l);
+      this._LEDChipType = l.LEDChipType;
+      this._waveLength = l.waveLength;
+      this._colorTemperature = l.colorTemperature;
+      this._maxBrightness = l.maxBrightness;
+      this._brightness = l.brightness;
+      this._name = l.name;
+      return;
     }
-    // Never should come here. Perhaps you didn't follow above c1-c5.
+    // Never should come here. Perhaps you didn't follow above c1-c4.
     throw new Error('Class LEDChip: Unexpected contructor parameters');
   }
 }
 
 // CREE MCE4CT-A2-0000-00A4AAAB1 and measurement found in AN1857 by MicroChip.
 // http://ww1.microchip.com/downloads/jp/AppNotes/jp572250.pdf
-export const LEDChipTypR: LEDChip = new LEDChip('LED_R', 'Typical R', 0.6857, 0.3143, 30.6);
-export const LEDChipTypG: LEDChip = new LEDChip('LED_G', 'Typical G', 0.2002, 0.6976, 67.2);
-export const LEDChipTypB: LEDChip = new LEDChip('LED_B', 'Typical B', 0.1417, 0.0618, 8.2);
-export const LEDChipTypW: LEDChip = new LEDChip('LED_W', 'Typical W', 0.3816, 0.3678, 80);
+export const LEDChipTypR: LEDChip = new LEDChip('LED_R', 0.6857, 0.3143, 30.6, 'Typical R');
+export const LEDChipTypG: LEDChip = new LEDChip('LED_G', 0.2002, 0.6976, 67.2, 'Typical G');
+export const LEDChipTypB: LEDChip = new LEDChip('LED_B', 0.1417, 0.0618, 8.2,  'Typical B');
+export const LEDChipTypW: LEDChip = new LEDChip('LED_W', 0.3816, 0.3678, 80.0, 'Typical W');
 
 // These values are from RGBW Chip LC-S5050-04004-RGBW, Epistar
-export const LEDChipEpistarR: LEDChip = new LEDChip('LED_R',  'LC-S5050-04004-RGBW, Epistar', 625, 2.5);
-export const LEDChipEpistarG: LEDChip = new LEDChip('LED_G',  'LC-S5050-04004-RGBW, Epistar', 520, 3.5);
-export const LEDChipEpistarB: LEDChip = new LEDChip('LED_B',  'LC-S5050-04004-RGBW, Epistar', 470, 1.5);
-export const LEDChipEpistarWW: LEDChip = new LEDChip('LED_W', 'LC-S5050-04004-RGBW, Epistar', 2600, 6.5);
-export const LEDChipEpistarCW: LEDChip = new LEDChip('LED_W', 'LC-S5050-04004-RGBW, Epistar', 6500, 6.5);
+export const LEDChipEpistarR: LEDChip = new LEDChip('LED_R',  625, 2.5);
+export const LEDChipEpistarG: LEDChip = new LEDChip('LED_G',  520, 3.5);
+export const LEDChipEpistarB: LEDChip = new LEDChip('LED_B',  470, 1.5);
+export const LEDChipEpistarWW: LEDChip = new LEDChip('LED_W', 2600, 6.5);
+export const LEDChipEpistarCW: LEDChip = new LEDChip('LED_W', 6500, 6.5);
 
 function checkBrightness(b: number, max: number): number {
   if (b < 0) b = 0;

@@ -36,30 +36,37 @@ import { LEDChipTypes, LEDChip, LEDChipTypR, LEDChipTypG, LEDChipTypB, LEDChipTy
 
 let i = 1;
 
+test(`${i++}. inistantiate LEDChip by copy constructor`, () => {
+  expect(() => {
+    const led: LEDChip = new LEDChip(LEDChipTypR);
+    led.brightness = 100;
+  }).not.toThrow();
+});
+
 test(`${i++}. inistantiate LEDChip by waveLength`, () => {
   expect(() => {
-    const led: LEDChip = new LEDChip('LED_R', 'Red', 660, 100);
+    const led: LEDChip = new LEDChip('LED_R', 660, 100);
     led.brightness = 100;
   }).not.toThrow();
 });
 
 test(`${i++}. inistantiate LEDChip by colorTemp`, () => {
   expect(() => {
-    const led: LEDChip = new LEDChip('LED_W', 'White', 5700, 100);
+    const led: LEDChip = new LEDChip('LED_W', 5700, 100);
     led.brightness = 100;
   }).not.toThrow();
 });
 
 test(`${i++}. inistantiate LEDChip by CIE(x,y)`, () => {
   expect(() => {
-    const led: LEDChip = new LEDChip('LED_G', 'Green', 0.2, 0.7, 100);
+    const led: LEDChip = new LEDChip('LED_G', 0.3, 0.6, 100);
     led.brightness = 100;
   }).not.toThrow();
 });
 
 test(`${i++}. instantiate w/ wrong combination of parameters should throw exception`, () => {
   expect(() => {
-    const led: LEDChip = new LEDChip('LED_B', 'Wrong', 100);
+    const led: LEDChip = new LEDChip('LED_B', 100);
     led.brightness = 100;
   }).toThrow();
 });
@@ -85,48 +92,66 @@ test(`${i++}. instantiate w/o parameter, then populate using setters`, () => {
 });
 */
 
-test(`${i++}. getters should work`, () => {
-  const led: LEDChip = new LEDChip('LED_G', 'Green', 0.2, 0.7, 100);
-  led.brightness = 99.5;
-  expect(led.LEDChipType).toBe('LED_G');
-  expect(led.name).toBe('Green');
-  expect(led.waveLength).toBeCloseTo(541.27);
-  expect(led.colorTemperature).toBe(undefined);
-  expect(led.x).toBeCloseTo(0.2);
-  expect(led.y).toBeCloseTo(0.7);
-  expect(led.brightness).toBeCloseTo(99.5);
-  expect(led.maxBrightness).toBeCloseTo(100);
+describe.each([
+  [ 'LED_R', 'Red',   610,  50, 0.6658,	0.3340, 0, 610],
+  [ 'LED_G', 'Green', 550, 100, 0.3016, 0.6924, 0, 550 ],
+  [ 'LED_B', 'Blue',  470,  10, 0.1241, 0.0578, 0, 470 ],
+  [ 'LED_W', 'White', 6500, 80, 0.3155, 0.3270, 6500, 0 ]
+])('', (typ, name, a0, maxB, x, y, k, nm) => {
+  test(`${i++}. getters should work`, () => {
+    const led: LEDChip = new LEDChip(typ as LEDChipTypes, a0, maxB);
+    led.brightness = maxB;
+    led.name = name;
+    expect(led.LEDChipType).toBe(typ);
+    expect(led.name).toBe(name);
+    expect(led.x).toBeCloseTo(x, 4);
+    expect(led.y).toBeCloseTo(y, 4);
+    if (nm !== 0)
+      expect(led.waveLength).toBeCloseTo(nm, 5);
+    if (k !== 0)
+      expect(led.colorTemperature).toBeCloseTo(k, 5);
+    expect(led.brightness).toBeCloseTo(maxB, 5);
+    expect(led.maxBrightness).toBeCloseTo(maxB, 5);
+  });
 });
 
 test(`${i++}. inistantiate abnormal values should truncate.`, () => {
   let ledtype: LEDChipTypes = 'LED_R';
 
-  let led: LEDChip = new LEDChip(ledtype, 'red', 650, 0);
+  let led: LEDChip = new LEDChip(ledtype, 650, 0);
   expect(led.maxBrightness).toBeCloseTo(1);
   expect(led.colorTemperature).toBe(undefined);
-  led = new LEDChip(ledtype, 'red', 100, 1.0); // Too short
+  led = new LEDChip(ledtype, 100, 1.0); // Too short
   expect(led.waveLength).toBeCloseTo(405);
-  led = new LEDChip(ledtype, 'red', 800, 1.0); // Too long
+  led = new LEDChip(ledtype, 800, 1.0); // Too long
   expect(led.waveLength).toBeCloseTo(700);
 
   ledtype = 'LED_W';
-  led = new LEDChip(ledtype, 'white', 100, 1.0); // Too low
+  led = new LEDChip(ledtype, 100, 1.0); // Too low
   expect(led.waveLength).toBe(undefined);
   expect(led.colorTemperature).toBeCloseTo(1000);
-  led = new LEDChip(ledtype, 'white', 30000, 1.0); // Too high
+  led = new LEDChip(ledtype, 30000, 1.0); // Too high
   expect(led.colorTemperature).toBeCloseTo(20000);
 
   led.brightness = -1;
   expect(led.brightness).toBeCloseTo(0);
   led.brightness = 10;
   expect(led.brightness).toBeCloseTo(1);
+
+  led.name = '';
+  expect(led.name).toBe('');
 });
 
 test(`${i++}. Using some preset LEDs`, () => {
-  expect(LEDChipTypR.waveLength).toBeCloseTo(617, 0);
-  expect(LEDChipTypG.waveLength).toBeCloseTo(541, 0);
-  expect(LEDChipTypB.waveLength).toBeCloseTo(469, 0);
-  expect(LEDChipTypW.colorTemperature).toBeCloseTo(3930, -2);
+  let led: LEDChip = new LEDChip('LED_R');
+  expect(led).toStrictEqual(LEDChipTypR);
+  led = new LEDChip('LED_G');
+  expect(led).toStrictEqual(LEDChipTypG);
+  led = new LEDChip('LED_B');
+  expect(led).toStrictEqual(LEDChipTypB);
+  led = new LEDChip('LED_W');
+  expect(led).toStrictEqual(LEDChipTypW);
+
   expect(LEDChipEpistarR.x).toBeCloseTo(0.7006);
   expect(LEDChipEpistarG.x).toBeCloseTo(0.0743);
   expect(LEDChipEpistarB.x).toBeCloseTo(0.1241);

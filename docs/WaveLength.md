@@ -60,11 +60,11 @@ If `xyList` is omitted, the CIE 1931 gamut is used.
 `CIEfitxy2List()` calculates the corresponding wave length on the CIE 1931 curve when `xyList` is omitted.
 You can obtain the wave length by
 
-````TypeScript
+```TypeScript
 let c: CSpace = new CSpace('xy', [0.4, 0.6]);
 c = CIEfitxy2List(c);
 let waveLength = c.q; // in K
-````
+```
 
 `xyList` is in the same format as `checkCIExyInList()`.
 You must append the first point at the end of array.
@@ -77,7 +77,7 @@ You must append the first point at the end of array.
 - However it does not interpolate between 405nm and 700 nm.
   In such case, it returns either 405 nm or 700 nm point (5, 6).
 - Note that it can return physically nonsense wave WaveLength
-if the input is far from the CIE 1931 curve (7).
+  if the input is far from the CIE 1931 curve (7).
 
 # License
 

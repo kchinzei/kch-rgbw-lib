@@ -34,4 +34,4 @@ export * from './CSpace';
 export * from './waveLength';
 export * from './colorTemperature';
 export * from './LEDChip';
-// export * from './RGBWLED';
+export * from './RGBWLED';
