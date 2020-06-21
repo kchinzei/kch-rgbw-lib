@@ -76,6 +76,8 @@ describe.each([
     c = new CSpace('xyY', [x, y, 1]);
     ret = CIExy2k(c);
     expect(ret).toBeCloseTo(k, -2);
+    // It also works with (x, y) given.
+    expect(CIExy2k(x, y)).toBeCloseTo(k, -2);
   });
 });
 
@@ -92,6 +94,13 @@ describe.each([
     }).toThrow();
   });
 });
+
+test(`${i++}. CIExy2k(): should fail when only one number given`, () => {
+    expect(() => {
+      let ret: number = CIExy2k(0.5); // wrong! two numbers necessary.
+      console.log(ret);
+    }).toThrow();
+  });
 
 describe.each([
   [0.3155, 0.3270, 50, 6500], // 6500k

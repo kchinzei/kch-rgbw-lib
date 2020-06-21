@@ -106,7 +106,17 @@ export class RGBWLED extends CSpaceR implements IRGBWLED {
   }
 
   private updateLEDs(c: CSpace): void {
-    // TODO
+    // Assume that c is already in the gamut
+    if (c.type !== 'xy')
+      c = c.xyY();
+    switch (this.nLED) {
+      case 3:
+      case 4:
+      default:
+        // ToDo
+        // throw new Error("updateLED(): sorry, we will implement");
+    }
+    // ToDo remove when implement all
     this.x = c.x;
     this.y = c.y;
     if (c.type === 'xyY')

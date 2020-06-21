@@ -280,11 +280,24 @@ export function CIEk2y(k: number): number {
   }
 }
 
-export function CIExy2k(xy: CSpace): number {
-  if (xy.type !== 'xy' && xy.type !== 'xyY')
-    throw new Error('CIExy2k() requires a CSpace in xy or xyY');
-  let x = xy.x;
-  let y = xy.y;
+export function CIExy2k(xx: CSpace|number, yy?: number): number {
+  let xy!: CSpace;
+  let x!: number;
+  let y!: number;
+
+  if (typeof(xx) === 'object') {
+    xy = xx;
+    if (xy.type !== 'xy' && xy.type !== 'xyY')
+      throw new Error('CIExy2k() requires a CSpace in xy or xyY');
+    x = xy.x;
+    y = xy.y;
+  } else if (typeof(yy) === 'number') {
+    x = xx;
+    y = yy;
+    xy = new CSpace('xy', [x, y]);
+  } else {
+    throw new Error('CIExy2k() requires a pair of (x, y) or CSpace');
+  }
 
   if (checkCIExy(xy) === false) {
     const nmxy: CSpace = CIEfitxy2List(xy);

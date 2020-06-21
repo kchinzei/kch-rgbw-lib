@@ -60,9 +60,9 @@ export function checkCIExyInList(xy: CSpace, xyList?: CSpace[]): boolean {
     if (xyList[i].type !== 'xy' && xyList[i].type !== 'xyY')
       throw new Error('checkCIExyInList() requires array of CSpace of xy or xyY');
 
-    // Rule 1: Upside vertex.
+    // Rule 1: Upward vertex.
     if (((xyList[i].y <= y) && (xyList[i+1].y > y)) ||
-	// Rule 2: Downside vertex.
+	// Rule 2: Downward vertex.
 	((xyList[i].y >  y) && (xyList[i+1].y <= y))) {
       // Rule 3: When rule 1 & 2 examined, rule 3 is also examined.
       // Rule 4: If vertex is rightside of the point.
@@ -190,7 +190,15 @@ export function CIEnm2y(nm: number): number {
   }
 }
 
-export function CIExy2nm(xy: CSpace): number {
+export function CIExy2nm(x: CSpace|number, y?: number): number {
+  let xy!: CSpace;
+  if (typeof(x) === 'object') {
+    xy = x;
+  } else if (typeof(y) === 'number') {
+    xy = new CSpace('xy', [x, y]);
+  } else {
+    throw new Error('CIExy2nm() requires a pair of (x, y) or CSpace');
+  }
   const ret: CSpace = CIEfitxy2List(xy);
   return ret.q;
 }

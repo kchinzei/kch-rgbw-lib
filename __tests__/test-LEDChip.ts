@@ -45,52 +45,46 @@ test(`${i++}. inistantiate LEDChip by copy constructor`, () => {
 
 test(`${i++}. inistantiate LEDChip by waveLength`, () => {
   expect(() => {
-    const led: LEDChip = new LEDChip('LED_R', 660, 100);
+    const led: LEDChip = new LEDChip('LED_R', { waveLength: 660, maxBrightness: 100 });
     led.brightness = 100;
   }).not.toThrow();
 });
 
 test(`${i++}. inistantiate LEDChip by colorTemp`, () => {
   expect(() => {
-    const led: LEDChip = new LEDChip('LED_W', 5700, 100);
+    const led: LEDChip = new LEDChip('LED_W', { colorTemperature: 5700, maxBrightness: 100 });
     led.brightness = 100;
   }).not.toThrow();
 });
 
-test(`${i++}. inistantiate LEDChip by CIE(x,y)`, () => {
+test(`${i++}. combination of waveLength and LED_W should fail`, () => {
   expect(() => {
-    const led: LEDChip = new LEDChip('LED_G', 0.3, 0.6, 100);
-    led.brightness = 100;
-  }).not.toThrow();
-});
-
-test(`${i++}. instantiate w/ wrong combination of parameters should throw exception`, () => {
-  expect(() => {
-    const led: LEDChip = new LEDChip('LED_B', 100);
+    const led: LEDChip = new LEDChip('LED_W', { waveLength: 660, maxBrightness: 100 });
     led.brightness = 100;
   }).toThrow();
 });
 
-/*
-test(`${i++}. instantiate w/o parameter, then populate using setters`, () => {
+describe.each([
+  [ 'LED_R' ],
+  [ 'LED_G' ],
+  [ 'LED_B' ],
+  [ 'LED_Other' ]
+])('', (typ) => {
+  test(`${i++}. combination of colorTemperature and ${typ} should fail`, () => {
+    expect(() => {
+      const led: LEDChip = new LEDChip(typ as LEDChipTypes, { colorTemperature: 5700, maxBrightness: 100 });
+      led.brightness = 100;
+    }).toThrow();
+  });
+});
+
+
+test(`${i++}. inistantiate LEDChip by CIE(x,y)`, () => {
   expect(() => {
-    const led: LEDChip = new LEDChip();
-    led.setLEDChipType('LED_W');
-    led.setMaxBrightness(1);
-    led.setWaveLength(600);
-    led.setColorTemperature(undefined);
-    led.setColorTemperature(6000);
-    led.setLEDChipType('LED_R');
-    led.setWaveLength(undefined);
-    led.setWaveLength(600);
-    led.setColorTemperature(6000);
-    led.setX(0.2);
-    led.setY(0.7);
-    led.name = 'woo';
-    led.brightness = 0.5;
+    const led: LEDChip = new LEDChip('LED_G', { x: 0.3, y: 0.6, maxBrightness: 100 });
+    led.brightness = 100;
   }).not.toThrow();
 });
-*/
 
 describe.each([
   [ 'LED_R', 'Red',   610,  50, 0.6658,	0.3340, 0, 610],
@@ -99,9 +93,14 @@ describe.each([
   [ 'LED_W', 'White', 6500, 80, 0.3155, 0.3270, 6500, 0 ]
 ])('', (typ, name, a0, maxB, x, y, k, nm) => {
   test(`${i++}. getters should work`, () => {
-    const led: LEDChip = new LEDChip(typ as LEDChipTypes, a0, maxB);
+    let led!: LEDChip;
+    if (typ === 'LED_W')
+      led = new LEDChip(typ as LEDChipTypes, { colorTemperature: a0, maxBrightness: maxB });
+    else
+      led = new LEDChip(typ as LEDChipTypes, { waveLength: a0, maxBrightness: maxB });
     led.brightness = maxB;
     led.name = name;
+
     expect(led.LEDChipType).toBe(typ);
     expect(led.name).toBe(name);
     expect(led.x).toBeCloseTo(x, 4);
@@ -118,19 +117,22 @@ describe.each([
 test(`${i++}. inistantiate abnormal values should truncate.`, () => {
   let ledtype: LEDChipTypes = 'LED_R';
 
-  let led: LEDChip = new LEDChip(ledtype, 650, 0);
+  let led: LEDChip = new LEDChip(ledtype, { waveLength: 650, maxBrightness: 0 });
   expect(led.maxBrightness).toBeCloseTo(1);
   expect(led.colorTemperature).toBe(undefined);
-  led = new LEDChip(ledtype, 100, 1.0); // Too short
+  led = new LEDChip(ledtype, { waveLength: 100, maxBrightness: 1.0 }); // Too short
   expect(led.waveLength).toBeCloseTo(405);
-  led = new LEDChip(ledtype, 800, 1.0); // Too long
+  led = new LEDChip(ledtype, { waveLength: 800, maxBrightness: 1.0 }); // Too long
   expect(led.waveLength).toBeCloseTo(700);
 
+  led = new LEDChip(ledtype, { waveLength: 650, maxBrightness: 1.0, maxW: 0});
+  expect(led.maxW).toBeCloseTo(1);
+
   ledtype = 'LED_W';
-  led = new LEDChip(ledtype, 100, 1.0); // Too low
+  led = new LEDChip(ledtype, { colorTemperature: 100, maxBrightness: 1.0 }); // Too low
   expect(led.waveLength).toBe(undefined);
   expect(led.colorTemperature).toBeCloseTo(1000);
-  led = new LEDChip(ledtype, 30000, 1.0); // Too high
+  led = new LEDChip(ledtype, { colorTemperature: 30000, maxBrightness: 1.0 }); // Too high
   expect(led.colorTemperature).toBeCloseTo(20000);
 
   led.brightness = -1;
@@ -138,6 +140,11 @@ test(`${i++}. inistantiate abnormal values should truncate.`, () => {
   led.brightness = 10;
   expect(led.brightness).toBeCloseTo(1);
 
+  led.maxW = 0;
+  expect(led.maxW).toBeCloseTo(1);
+  led.maxW = 10;
+  expect(led.maxW).toBeCloseTo(10);
+  
   led.name = '';
   expect(led.name).toBe('');
 });

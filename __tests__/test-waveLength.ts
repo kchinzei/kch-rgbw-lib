@@ -85,6 +85,7 @@ describe.each([
     expect(CIExy2nm(c)).toBeCloseTo(nm, -2);
     c = new CSpace('xyY', [x, y, 1]);
     expect(CIExy2nm(c)).toBeCloseTo(nm, -2);
+    expect(CIExy2nm(x, y)).toBeCloseTo(nm, -2);
   });
 });
 
@@ -102,6 +103,12 @@ describe.each([
   });
 });
 
+test(`${i++}. CIExy2nm(): should fail when only one number given`, () => {
+    expect(() => {
+      let ret: number = CIExy2nm(0.5); // wrong! if number given, two numbers necessary
+      console.log(ret);
+    }).toThrow();
+  });
 
 
 

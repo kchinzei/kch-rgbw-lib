@@ -57,9 +57,9 @@ test(`${i++}. Initial values of some properties`, () => {
   expect(l.color.y).toBeCloseTo(0.3270, 4);
 });
 
-const LEDChipAmber: LEDChip     = new LEDChip('LED_Other', 0.38, 0.58, 50, 'Amb');
-const LEDChipTurquoise: LEDChip = new LEDChip('LED_Other', 0.15, 0.40, 70, 'Tur');
-const LEDChipViolet: LEDChip    = new LEDChip('LED_Other', 0.25, 0.05, 5,  'Vio');
+const LEDChipAmber: LEDChip     = new LEDChip('LED_Other', { x: 0.38, y: 0.58, maxBrightness: 50, name: 'Amb' });
+const LEDChipTurquoise: LEDChip = new LEDChip('LED_Other', { x: 0.15, y: 0.40, maxBrightness: 70, name: 'Tur' });
+const LEDChipViolet: LEDChip    = new LEDChip('LED_Other', { x: 0.25, y: 0.05, maxBrightness: 5,  name: 'Vio' });
 
 class idLED extends LEDChip {
   id: number;
