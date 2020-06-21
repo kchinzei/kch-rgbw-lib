@@ -31,18 +31,18 @@ THE SOFTWARE.
   Some implementation of SVD (singular value decomposition) assumes that
   1) size of the matrix to be solved, A [mxn] is  m >=n (more rows than column)
   2) returned singular values do not sorted
-  But svd() in Matlab does not assume so.
-  This helper does like Matlab [U, V, S] = svd(A, 'econ') so that there is no
-  restriction about the dimention, and the singular values and U, V are sorted.
+  But svd() in Matlab does not assume or behave so.
+  This helper does like Matlab [U, V, S] = svd(A, 'econ')
 
   Here we assume svd-js in npmjs.
 */
 
 import { SVD } from 'svd-js';
 
-export function svd_matlab(a: number[][]): {u: number[][]; v: number[][]; q: number[]} {
+// eslint-disable-next-line @typescript-eslint/naming-convention, camelcase
+export function svd_matlab(a: number[][], flag?: string): {u: number[][]; v: number[][]; q: number[]} {
   const b: number[][] = svd_pre(a);
-  const uvq0: {u: number[][]; v: number[][]; q: number[]} = SVD(b, 'f');
+  const uvq0: {u: number[][]; v: number[][]; q: number[]} = SVD(b, (typeof(flag) === 'undefined' ? 'f' : true));
   const uvq1: {u: number[][]; v: number[][]; q: number[]} = svd_post(uvq0);
   if (a.length === b.length)
     return uvq1;
@@ -50,6 +50,7 @@ export function svd_matlab(a: number[][]): {u: number[][]; v: number[][]; q: num
     return {u: uvq1.v, v: uvq1.u, q:uvq1.q};
 }
 
+// eslint-disable-next-line @typescript-eslint/naming-convention, camelcase
 function svd_pre(a: number[][]): number[][] {
   const m = a.length;
   const n = a[0].length;
@@ -66,6 +67,7 @@ function svd_pre(a: number[][]): number[][] {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/naming-convention, camelcase
 function svd_post(uvq: {u: number[][]; v: number[][]; q: number[]}): {u: number[][]; v: number[][]; q: number[]} {
   // Find descending order of q[]
   const id: number[] = Array(uvq.q.length) as number[];
@@ -75,10 +77,10 @@ function svd_post(uvq: {u: number[][]; v: number[][]; q: number[]}): {u: number[
 
   // reorder u, v, q
   reorder(uvq.q, id);
-  for (const uu of uvq.u)
-    reorder(uu, id);
-  for (const vv of uvq.v)
-    reorder(vv, id);
+  for (let i=0; i<uvq.u.length; i++)
+    reorder(uvq.u[i], id);
+  for (let i=0; i<uvq.v.length; i++)
+    reorder(uvq.v[i], id);
   return uvq;
 }
 

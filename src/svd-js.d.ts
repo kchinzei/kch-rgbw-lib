@@ -23,5 +23,6 @@
  */
 
 declare module 'svd-js' {
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   export function SVD(a: number[][], withu?: boolean|'f', withv?: boolean, eps?: number, tol?: number): {q: number[]; u: number[][]; v: number[][]};
 }

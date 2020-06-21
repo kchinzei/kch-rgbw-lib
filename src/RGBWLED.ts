@@ -34,6 +34,7 @@ import { CSpace, CSpaceR } from './CSpace';
 import { checkCIExyInList, CIEfitxy2List } from './waveLength';
 import { LEDChip } from './LEDChip';
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 const D65White: number[] = [ 0.3155, 0.3270, 0 ] ; // D65 White; https://en.wikipedia.org/wiki/SRGB
 
 export interface IRGBWLED {
@@ -54,6 +55,7 @@ export class RGBWLED extends CSpaceR implements IRGBWLED {
   private _maxB: number;
   private _gamutContour: CSpace[];
 
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   get LED(): LEDChip[] { return this._LED; }
   get rLED(): LEDChip { return this.LED[0]; }
   get gLED(): LEDChip { return this.LED[1]; }

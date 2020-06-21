@@ -155,6 +155,7 @@ function makeWaveLengthTable(): CSpace[] {
   return t;
 }
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export function CIEnm2x(nm: number): number {
   nm = checkWaveLength(nm);
   const i = nmIndex(nm);
@@ -173,6 +174,7 @@ export function CIEnm2x(nm: number): number {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export function CIEnm2y(nm: number): number {
   nm = checkWaveLength(nm);
   const i = nmIndex(nm);
@@ -190,6 +192,7 @@ export function CIEnm2y(nm: number): number {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export function CIExy2nm(x: CSpace|number, y?: number): number {
   let xy!: CSpace;
   if (typeof(x) === 'object') {
@@ -209,6 +212,7 @@ export function CIExy2nm(x: CSpace|number, y?: number): number {
   If xyList is omitted, waveLengthTable[] is used, which is the gamut of the chromaticity space.
   checkCIExy(interpotaled point) should be true, but numerical error may exist.
 */
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export function CIEfitxy2List(xy: CSpace, xyList?: CSpace[]): CSpace {
   if (xy.type !== 'xy' && xy.type !== 'xyY')
     throw new Error('CIEfitxy2List() requires a start color in xy or xyY');

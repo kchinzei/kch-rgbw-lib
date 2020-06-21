@@ -91,6 +91,7 @@ export class LEDChip extends CSpaceR implements ILEDChip {
   private _brightness: number;
   private _name: string;
 
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   get LEDChipType(): LEDChipTypes { return this._LEDChipType; }
   get waveLength(): (number | undefined) { return this._waveLength; }
   get colorTemperature(): (number | undefined) { return this._colorTemperature; }
@@ -191,6 +192,8 @@ export class LEDChip extends CSpaceR implements ILEDChip {
   }
 }
 
+/* eslint-disable @typescript-eslint/naming-convention */
+
 // CREE MCE4CT-A2-0000-00A4AAAB1 and measurement found in AN1857 by MicroChip.
 // http://ww1.microchip.com/downloads/jp/AppNotes/jp572250.pdf
 export const LEDChipTypR: LEDChip = new LEDChip('LED_R', { x: 0.6857, y: 0.3143, maxBrightness: 30.6, name: 'Typical R' });
@@ -204,6 +207,8 @@ export const LEDChipEpistarG: LEDChip = new LEDChip('LED_G', { waveLength: 520, 
 export const LEDChipEpistarB: LEDChip = new LEDChip('LED_B', { waveLength: 470, maxBrightness: 1.5, name: 'LC-S5050-04004-RGBW, Epistar' });
 export const LEDChipEpistarWW: LEDChip = new LEDChip('LED_W', { colorTemperature: 2600, maxBrightness: 6.5, name: 'LC-S5050-04004-RGBW, Epistar' });
 export const LEDChipEpistarCW: LEDChip = new LEDChip('LED_W', { colorTemperature: 6500, maxBrightness: 6.5, name: 'LC-S5050-04004-RGBW, Epistar' });
+
+/* eslint-enable @typescript-eslint/naming-convention */
 
 function checkBrightness(b: number, max: number): number {
   if (b < 0) b = 0;

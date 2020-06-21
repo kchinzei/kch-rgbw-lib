@@ -71,12 +71,12 @@ export class CSpace implements ICSpace {
   set s(a: number) { this._a[1] = a; }
   get v(): number { return this._a[2]; }
   set v(a: number) { this._a[2] = a; }
-  get X(): number { return this._a[0]; }
-  set X(a: number) { this._a[0] = a; }
-  get Y(): number { return this.type === 'XYZ'? this._a[1] : this._a[2]; }
-  set Y(a: number) { if (this.type === 'XYZ') this._a[1] = a; else this._a[2] = a; }
-  get Z(): number { return this._a[2]; }
-  set Z(a: number) { this._a[2] = a; }
+  get X(): number { return this._a[0]; } // eslint-disable-line @typescript-eslint/naming-convention
+  set X(a: number) { this._a[0] = a; } // eslint-disable-line @typescript-eslint/naming-convention
+  get Y(): number { return this.type === 'XYZ'? this._a[1] : this._a[2]; } // eslint-disable-line @typescript-eslint/naming-convention
+  set Y(a: number) { if (this.type === 'XYZ') this._a[1] = a; else this._a[2] = a; } // eslint-disable-line @typescript-eslint/naming-convention
+  get Z(): number { return this._a[2]; } // eslint-disable-line @typescript-eslint/naming-convention
+  set Z(a: number) { this._a[2] = a; } // eslint-disable-line @typescript-eslint/naming-convention
   get x(): number { return this._a[0]; }
   set x(a: number) { this._a[0] = a; }
   get y(): number { return this._a[1]; }
@@ -225,6 +225,7 @@ export class CSpace implements ICSpace {
     return tmp;
   }
 
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   public XYZ(): CSpace{
     let tmp: CSpace = new CSpace(this);
     let X = 0;

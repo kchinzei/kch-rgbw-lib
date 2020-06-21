@@ -32,6 +32,7 @@ THE SOFTWARE.
 
 import { LEDChip } from './LEDChip';
 import { CSpace } from './CSpace';
+// eslint-disable-next-line camelcase
 import { svd_matlab } from './svd-helper';
 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-var-requires
 const { transpose, column, diag, multiply, flatten } = require('mathjs');
@@ -75,6 +76,7 @@ export function makeLEDMatrix(lList: LEDChip[]): {a: number[][]; ainv: number[][
   return {a, ainv, nvecs };
 }
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export function LED2XYZ(lList: LEDChip[], aList: number[], a: number[][]): CSpace {
   // Assume a is from lList by makeLEDMatrix(). No size check.
   if (lList.length !== aList.length)
@@ -85,6 +87,7 @@ export function LED2XYZ(lList: LEDChip[], aList: number[], a: number[][]): CSpac
   return new CSpace('XYZ', XYZ);
 }
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export function XYZ2LED(XYZ: CSpace, lList: LEDChip[], ainv: number[][], nvecs: number[][] ): number[] {
   // Assume ainv, nvecs are from lList by makeLEDMatrix(). No size check.
 
@@ -100,6 +103,7 @@ export function XYZ2LED(XYZ: CSpace, lList: LEDChip[], ainv: number[][], nvecs: 
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 function XYZ2LED3(XYZ: CSpace, lList: LEDChip[], ainv: number[][]): number[] {
   // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment
   const aList: number[] = flatten(multiply(ainv, XYZ.a));
@@ -116,12 +120,14 @@ function XYZ2LED3(XYZ: CSpace, lList: LEDChip[], ainv: number[][]): number[] {
   return aList;
 }
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 function XYZ2LED4(XYZ: CSpace, lList: LEDChip[], ainv: number[][], nvec: number[] ): number[] {
   // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment
   const aList: number[] = flatten(multiply(ainv, XYZ.a));
   return aList;
 }
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 function XYZ2LEDx(XYZ: CSpace, lList: LEDChip[], ainv: number[][], nvecs: number[][] ): number[] {
   // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment
   const aList: number[] = flatten(multiply(ainv, XYZ.a));

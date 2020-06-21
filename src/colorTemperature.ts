@@ -248,6 +248,7 @@ function makeColorTemperatureTable() {
   return t;
 }
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export function CIEk2x(k: number): number {
   k = checkColorTemperature(k);
   const i = kIndex(k);
@@ -264,6 +265,7 @@ export function CIEk2x(k: number): number {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export function CIEk2y(k: number): number {
   k = checkColorTemperature(k);
   const i = kIndex(k);
@@ -280,6 +282,7 @@ export function CIEk2y(k: number): number {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export function CIExy2k(xx: CSpace|number, yy?: number): number {
   let xy!: CSpace;
   let x!: number;
@@ -362,6 +365,7 @@ export function CIExy2k(xx: CSpace|number, yy?: number): number {
 
 const linearFade = (r: number) => (r);
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export function CIEfadeout(xy0: CSpace, steps: number, fade?: (r: number) => number): CSpace[] {
   if (xy0.type !== 'xy' && xy0.type !== 'xyY')
     throw new Error('CIEfadeout() requires a start color in xy or xyY');
@@ -386,6 +390,7 @@ export function CIEfadeout(xy0: CSpace, steps: number, fade?: (r: number) => num
   return fadeVals;
 }
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export function CIEfadein(xy0: CSpace, steps: number, fade?: (r: number) => number): CSpace[] {
   // FixMe: fade should be reversed also.
   const fadeArray: CSpace[] = CIEfadeout(xy0, steps, fade);
