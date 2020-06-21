@@ -42,7 +42,7 @@ import { SVD } from 'svd-js';
 
 export function svd_matlab(a: number[][]): {u: number[][]; v: number[][]; q: number[]} {
   const b: number[][] = svd_pre(a);
-  const uvq0: {u: number[][]; v: number[][]; q: number[]} = SVD(b);
+  const uvq0: {u: number[][]; v: number[][]; q: number[]} = SVD(b, 'f');
   const uvq1: {u: number[][]; v: number[][]; q: number[]} = svd_post(uvq0);
   if (a.length === b.length)
     return uvq1;

@@ -23,5 +23,5 @@
  */
 
 declare module 'svd-js' {
-  export function SVD(a: number[][], withu?: boolean, withv?: boolean, eps?: number, tol?: number): {q: number[]; u: number[][]; v: number[][]};
+  export function SVD(a: number[][], withu?: boolean|'f', withv?: boolean, eps?: number, tol?: number): {q: number[]; u: number[][]; v: number[][]};
 }
