@@ -93,7 +93,7 @@ export function XYZ2LED(XYZ: CSpace, lList: LEDChip[], ainv: number[][], nvecs: 
 
   switch (lList.length) {
     case 3:
-      return XYZ2LED3(XYZ, lList, ainv);
+      return XYZ2LED3(XYZ, ainv);
       break;
     case 4:
       return XYZ2LED4(XYZ, lList, ainv, nvecs[0]);
@@ -104,7 +104,7 @@ export function XYZ2LED(XYZ: CSpace, lList: LEDChip[], ainv: number[][], nvecs: 
 }
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
-function XYZ2LED3(XYZ: CSpace, lList: LEDChip[], ainv: number[][]): number[] {
+function XYZ2LED3(XYZ: CSpace, ainv: number[][]): number[] {
   // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment
   const aList: number[] = flatten(multiply(ainv, XYZ.a));
 
@@ -120,11 +120,55 @@ function XYZ2LED3(XYZ: CSpace, lList: LEDChip[], ainv: number[][]): number[] {
   return aList;
 }
 
+/*
+  Solution of lList.length = 4, See Eqs. 3.0.1 to 3.2.7 in "Determine RGBW LED PWM from CIE Chromaticity"
+  Number in comments are Eqs. in it.
+ */
 // eslint-disable-next-line @typescript-eslint/naming-convention
-function XYZ2LED4(XYZ: CSpace, lList: LEDChip[], ainv: number[][], nvec: number[] ): number[] {
+function XYZ2LED4(XYZ: CSpace, lList: LEDChip[], ainv: number[][], n: number[] ): number[] {
   // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment
-  const aList: number[] = flatten(multiply(ainv, XYZ.a));
-  return aList;
+  const b: number[] = flatten(multiply(ainv, XYZ.a)); // 1.3.12
+
+  // Find possible range of beta
+  let betaMin: number = Number.NEGATIVE_INFINITY;
+  let betaMax: number = Number.POSITIVE_INFINITY;
+  let nW = 0;
+  for (let i=0; i< 4; i++) {
+    if (Math.abs(n[i]) > Number.MIN_VALUE) {
+      // eslint-disable-next-line @typescript-eslint/naming-convention, camelcase
+      const b_n = - b[i] / n[i];
+      if (betaMin < b_n) betaMin = b_n; // 3.0.2
+      if (betaMax > 1/n[i] + b_n) betaMax = 1/n[i] + b_n; // 3.0.3
+      nW += n[i]*lList[i].maxW; // 3.0.6
+    }
+  }
+
+  // choose beta
+  let beta = 0;
+  if (betaMin < betaMax) {
+    if (nW > 0)
+      beta = betaMin; // 3.0.6 upper
+    else
+      beta = betaMax; // 3.0.6 lower
+  } else {
+    beta = betaMin; // Suction 3.1
+  }
+
+  // Solve
+  for (let i=0; i<4; i++)
+    b[i] += beta*n[i];
+
+  // Need normalize?
+  let bMax = 0;
+  for (const bi of b) {
+    if (bi > bMax) bMax = bi;
+  }
+  if (bMax > 1) {
+    for (let i=0; i<b.length; i++)
+      b[i] /= bMax;
+  }
+
+  return b;
 }
 
 // eslint-disable-next-line @typescript-eslint/naming-convention

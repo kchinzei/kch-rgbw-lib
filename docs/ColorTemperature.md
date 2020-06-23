@@ -26,6 +26,8 @@ color temperature in K.
 
 ##### CIExy2k(xy: CSpace): number
 
+##### CIExy2k(x: number, y: number): number
+
 Return correlated color temperature (CCT) corresponding to CIE (x, y).
 `xy` should be in 'xy' or 'xyY' of `CSpaceTypes`.
 Other types will throw an exception.

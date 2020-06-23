@@ -26,6 +26,8 @@ Return CIE-x or CIE-y value corresponding to the given wavelength in nm.
 
 ##### function CIExy2nm(xy: CSpace): number
 
+##### function CIExy2nm(x: number, y: number): number
+
 Return wavelength that corresponds to CIE (x, y), in nanometer [nm].
 When (x, y) is not on the CIE 1931 curve, it returns the projected point to the
 curve. Note that the returned wavelength is meaningful only when (x, y)
@@ -35,11 +37,13 @@ is on or the curve. It internally calls CIEfitxy2List().
 
 Examine if a color `xy` is within the polygon given by `xyList`.
 If `xyList` is omitted, the CIE 1931 gamut is used.
-`checkCIExyInList()` can be used to check if a color is in the gamut represented by a combination of R-G-B LEDs (as figure below).
+`checkCIExyInList()` can be used to check if a color is in the gamut represented by `xyList`. If you provide a CSpace list for R-G-B LEDs, you can use `checkCIExyInList()` to check if a color is in the RGB range.
 ![Gamut_sRGB](./figs/Gamut_sRGB.png "sRGB Gamut")
 
 `xy` and `xyList` should be in 'xy' or 'xyY' of `CSpaceTypes`.
 Other types will throw an exception.
+Order of entries in xyList can be both clockwise and counter clockwise.
+
 `checkCIExyInList()`` uses an algorithm in https://www.nttpc.co.jp/technology/number_algorithm.html.
 
 `xyList` is an array of CSpace, each element represents a vertex of the polygon.

@@ -147,7 +147,7 @@ export class LEDChip extends CSpaceR implements ILEDChip {
         } else {
           throw new Error('Class LEDChip: Unexpected contructor parameters, wrong combination of LEDChipTypes and LEDChipDefByXXXX');
         }
-        super('xy', [x, y, checkNonNegative(arg.maxBrightness)]);
+        super('xyY', [x, y, checkNonNegative(arg.maxBrightness)]);
         this._LEDChipType = typeOrLED;
         this._waveLength = w;
         this._colorTemperature = t;

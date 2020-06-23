@@ -38,28 +38,29 @@ We have $n \geq 3$ color sources (LEDs) with chromaticity $(x_i, y_i)$ and maxim
 
 Here, we set our goal of optimization as the following:
 \begin{enumerate}
+  \item\label{I_max_luminance} Under the physical constraint $0 \leq Y \leq \alpha_1 Y_1 + \ldots + \alpha_n Y_n$,
   \item Minimize the error of color to represent,
-  \item\label{I_inside_gamut} If $(x, y)$ is outside the gamut of $(x_i, y_i)$, nearest color in the gamut is used,
+  \item\label{I_inside_gamut} If $(x, y)$ is outside the gamut of color source, nearest color in it is used,
   \item\label{I_min_energy} When possible, minimize energy consumption,
-  \item\label{I_small_alpha} When possible, set $\alpha_i$ to null when it's very small,
-  \item\label{I_max_luminance} Under the physical constraint $Y \leq \alpha_1 Y_1 + \ldots + \alpha_n Y_n$.
+%  \item\label{I_lifetime} When possible, average turn-on time of LEDs to equalize LEDs lifetime,
+  \item\label{I_small_alpha} When possible, set $\alpha_i$ to null when it's very small.
 \end{enumerate}
 
 \begin{itemize}
-  \item Condition \ref{I_inside_gamut} can be achieved by projecting the input to the contour of the gamut.
+  \item Condition \ref{I_inside_gamut} can be achieved by projecting the input to the gamut contour.
   \item Condition \ref{I_min_energy}, energy consumption is obtained as
   \begin{equation}
     \label{E_min_energy}
     E = \sum_1^n \alpha_i W_i
   \end{equation}
-  where $W_i$ is the power (W) of each LED at the maximum luminosity $Y_i$.
-  \item Condition \ref{I_small_alpha} is preferable to avoid gitter of low PWM output, and high sensitivity of human eyes against such gitter.
+  where $W_i$ is the power (W) of each LED at the maximum luminosity.
+  \item Condition \ref{I_small_alpha} is preferable to avoid gitter at low PWM output.
 \end{itemize}
 
-It is a typical linear programming (LP) problem. When $n=3$, e.g. R-G-B color sources only, it's a deterministic and not an optimization problem. And when $n=4$, e.g. R-G-B-W LEDs, there is only one parameter to optimize, which makes the problem as simple as we don't need to use sophisticated LP solver. We first derive a general description of the problem and solve it for $n=3$, $n=4$ and $n \geq 5$ cases.
+It is a typical linear programming (LP) problem. When $n=3$, e.g. R-G-B color sources only, it's a deterministic and not an optimization problem. And when $n=4$, e.g. R-G-B-W LEDs, there is only one parameter to optimize, which makes the problem as simple as we don't need to use sophisticated LP solver. We first derive a general description of the problem and solve it for $n=3$, $n=4$ and $n > 4$ cases.
 
 \subsection{Description of problem}
-Composite of color source in XYZ color space $(X, Y, Z)$ can be obtained as a simple sum of each term. Therefore we use XYZ color space. In XYZ color space, our problem is to determine $\boldsymbol{\alpha} = [\alpha_1 \ldots \alpha_n]$ which gives an equation between input color $[X, Y, Z]^T$ and color source $[X_{i}, Y_{i}, Z_{i}]^T, i=1 \ldots n$;
+We use XYZ color space because a composite of color source in XYZ color space can be obtained as a simple sum of each term.  In XYZ color space, our problem is to determine $\boldsymbol{\alpha} = [\alpha_1 \ldots \alpha_n]$ which gives an equation between input color $[X, Y, Z]^T$ and color source $[X_{i}, Y_{i}, Z_{i}]^T$, $i=1 \ldots n$;
 
 \begin{equation}
   \label{E_XYZcomposite}
@@ -106,11 +107,12 @@ Using matrix representation, Eq. \ref{E_XYZcomposite} is written as
   \left[ \boldsymbol{\alpha} \right]
 \end{equation}
 
+\noindent
 where
 
 \begin{eqnarray}
   \left[ \boldsymbol{X} \right] &=&
-  \left[ X, Y, Z \right]^T \\
+  \left[ X, Y, Z \right]^T \label{E_XYZ^T} \\
   \left[ \boldsymbol{A} \right] &=&
   \left[
     \begin{array}{ccc}
@@ -139,6 +141,7 @@ Our goal is to solve Eq. \ref{E_X=AY} for $ \boldsymbol{\alpha} = [\alpha_1 \ldo
   \Bigg[ \boldsymbol{V}^T \Bigg]
 \end{equation}
 
+\noindent
 where $ \boldsymbol{A} $ is $ 3 \times n $,
 $ \boldsymbol{U} $ is $ 3 \times 3 $,
 $ [\omega_1 \ddots \omega_3, 0 \ldots 0] $ is $ 3 \times n $,
@@ -159,6 +162,7 @@ $ \boldsymbol{A}^{-1} $ is obtained by
   \Bigg[ \boldsymbol{U}^T \Bigg]
 \end{equation}
 
+\noindent
 where $ \boldsymbol{V}_{1-3} $ is the first 3 columns of $ \boldsymbol{V} $, those correspond to $ \omega_1 \ldots \omega_3 $. Using $ \boldsymbol{A}^{-1} $, one obtains
 
 \begin{equation}
@@ -177,15 +181,21 @@ By the way, what about the rest of columns in $ \boldsymbol{V} $? They are null 
   \left[ \boldsymbol{X} \right]
   + \beta_4 \boldsymbol{n}_4 + \ldots + \beta_n \boldsymbol{n}_n
 \end{equation}
-
-where $ \beta_4 \ldots \beta_n $ are arbitrary numbers. By choosing these using other constraint, one can obtain the optimum solutions.
+\noindent
+where $ \beta_4 \ldots \beta_n $ are arbitrary numbers. By choosing these using other constraints, one can obtain the optimum solution.
 
 
 
 
 \section{Solution of $n=3$ case}
 
-When $n=3$, Eq. \ref{E_Y=A-1X} gives a deterministic solution. No optimization. However, one should be careful that the obtained $ \alpha_i $ are physically meaningful, i.e., $ 0 \leq \alpha_i \leq 1 $. This can happen when the input color $[X]$ is out of the gamut defined by the color sources. When $ \alpha_i < 0$, it should be truncated to 0. In this case, the color has certain error.
+When $n=3$, Eq. \ref{E_Y=A-1X} gives a deterministic solution. No optimization. However, the obtained $ \alpha_i $ should be physically meaningful, i.e., $ 0 \leq \alpha_i \leq 1 $. It can be out of range when
+\begin{itemize}
+  \item Input color $[X]$ is out of the gamut defined by the color sources,
+  \item $Y$ of $[X]$ is greater (brighter) than the color sources.
+\end{itemize}
+\noindent
+When $ \alpha_i < 0$, it should be truncated to 0. In this case, the color has certain error.
 
 When $ \alpha_i > 1 $, All $\alpha$s should be normalized by the largest $\alpha$. This way the color will be correctly obtained, but it will be darker than expected.
 
@@ -204,15 +214,17 @@ When $n=4$, Eq. \ref{E_Y=A-1X+n} is modified as
   + \beta_4 \boldsymbol{n}_4
 \end{equation}
 
+\noindent
 Parameter $\beta_4$ will be determined by the assumptions in section \ref{s_assumptions}.
-Solving for $\beta$ (hereafter omitting '4'), we obtain the following conditions.
+Since it is always $ 0 \leq \alpha_i \leq 1$, by solving it for $\beta$ (hereafter omitting '4'), we obtain the following conditions.
 \begin{eqnarray}
   \beta &\geq& - \frac{b_i}{n_i} \;\;\;\; i = 1 \ldots 4, \text{ if \(n \neq 0\)} \label{E_betamin} \\
   \beta &\leq& \frac{1 - b_i}{n_i} \;\;\;\; i = 1 \ldots 4, \text{ if \(n \neq 0\)} \label{E_betamax} \\
-  E &=& \sum_1^4 (\beta n_i + b_i) W_i \to min \label{E_energy_n4}
+  E &=& \sum_{i=1}^4 (\beta n_i + b_i) W_i \to min \label{E_energy_n4}
 \end{eqnarray}
 
-where $ [b_1,\, \ldots\, , b_4]^T = [ \boldsymbol{A} ]^{-1} [\boldsymbol{X}] $, $n_i$ are the elements of $\boldsymbol{n}$. Eq. \ref{E_energy_n4} is from Eq. \ref{E_min_energy}. Finding the largest and smallest values of the right hand side of Eqs. \ref{E_betamin} and \ref{E_betamax}, denoted as $\beta_{}$ and $\beta_{max}$, Eqs. \ref{E_betamin} and \ref{E_betamax} are rewritten as
+\noindent
+where $ [b_1,\, \ldots\, , b_4]^T = [ \boldsymbol{A} ]^{-1} [\boldsymbol{X}] $, $n_i$ are the elements of $\boldsymbol{n}$. Eq. \ref{E_energy_n4} is from Eq. \ref{E_min_energy}. Finding the largest and smallest values of the right hand side of Eqs. \ref{E_betamin} and \ref{E_betamax}, denoted as $\beta_{min}$ and $\beta_{max}$, Eqs. \ref{E_betamin} and \ref{E_betamax} are rewritten as
 
 \begin{equation}
   \beta_{min} \leq \beta \leq \beta_{max}
@@ -222,10 +234,16 @@ Since Eq. \ref{E_energy_n4} is rewritten as $E = s_1\beta + s_2$, here $s_1$ and
 
 \begin{equation}
     \beta = \begin{cases}
-      \beta_{min}  & \text{if \(s_1 = \sum_0^4 n_i W_i > 0\)} \\
+      \beta_{min}  & \text{if \(s_1 = \sum_1^4 n_i W_i > 0\)} \\
       \beta_{max}  & \text{else}
   \end{cases}
 \end{equation}
+
+\subsection{When $\beta$ is not determined}
+
+When $\beta_{min} > \beta_{max}$, there is no possible answer. This can happen when $Y$ in Eq. \ref{E_XYZ^T} is greater (brighter) than the color source's capacity. When it happens, since Eq. \ref{E_betamin} cannot compromise, set $\beta$ to $\beta_{min}$ and normalize the largest $\alpha_i$ to be 1.
+
+\subsection{When $\alpha_i$ is small}
 
 To implement the assumption \ref{I_small_alpha} in section \ref{s_assumptions}, you introduce allowance of small $\alpha$, $\alpha_\varepsilon$, and exchange Eq. \ref{E_betamin} as
 
@@ -233,7 +251,7 @@ To implement the assumption \ref{I_small_alpha} in section \ref{s_assumptions}, 
   \beta \geq \frac{\alpha_\varepsilon - b_i}{n_i}
 \end{equation}
 
-But this may result in $\beta_{min} > \beta_{max}$, where no possible answer found. When this happens, you need to relax the constraint by $\alpha_\varepsilon$. The easiest is to go back to Eq. \ref{E_betamin}.
+But this may also result in $\beta_{min} > \beta_{max}$. When it is the case, you need to relax the constraint by $\alpha_\varepsilon$. The easiest is to go back to Eq. \ref{E_betamin}.
 
 
 
