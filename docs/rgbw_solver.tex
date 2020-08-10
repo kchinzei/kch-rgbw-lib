@@ -40,7 +40,7 @@ This article\footnote{To cite, please refer to https://github.com/kchinzei/kch-r
 Obtaining accurate colors by mixing R-G-B color sources has been utilized as color displays since 1950s. As various colors are available by LED, recent topics are solutions of color composite with additional color sources typically for OLED applications \cite{Chi2011, Lee2014}. Usually white light sources are used as an additional light source \cite{AN1562, Chi2011, Lee2014}. For display purposes additional colors other than R-G-B have been also used to expand the possible color ranges (gamut)\cite{Wikipedia_multicolor}. Sharp once added yellow in Aquos flat-panel TV, but they initially researched 5-primary color display \cite{Sharp2011}. Amber \cite{AN2026}, turquoise, and violet can be other colors to expand the gamut.
 
 \subsection{Given parameters and assumptions}\label{s_assumptions}
-We have $N \geq 3$ color sources (LEDs) with chromaticity $(x_i, y_i)$ and maximum luminosity $Y_i$, where $i=1 \ldots N$. Our problem is to find the optimum composite output ratio (PWM output) $\boldsymbol{\alpha} = [\alpha_1 \ldots \alpha_N]^T$ where $0 \leq \alpha_i \leq 1$ to represent a given color input with chromaticity $(x, y)$ and luminosity $Y$.
+We have $N \geq 3$ color sources (LEDs) with chromaticity $(x_i, y_i)$ and maximum luminance $Y_i$, where $i=1 \ldots N$. Our problem is to find the optimum composite output ratio (PWM output) $\boldsymbol{\alpha} = [\alpha_1 \ldots \alpha_N]^T$ where $0 \leq \alpha_i \leq 1$ to represent a given color input with chromaticity $(x, y)$ and luminance $Y$.
 
 Here, we set our goal of optimization as the following:
 \begin{enumerate}
@@ -53,7 +53,7 @@ Here, we set our goal of optimization as the following:
     \label{E_min_energy}
     E = \sum_1^N \alpha_i W_i
   \end{equation}
-  where $W_i$ is the power of each LED at the maximum luminosity.
+  where $W_i$ is the power of each LED at the maximum luminance.
   \item\label{I_lifetime} When possible, average turn-on time of LEDs to equalize LEDs lifetime,
   \item\label{I_small_alpha} When possible, set $\alpha_i$ to null when it's very small.
   It is preferable to avoid jitter at low PWM output.

@@ -2,7 +2,7 @@
 
 RGB/RGBW LED class library in typescript. It provides following classes and functions,
 
-- Composite LED class `RGBWLED` for multi-color LED. In addition to R-G-B (3 LEDs), R-G-B-W (4 LEDs), it can have **unlimited number of LEDs**.
+- Composite LED class `RGBWLED` for multi-color LED. In addition to R-G-B (3 LEDs), R-G-B-W (4 LEDs), it can have **unlimited many number of LEDs**.
 - Mathematically clear solution for many-LED problem.
 - Conversions between
   - Composite LED color <=> Each LEDs ratio.
@@ -11,9 +11,7 @@ RGB/RGBW LED class library in typescript. It provides following classes and func
   - Wavelength <=> CIE
 - Typical RGB LED properties
 
-It is intended to use with
-[homebridge-raspi-rgbw-led](https://github.com/kchinzei/homebridge-raspi-rgbw-led)
-project.
+It is intended to use with [homebridge-raspi-rgbw-led](https://github.com/kchinzei/homebridge-raspi-rgbw-led) project.
 
 ## System Requirements
 
