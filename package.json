@@ -1,6 +1,6 @@
 {
   "name": "kch-rgbw-lib",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "RGB/RGBW LED class library",
   "main": "dist/index.js",
   "scripts": {
@@ -19,7 +19,8 @@
   },
   "keywords": [
     "LED",
-    "RGB/HSB/CIE",
+    "Many-color LED",
+    "RGB/HSV/CIE",
     "Color temperature",
     "Wavelength"
   ],
@@ -32,7 +33,12 @@
     }
   ],
   "bundleDependencies": false,
-  "dependencies": {},
+  "dependencies": {
+    "mathjs": "^7.0.0",
+    "svd-js": "^1.1.0",
+    "linear-program-parser": "^1.0.11",
+    "linear-program-solver": "^1.1.0"
+  },
   "deprecated": false,
   "devDependencies": {
     "@types/jest": "^25.2.1",
@@ -47,7 +53,7 @@
     "agh.sprintf": "^0.0.11"
   },
   "engines": {
-    "node": ">= 6.4.0"
+    "node": ">= 10.20.0"
   },
   "homepage": "https://github.com/kchinzei/kch-rgbw-lib",
   "repository": {

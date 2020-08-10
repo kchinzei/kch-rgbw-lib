@@ -50,7 +50,7 @@ export function checkCIExyInList(xy: CSpace, xyList?: CSpace[]): boolean {
     xyList = waveLengthTable;
   }
 
-  // If (x,y) is inside xyList.
+  // If (x,y) is inside of poligon formed by xyList.
   // the crossing number algorithm.
   // Point near the border of xyList may incorrectly assessed.
   // Translated from https://www.nttpc.co.jp/technology/number_algorithm.html
@@ -288,6 +288,8 @@ export function CIEfitxy2List(xy: CSpace, xyList?: CSpace[]): CSpace {
     If both are extrapolation, smaller abs(t) is preferable.
   */
   const ret: CSpace = new CSpace(xyList[iMin]);
+  if (xyList !== waveLengthTable)
+    ret.q = xy.q;
   let t0: number = t[0];
   let i0 = iMins[0][0];
   let i1 = iMins[0][1];

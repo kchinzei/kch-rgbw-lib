@@ -51,14 +51,14 @@ export type LEDChipTypes =
 
 export type LEDChipDefByWaveLength = {
   waveLength: number;
-  maxBrightness: number;
+  maxLuminance: number;
   maxW?: number;
   name?: string;
 };
 
 export type LEDChipDefByColorTemperature = {
   colorTemperature: number;
-  maxBrightness: number;
+  maxLuminance: number;
   maxW?: number;
   name?: string;
 };
@@ -66,7 +66,7 @@ export type LEDChipDefByColorTemperature = {
 export type LEDChipDefByCIExy = {
   x: number;
   y: number;
-  maxBrightness: number;
+  maxLuminance: number;
   maxW?: number;
   name?: string;
 };
@@ -75,7 +75,7 @@ export interface ILEDChip {
   readonly LEDChipType: LEDChipTypes;
   readonly waveLength: (number | undefined);
   readonly colorTemperature: (number | undefined);
-  readonly maxBrightness: number;
+  readonly maxLuminance: number;
   maxW: number;
   readonly x: number;
   readonly y: number;
@@ -97,12 +97,12 @@ export class LEDChip extends CSpaceR implements ILEDChip {
   get colorTemperature(): (number | undefined) { return this._colorTemperature; }
   get maxW(): number { return this._maxW; }
   set maxW(w: number) { this._maxW = checkNonNegative(w); }
-  get maxBrightness(): number { return super.q; }
+  get maxLuminance(): number { return super.q; }
   get x(): number { return super.x; }
   get y(): number { return super.y; }
   get brightness(): number { return this._brightness; }
   set brightness(b: number) {
-    this._brightness = checkBrightness(b, this.maxBrightness);
+    this._brightness = checkBrightness(b, this.maxLuminance);
   }
   get name(): string { return this._name; }
   set name(n: string) { this._name = n; }
@@ -147,7 +147,7 @@ export class LEDChip extends CSpaceR implements ILEDChip {
         } else {
           throw new Error('Class LEDChip: Unexpected contructor parameters, wrong combination of LEDChipTypes and LEDChipDefByXXXX');
         }
-        super('xyY', [x, y, checkNonNegative(arg.maxBrightness)]);
+        super('xyY', [x, y, checkNonNegative(arg.maxLuminance)]);
         this._LEDChipType = typeOrLED;
         this._waveLength = w;
         this._colorTemperature = t;
@@ -196,17 +196,17 @@ export class LEDChip extends CSpaceR implements ILEDChip {
 
 // CREE MCE4CT-A2-0000-00A4AAAB1 and measurement found in AN1857 by MicroChip.
 // http://ww1.microchip.com/downloads/jp/AppNotes/jp572250.pdf
-export const LEDChipTypR: LEDChip = new LEDChip('LED_R', { x: 0.6857, y: 0.3143, maxBrightness: 30.6, name: 'Typical R' });
-export const LEDChipTypG: LEDChip = new LEDChip('LED_G', { x: 0.2002, y: 0.6976, maxBrightness: 67.2, name: 'Typical G' });
-export const LEDChipTypB: LEDChip = new LEDChip('LED_B', { x: 0.1417, y: 0.0618, maxBrightness: 8.2,  name: 'Typical B' });
-export const LEDChipTypW: LEDChip = new LEDChip('LED_W', { x: 0.3816, y: 0.3678, maxBrightness: 80.0, name: 'Typical W' });
+export const LEDChipTypR: LEDChip = new LEDChip('LED_R', { x: 0.6857, y: 0.3143, maxLuminance: 30.6, name: 'Typical R' });
+export const LEDChipTypG: LEDChip = new LEDChip('LED_G', { x: 0.2002, y: 0.6976, maxLuminance: 67.2, name: 'Typical G' });
+export const LEDChipTypB: LEDChip = new LEDChip('LED_B', { x: 0.1417, y: 0.0618, maxLuminance: 8.2,  name: 'Typical B' });
+export const LEDChipTypW: LEDChip = new LEDChip('LED_W', { x: 0.3816, y: 0.3678, maxLuminance: 80.0, name: 'Typical W' });
 
 // These values are from RGBW Chip LC-S5050-04004-RGBW, Epistar
-export const LEDChipEpistarR: LEDChip = new LEDChip('LED_R', { waveLength: 625, maxBrightness: 2.5, name: 'LC-S5050-04004-RGBW, Epistar' });
-export const LEDChipEpistarG: LEDChip = new LEDChip('LED_G', { waveLength: 520, maxBrightness: 3.5, name: 'LC-S5050-04004-RGBW, Epistar' });
-export const LEDChipEpistarB: LEDChip = new LEDChip('LED_B', { waveLength: 470, maxBrightness: 1.5, name: 'LC-S5050-04004-RGBW, Epistar' });
-export const LEDChipEpistarWW: LEDChip = new LEDChip('LED_W', { colorTemperature: 2600, maxBrightness: 6.5, name: 'LC-S5050-04004-RGBW, Epistar' });
-export const LEDChipEpistarCW: LEDChip = new LEDChip('LED_W', { colorTemperature: 6500, maxBrightness: 6.5, name: 'LC-S5050-04004-RGBW, Epistar' });
+export const LEDChipEpistarR: LEDChip = new LEDChip('LED_R', { waveLength: 625, maxLuminance: 2.5, name: 'LC-S5050-04004-RGBW, Epistar' });
+export const LEDChipEpistarG: LEDChip = new LEDChip('LED_G', { waveLength: 520, maxLuminance: 3.5, name: 'LC-S5050-04004-RGBW, Epistar' });
+export const LEDChipEpistarB: LEDChip = new LEDChip('LED_B', { waveLength: 470, maxLuminance: 1.5, name: 'LC-S5050-04004-RGBW, Epistar' });
+export const LEDChipEpistarWW: LEDChip = new LEDChip('LED_W', { colorTemperature: 2600, maxLuminance: 6.5, name: 'LC-S5050-04004-RGBW, Epistar' });
+export const LEDChipEpistarCW: LEDChip = new LEDChip('LED_W', { colorTemperature: 6500, maxLuminance: 6.5, name: 'LC-S5050-04004-RGBW, Epistar' });
 
 /* eslint-enable @typescript-eslint/naming-convention */
 

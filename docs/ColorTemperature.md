@@ -21,8 +21,7 @@ import { CIEk2x, CIEk2y, CIExy2k, CIEfadeout, CIEfadein } from 'kch-rgbw-lib';
 
 ##### CIEk2y(k: number): number
 
-Return CIE-x or CIE-y value of back body corresponding to the given
-color temperature in K.
+Return CIE-x or CIE-y value of black body corresponding to the given color temperature in K.
 
 ##### CIExy2k(xy: CSpace): number
 

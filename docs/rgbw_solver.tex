@@ -1,66 +1,70 @@
-\documentclass[dvipdfmx,uplatex]{article}
+\documentclass[dvipdfmx,uplatex,a4paper]{article}
 \def\vector#1{\mbox{\boldmath $#1$}}
+\usepackage[hiresbb]{graphicx}
 \usepackage{amsmath}
 \usepackage{amssymb}
-\usepackage[hiresbb]{graphicx}
 \usepackage{ascmac}
-\usepackage{siunitx}
-\usepackage{float}
-\usepackage{tikz}
-\usepackage{circuitikz}
-\usepackage{listings}
 \usepackage{braket}
+\usepackage{circuitikz}
+\usepackage{cite}
+\usepackage{comment}
+\usepackage{float}
+\usepackage{listings}
+\usepackage{nameref}
+\usepackage{siunitx}
+\usepackage{tikz}
+\usepackage[version=3]{mhchem}
+
 \usepackage[colorlinks=true, bookmarks=true,
 bookmarksnumbered=true, bookmarkstype=toc, linkcolor=blue,
 urlcolor=blue, citecolor=blue]{hyperref}
-\usepackage[version=3]{mhchem}
+
 \makeatletter
  \renewcommand{\theequation}{
    \thesubsection.\arabic{equation}}
   \@addtoreset{equation}{section}
 \makeatother
-\title{Determine RGBW LED PWM from CIE Chromaticity}
+
+\title{Solve RGB+ LEDs PWM from Chromaticity}
 \author{CHINZEI, Kiyoyuki}
 \date{\today}
-\begin{document}
+\begin{doÍcument}
 \maketitle
 
 \begin{abstract}
-This article is a private note to develop \lstinline$kch-rgbw-lib$, available in \href{https://github.com/kchinzei/kch-rgbw-lib}{github} and \href{https://www.npmjs.com/package/kch-rgbw-lib}{npm}. \lstinline$kch-rgbw-lib$ is written in typescript, its main functions include color space conversions between HSV, RGB, XYZ and xyY, and calculation of color mixing. This article gives a general solution of multi-number (more than RGB) LEDs to represent different colors used in \lstinline$kch-rgbw-lib$. It is not intended to carry new, accurate, or most efficient ideas. This document is granted under MIT License.
+This article\footnote{To cite, please refer to https://github.com/kchinzei/kch-rgbw-lib/docs/rgbw\_solver.pdf} is a private note to develop \texttt{kch-rgbw-lib}, a TypeScript library in \href{https://github.com/kchinzei/kch-rgbw-lib}{github} and \href{https://www.npmjs.com/package/kch-rgbw-lib}{npm}. \texttt{Kch-rgbw-lib} provides classes and functions for multicolor LED, including color space conversions between HSV, RGB, XYZ and xyY and calculation of accurate color composition. This article gives a general solution of multi-number (more than R-G-B) LEDs to represent composite colors. It is not intended to carry new, comprehensive, or most efficient ideas. This document is granted under MIT License.
 \end{abstract}
 
 \section{Define the Problem}
 \subsection{Past works}\label{s_intro}
-Obtaining accurate color by mixing RGB color sources has been utilized as color displays since 1950s. As various colors are available by LED, recent topics are solution to expand additional colors or light source typically for OLED applications \cite{Chi2011, Lee2014}. Usually while light sources are used as an additional light source \cite{AN1562, Chi2011, Lee2014}. For display purposes colors other than RGB have been also used to expand the possible color ranges\cite{Wikipedia_multicolor}. Sharp once added yellow in Aquos flat-panel TV, but they researched 5-primary color display \cite{Sharp2011}. Amber \cite{AN2026}, turquoise, and violet can be other colors to expand the gamut.
+Obtaining accurate colors by mixing R-G-B color sources has been utilized as color displays since 1950s. As various colors are available by LED, recent topics are solutions of color composite with additional color sources typically for OLED applications \cite{Chi2011, Lee2014}. Usually white light sources are used as an additional light source \cite{AN1562, Chi2011, Lee2014}. For display purposes additional colors other than R-G-B have been also used to expand the possible color ranges (gamut)\cite{Wikipedia_multicolor}. Sharp once added yellow in Aquos flat-panel TV, but they initially researched 5-primary color display \cite{Sharp2011}. Amber \cite{AN2026}, turquoise, and violet can be other colors to expand the gamut.
 
 \subsection{Given parameters and assumptions}\label{s_assumptions}
-We have $n \geq 3$ color sources (LEDs) with chromaticity $(x_i, y_i)$ and maximum luminosity $Y_i$, where $i=1 \ldots n$. Our problem is to find the optimum PWM output $\boldsymbol{\alpha} = [\alpha_1 \ldots \alpha_n]^T$ where $0 \leq \alpha_i \leq 1$ to represent a given color input with chromaticity $(x, y)$ and luminosity $Y$.
+We have $N \geq 3$ color sources (LEDs) with chromaticity $(x_i, y_i)$ and maximum luminosity $Y_i$, where $i=1 \ldots N$. Our problem is to find the optimum composite output ratio (PWM output) $\boldsymbol{\alpha} = [\alpha_1 \ldots \alpha_N]^T$ where $0 \leq \alpha_i \leq 1$ to represent a given color input with chromaticity $(x, y)$ and luminosity $Y$.
 
 Here, we set our goal of optimization as the following:
 \begin{enumerate}
-  \item\label{I_max_luminance} Under the physical constraint $0 \leq Y \leq \alpha_1 Y_1 + \ldots + \alpha_n Y_n$,
-  \item Minimize the error of color to represent,
-  \item\label{I_inside_gamut} If $(x, y)$ is outside the gamut of color source, nearest color in it is used,
-  \item\label{I_min_energy} When possible, minimize energy consumption,
-%  \item\label{I_lifetime} When possible, average turn-on time of LEDs to equalize LEDs lifetime,
-  \item\label{I_small_alpha} When possible, set $\alpha_i$ to null when it's very small.
-\end{enumerate}
-
-\begin{itemize}
-  \item Condition \ref{I_inside_gamut} can be achieved by projecting the input to the gamut contour.
-  \item Condition \ref{I_min_energy}, energy consumption is obtained as
+  \item\label{I_max_luminance} Under physical constraint $0 \leq Y \leq  Y_1 + \ldots + Y_N$,
+  \item\label{I_solution} Obtain exact composite color to represent $(x, y, Y)$.
+  \item\label{I_inside_gamut} If $(x, y)$ is outside the gamut of color source, the nearest color in it is used.
+  It can be achieved by projecting the input to the gamut contour.
+  \item\label{I_min_energy} When possible, minimize energy consumption $E$, \\
   \begin{equation}
     \label{E_min_energy}
-    E = \sum_1^n \alpha_i W_i
+    E = \sum_1^N \alpha_i W_i
   \end{equation}
-  where $W_i$ is the power (W) of each LED at the maximum luminosity.
-  \item Condition \ref{I_small_alpha} is preferable to avoid gitter at low PWM output.
-\end{itemize}
+  where $W_i$ is the power of each LED at the maximum luminosity.
+  \item\label{I_lifetime} When possible, average turn-on time of LEDs to equalize LEDs lifetime,
+  \item\label{I_small_alpha} When possible, set $\alpha_i$ to null when it's very small.
+  It is preferable to avoid jitter at low PWM output.
+\end{enumerate}
 
-It is a typical linear programming (LP) problem. When $n=3$, e.g. R-G-B color sources only, it's a deterministic and not an optimization problem. And when $n=4$, e.g. R-G-B-W LEDs, there is only one parameter to optimize, which makes the problem as simple as we don't need to use sophisticated LP solver. We first derive a general description of the problem and solve it for $n=3$, $n=4$ and $n > 4$ cases.
+It is a typical linear programming (LP) problem. When $N=3$, e.g. R-G-B color sources only, it's a deterministic and not an optimization problem. And when $N=4$, e.g. R-G-B-W LEDs, there is only one parameter to optimize, which makes the problem as simple as we don't need to use sophisticated LP solver.
+% Mathematically, it is dependent to $R = rank(\boldsymbol{A})$, where $\boldsymbol{A}$ is a matrix of LEDs, in Eq.~\eqref{E_X=AY}. We first derive a general description of the problem and solve it for $R=3$, $R=4$ and $R > 4$ cases.
+We first derive a general description of the problem and solve it for $N=3$, $N=4$ and $N > 4$ cases.
 
-\subsection{Description of problem}
-We use XYZ color space because a composite of color source in XYZ color space can be obtained as a simple sum of each term.  In XYZ color space, our problem is to determine $\boldsymbol{\alpha} = [\alpha_1 \ldots \alpha_n]$ which gives an equation between input color $[X, Y, Z]^T$ and color source $[X_{i}, Y_{i}, Z_{i}]^T$, $i=1 \ldots n$;
+\section{General solution}
+We use XYZ color space because a composite of color source in XYZ color space can be obtained as a simple sum of each term.  In XYZ color space, our problem is to determine $\boldsymbol{\alpha} = [\alpha_1 \ldots \alpha_N]$ which gives an equation between input color $[X, Y, Z]^T$ and color source $[X_{i}, Y_{i}, Z_{i}]^T$, $i=1 \ldots N$;
 
 \begin{equation}
   \label{E_XYZcomposite}
@@ -79,26 +83,26 @@ We use XYZ color space because a composite of color source in XYZ color space ca
         Z_1
     \end{array}
   \right]
-   + \ldots + \alpha_n
+   + \ldots + \alpha_N
   \left[
     \begin{array}{c}
-        X_n \\
-        Y_n \\
-        Z_n
+        X_N \\
+        Y_N \\
+        Z_N
     \end{array}
   \right]
 \end{equation}
 
-Color space $[X, Y, Z]^T$ is expressed by using $(x_i, y_i, Y_i)$:
+Color space $[X, Y, Z]^T$ is expressed by using $(x, y, Y)$:
 
 \begin{eqnarray}
   \label{E_xyY2XYZ}
-  X_i & = & \frac{x_i}{y_i}  Y_i \\
-  Y_i & = & Y_i \\
-  Z_i & = & \frac{1 - x_i - y_i}{y_i} Y_i
+  X & = & \frac{x}{y}  Y \\
+  Y & = & Y \\
+  Z & = & \frac{1 - x - y}{y} Y
 \end{eqnarray}
 
-Using matrix representation, Eq. \ref{E_XYZcomposite} is written as
+Using matrix representation, Eq.~\eqref{E_XYZcomposite} is written as
 
 \begin{equation}
   \label{E_X=AY}
@@ -113,19 +117,21 @@ where
 \begin{eqnarray}
   \left[ \boldsymbol{X} \right] &=&
   \left[ X, Y, Z \right]^T \label{E_XYZ^T} \\
+%
   \left[ \boldsymbol{A} \right] &=&
   \left[
     \begin{array}{ccc}
-      \frac{x_1}{y_1} Y_1 & \ldots & \frac{x_n}{y_n} Y_n \\
-      Y_1 & \ldots & Y_n \\
-      \frac{1 - x_1 - y_1}{y_1}Y_1 & \ldots & \frac{1 - x_n - y_n}{y_n}Y_n
+      \frac{x_1}{y_1} Y_1 & \ldots & \frac{x_N}{y_N} Y_N \\
+      Y_1 & \ldots & Y_N \\
+      \frac{1 - x_1 - y_1}{y_1}Y_1 & \ldots & \frac{1 - x_N - y_N}{y_N}Y_N
     \end{array}
   \right] \\
+%
   \left[ \boldsymbol{\alpha} \right] &=&
-  \left[ \alpha_1,\ \ldots\ , \alpha_n \right]^T
+  \left[ \alpha_1,\ \ldots\ , \alpha_N \right]^T
 \end{eqnarray}
 
-Our goal is to solve Eq. \ref{E_X=AY} for $ \boldsymbol{\alpha} = [\alpha_1 \ldots \alpha_n]^T $. To solve it, $ \boldsymbol{A}^{-1} $, the pseudo-inverse matrix of $ \boldsymbol{A} $ is obtained by the singular value decomposition (SVD) (Eq. \ref{E_SVD})~\cite{SVD_NRC}.
+Our goal is to solve Eq.~\eqref{E_X=AY} with respect to $ \boldsymbol{\alpha} = [\alpha_1 \ldots \alpha_N]^T $. To solve it, we can use the singular value decomposition (SVD) (Eq.~\eqref{E_SVD})~\cite{SVD_NRC}.
 
 \begin{equation}
   \label{E_SVD}
@@ -142,12 +148,13 @@ Our goal is to solve Eq. \ref{E_X=AY} for $ \boldsymbol{\alpha} = [\alpha_1 \ldo
 \end{equation}
 
 \noindent
-where $ \boldsymbol{A} $ is $ 3 \times n $,
+where $ \boldsymbol{A} $ is $ 3 \times N $,
 $ \boldsymbol{U} $ is $ 3 \times 3 $,
-$ [\omega_1 \ddots \omega_3, 0 \ldots 0] $ is $ 3 \times n $,
-$ \boldsymbol{V}^T $ is $ n \times n $ matrixes
-In this specific case, since $ \boldsymbol{A} $ is a $ 3 \times n $ matrix, there are upto 3 $\omega$'s. When $ n \geq 4 $, $ [\omega_1 \ddots \omega_3 ] $ is null-padded in $ 3 \times (n-3) $.
-$ \boldsymbol{A}^{-1} $ is obtained by
+$ [\omega_1 \ddots \omega_3, 0 \ldots 0] $ is $ 3 \times N $,
+$ \boldsymbol{V}^T $ is $ N \times N $ matrixes
+\footnote{Many implementations of SVD return 'economy' $\boldsymbol{V}$ in $ N \times 3$ instead of calculating full $N \times N$ size. Matlab, Octave without 'econ' option and \href{https://www.npmjs.com/package/svd-js}{svd-js} javascript package in NPM with 'f' option (This is my contribution!) give full $\boldsymbol{V}$.}
+in this specific case, since $ \boldsymbol{A} $ is a $ 3 \times N $ matrix and there are upto 3 $\omega$'s. When $ N \geq 4 $, $ [\omega_1 \ddots \omega_3 ] $ is null-padded in $ 3 \times (N-3) $.
+The pseudo-inverse matrix $ \boldsymbol{A}^{-1} $ is obtained by
 
 \begin{equation}
   \Bigg[ \boldsymbol{A} \Bigg]^{-1} =
@@ -163,7 +170,9 @@ $ \boldsymbol{A}^{-1} $ is obtained by
 \end{equation}
 
 \noindent
-where $ \boldsymbol{V}_{1-3} $ is the first 3 columns of $ \boldsymbol{V} $, those correspond to $ \omega_1 \ldots \omega_3 $. Using $ \boldsymbol{A}^{-1} $, one obtains
+where $ \boldsymbol{V}_{1-3} $ is the first 3 columns of $ \boldsymbol{V} $, those correspond to $ \omega_1 \ldots \omega_3 $
+\footnote{Many implementations of SVD do not sort $ \boldsymbol{U}, \boldsymbol{V}$ by $\omega$s. Matlab and Octave do sort. Algorithm in 'Numerical Recipes in C' and \href{https://www.npmjs.com/package/svd-js}{svd-js} in NPM do not.}.
+Using $ \boldsymbol{A}^{-1} $, we obtain
 
 \begin{equation}
   \label{E_Y=A-1X}
@@ -172,39 +181,41 @@ where $ \boldsymbol{V}_{1-3} $ is the first 3 columns of $ \boldsymbol{V} $, tho
   \left[ \boldsymbol{X} \right]
 \end{equation}
 
-By the way, what about the rest of columns in $ \boldsymbol{V} $? They are null vectors of $ \boldsymbol{A} $. A null vector $\boldsymbol{n}$ of $ \boldsymbol{A}$ is such vector that satisfies $ \boldsymbol{A} \boldsymbol{n} = [0]$. By denoting these columns as $ \boldsymbol{n}_4 \ldots \boldsymbol{n}_n $, Eq. \ref{E_Y=A-1X} can be extended as
+By the way, what about the rest of columns in $ \boldsymbol{V} $? They are null vectors of $ \boldsymbol{A} $. A null vector $\boldsymbol{n}$ of $ \boldsymbol{A}$ is such vector that satisfies $ \boldsymbol{A} \boldsymbol{n} = [0]$. By denoting these columns as $ \boldsymbol{n}_4 \ldots \boldsymbol{n}_N $, Eq.~\eqref{E_Y=A-1X} can be extended as
 
 \begin{equation}
   \label{E_Y=A-1X+n}
   \left[ \boldsymbol{\alpha} \right] =
   \left[ \boldsymbol{A} \right]^{-1}
   \left[ \boldsymbol{X} \right]
-  + \beta_4 \boldsymbol{n}_4 + \ldots + \beta_n \boldsymbol{n}_n
+  + \beta_4 \boldsymbol{n}_4 + \ldots + \beta_N \boldsymbol{n}_N
 \end{equation}
 \noindent
-where $ \beta_4 \ldots \beta_n $ are arbitrary numbers. By choosing these using other constraints, one can obtain the optimum solution.
+where $ \beta_4 \ldots \beta_N $ are arbitrary numbers. By choosing these using other constraints, we can obtain the optimum solution.
+
+% The actual number of null vectors is determined by the rank of $\boldsymbol{A}$.
 
 
 
 
-\section{Solution of $n=3$ case}
+\section{Solution of $N=3$ case}
 
-When $n=3$, Eq. \ref{E_Y=A-1X} gives a deterministic solution. No optimization. However, the obtained $ \alpha_i $ should be physically meaningful, i.e., $ 0 \leq \alpha_i \leq 1 $. It can be out of range when
+When $N=3$, Eq.~\eqref{E_Y=A-1X} gives a deterministic solution. No optimization. However, the obtained $ \alpha_i $ should be physically meaningful, i.e., $ 0 \leq \alpha_i \leq 1 $. It can be out of range when
 \begin{itemize}
   \item Input color $[X]$ is out of the gamut defined by the color sources,
   \item $Y$ of $[X]$ is greater (brighter) than the color sources.
 \end{itemize}
 \noindent
-When $ \alpha_i < 0$, it should be truncated to 0. In this case, the color has certain error.
+When $ \alpha_i < 0$, the nearest color in the gamut should be used as the input. We can also truncate such $\alpha_i$ to 0. In this case, the output color has certain error.
 
-When $ \alpha_i > 1 $, All $\alpha$s should be normalized by the largest $\alpha$. This way the color will be correctly obtained, but it will be darker than expected.
-
-
+When $ \alpha_i > 1 $, all $\alpha$s should be normalized by the largest $\alpha$. This way the color will be correctly obtained, but it will be darker than expected.
 
 
-\section{Solution of $n=4$ case}
 
-When $n=4$, Eq. \ref{E_Y=A-1X+n} is modified as
+
+\section{Solution of $N=4$ case}
+
+When $N=4$, Eq.~\eqref{E_Y=A-1X+n} is simple.
 
 \begin{equation}
   \label{E_Y=A-1X+1}
@@ -215,22 +226,30 @@ When $n=4$, Eq. \ref{E_Y=A-1X+n} is modified as
 \end{equation}
 
 \noindent
-Parameter $\beta_4$ will be determined by the assumptions in section \ref{s_assumptions}.
-Since it is always $ 0 \leq \alpha_i \leq 1$, by solving it for $\beta$ (hereafter omitting '4'), we obtain the following conditions.
+We will determine parameter $\beta_4$ using the assumptions in section \ref{s_assumptions}.
+Since it is always $ 0 \leq \alpha_i \leq 1$, by solving it for $\beta$ (hereafter omitting '$_4$'), we obtain the following conditions.
 \begin{eqnarray}
-  \beta &\geq& - \frac{b_i}{n_i} \;\;\;\; i = 1 \ldots 4, \text{ if \(n \neq 0\)} \label{E_betamin} \\
-  \beta &\leq& \frac{1 - b_i}{n_i} \;\;\;\; i = 1 \ldots 4, \text{ if \(n \neq 0\)} \label{E_betamax} \\
-  E &=& \sum_{i=1}^4 (\beta n_i + b_i) W_i \to min \label{E_energy_n4}
+  \beta & \geq & \begin{cases}
+    - \frac{b_i}{n_i} \;\;\;\; \text{ if \(n_i > 0\)} \label{E_betamin} \\
+    \frac{1 - b_i}{n_i} \;\;\;\; \text{ if \(n_i < 0\)}
+  \end{cases} \\
+%
+  \beta & \leq & \begin{cases}
+    \frac{1 - b_i}{n_i} \;\;\;\; \text{ if \(n_i > 0\)} \\
+    - \frac{b_i}{n_i} \;\;\;\; \text{ if \(n_i < 0\)} \label{E_betamax}
+  \end{cases} \\
+%
+    E &=& \sum_{i=1}^4 (\beta n_i + b_i) W_i \to min \label{E_energy_n4}
 \end{eqnarray}
 
 \noindent
-where $ [b_1,\, \ldots\, , b_4]^T = [ \boldsymbol{A} ]^{-1} [\boldsymbol{X}] $, $n_i$ are the elements of $\boldsymbol{n}$. Eq. \ref{E_energy_n4} is from Eq. \ref{E_min_energy}. Finding the largest and smallest values of the right hand side of Eqs. \ref{E_betamin} and \ref{E_betamax}, denoted as $\beta_{min}$ and $\beta_{max}$, Eqs. \ref{E_betamin} and \ref{E_betamax} are rewritten as
+where $ [b_1,\, \ldots\, , b_4]^T = [ \boldsymbol{A} ]^{-1} [\boldsymbol{X}] $, $n_i$ are the elements of $\boldsymbol{n}$. Eq.~\eqref{E_energy_n4} is from Eq.~\eqref{E_min_energy}. Finding the largest and smallest values of the right hand side of Eqs.~\eqref{E_betamin} and \eqref{E_betamax}, denoted as $\beta_{min}$ and $\beta_{max}$, Eqs.~\eqref{E_betamin} and \eqref{E_betamax} are rewritten as
 
 \begin{equation}
   \beta_{min} \leq \beta \leq \beta_{max}
 \end{equation}
 
-Since Eq. \ref{E_energy_n4} is rewritten as $E = s_1\beta + s_2$, here $s_1$ and $s_2$ are constants determined by calculating the sums in Eq. \ref{E_energy_n4}, optimized $\beta$ is determined as
+Since Eq.~\eqref{E_energy_n4} is rewritten as $E = s_1\beta + s_2$, here $s_1$ and $s_2$ are constants determined by calculating the sums in Eq.~\eqref{E_energy_n4}, optimized $\beta$ is determined as
 
 \begin{equation}
     \beta = \begin{cases}
@@ -241,23 +260,89 @@ Since Eq. \ref{E_energy_n4} is rewritten as $E = s_1\beta + s_2$, here $s_1$ and
 
 \subsection{When $\beta$ is not determined}
 
-When $\beta_{min} > \beta_{max}$, there is no possible answer. This can happen when $Y$ in Eq. \ref{E_XYZ^T} is greater (brighter) than the color source's capacity. When it happens, since Eq. \ref{E_betamin} cannot compromise, set $\beta$ to $\beta_{min}$ and normalize the largest $\alpha_i$ to be 1.
+When $\beta_{min} > \beta_{max}$, there is no feasible answer. Again, there are two cases, when the input color $[\boldsymbol{X}]$ is out of the gamut, or when $Y$ in Eq.~\eqref{E_XYZ^T} is greater than the color sources. Since $\alpha_i \geq 0$ cannot compromise, we find $\beta$ that satisfies
+
+\begin{eqnarray}
+  \beta & \geq & - \frac{b_i}{n_i} \;\;\;\; \text{ if \(n_i > 0\)} \label{E_beta0min} \\
+  \beta & \leq & - \frac{b_i}{n_i} \;\;\;\; \text{ if \(n_i < 0\)} \label{E_beta0miax}
+\end{eqnarray}
+Then we normalize the largest $\alpha_i$ to be 1.
 
 \subsection{When $\alpha_i$ is small}
 
-To implement the assumption \ref{I_small_alpha} in section \ref{s_assumptions}, you introduce allowance of small $\alpha$, $\alpha_\varepsilon$, and exchange Eq. \ref{E_betamin} as
+To implement the assumption \ref{I_small_alpha} in section \ref{s_assumptions}, we can introduce allowance of small $\alpha$, $\alpha_\varepsilon$, and exchange Eqs.~\eqref{E_betamin} and \eqref{E_betamax} as
 
 \begin{equation}
   \beta \geq \frac{\alpha_\varepsilon - b_i}{n_i}
 \end{equation}
 
-But this may also result in $\beta_{min} > \beta_{max}$. When it is the case, you need to relax the constraint by $\alpha_\varepsilon$. The easiest is to go back to Eq. \ref{E_betamin}.
+But this also needs to assert if $\beta_{min} \leq \beta_{max}$.
 
 
 
-\section{Solution of $n > 4$ case}
-You need to optimize Eq. \ref{E_min_energy} under constraints of $0 \leq \alpha_i \leq 1$ and Eq. \ref{E_Y=A-1X+n} using a linear programming solution.
-We will implement it in future.
+
+\section{Solution of $N > 4$ case}
+We can optimize Eq.~\eqref{E_min_energy} under constraints of $0 \leq \alpha_i \leq 1$ for Eq.~\eqref{E_Y=A-1X+n} using a linear programming solution\cite{LP_NRC}.
+To use linear programming we need to rewrite our problem into the \textit{normal form}. Normal form of a linear programming problem is
+
+\begin{itemize}
+  \item Objective functions are to be minimized,
+  \item All constraints are equality formulas,
+  \item All variables $ \geq 0$.
+\end{itemize}
+
+Since our constraints $0 \leq \alpha_i \leq 1$ are unequal and $\beta_i$ can be negative, we introduce \textit{slack variables} $\gamma_i, \delta_i$ and $\epsilon_i, \zeta_i$ to replace $\beta$.
+
+\begin{itemize}
+  \item Introduce $\gamma_i \geq 0$ such that $b_i + \beta_4 n_{4i} + \ldots + \beta_N n_{Ni} - \gamma_i = 0$,
+
+  \item Introduce $\delta_i \geq 0$ such that $b_i + \beta_4 n_{4i} + \ldots + \beta_n n_{Ni} + \delta_i = 1$,
+
+  \item Replace $\beta_i = \epsilon_i - \zeta_i$, such that $\epsilon_i \geq 0 $ and $\zeta_i \geq 0$.
+\end{itemize}
+
+After this modification, we have $2N$ equations with $2N$ variables (for $\gamma$ and $\delta$) and $2(N-3)$ variables (for $\epsilon$ and $\zeta$). Using these replacements, the objective function (Eq.~\eqref{E_min_energy}) and Eq.~\eqref{E_Y=A-1X+n} are rewritten as
+
+\begin{eqnarray}
+%
+  \label{E_min_energy5}
+  \sum_{i=1}^N (n_{4i} \epsilon_4 - n_{4i} \zeta_4 + \ldots +  n_{Ni} \epsilon_N - n_{Ni} \zeta_N + b_{i}) W_i &\to& min \\
+%
+  \label{E_bmin5}
+  n_{4i} \epsilon_4  - n_{4i} \zeta_4 + \ldots + n_{Ni} \epsilon_N  - n_{Ni} \zeta_N  - \gamma_i + b_i &=& 0 \\
+%
+  \label{E_bmax5}
+  n_{4i} \epsilon_4  - n_{4i} \zeta_4 + \ldots + n_{Ni} \epsilon_N  - n_{Ni} \zeta_N  + \delta_i + b_i &=& 1
+\end{eqnarray}
+
+\noindent
+Eq.~\eqref{E_min_energy5} is the objective function. Solvers applicable to Eqs.~\eqref{E_min_energy5} - \eqref{E_bmax5} can be found in many numerical packages. \href{https://www.npmjs.com/package/kch-rgbw-lib}{\texttt{Kch-rgbw-lib}} uses \href{https://www.npmjs.com/package/linear-program-parser}{linear-program-parser} and \href{https://www.npmjs.com/package/linear-program-solver}{linear-program-solver} in npm.
+
+\subsection{When solution infeasible}
+Linear programming solver may find it's `infeasible' - no solution to satisfy all constraints in Eqs.~\eqref{E_bmin5} and \eqref{E_bmax5}. Another possibility is that the solution would not converge. Yet again, there are two cases, when the input color $[X]$ is out of the gamut, or when $Y$ in Eq.~\eqref{E_XYZ^T} is greater (brighter) than the color sources.
+
+When the object brightness is too large, we can find a solution by omitting Eq.~\eqref{E_bmax5}. Physically doable solution is to normalize the maximum $Y_i$ to $1.0$.
+
+We may also see infeasible case when one or more value in solution is very close to zero and Eq.~\eqref{E_bmin5} fails due to numerical error. If it is the case, you can set a small negative value to the right side of Eq.~\eqref{E_bmin5} instead of $0$.
+
+
+
+\section{More to do}
+
+The following sections discuss items not implemented in \href{https://www.npmjs.com/package/kch-rgbw-lib}{\texttt{kch-rgbw-lib}}. We leave them as `homework' fun.
+
+\subsection{Not to compromise brightness $Y$}
+When $Y$ in Eq.~\eqref{E_XYZ^T} is greater (brighter) than the color source's capacity, there is no solution. Here we suggested a (compromised) solution to normalize $Y_i$. But we can also take another strategy to maintain the goal brightness by compromising the goal color.
+
+This strategy requires computation of gradient of $Y$ in $\boldsymbol{\alpha}$ space.
+
+
+\subsection{LED's lifetime averaging}
+In section \ref{s_assumptions} '\nameref{s_assumptions}' we introduced an optional condition \ref{I_lifetime}, 'When possible, average turn-on time of LEDs to equalize LEDs lifetime'. It is equivalent to minimize the variance of $\alpha_1 \ldots \alpha_N$. It can be an optimization of a quadratic function.
+
+In $N = 4$ case, we have only one variable $\beta$ therefore we can optimize only one condition. This means we need to chose between the energy minimization and this condition.
+
+
 
 \bibliographystyle{unsrt}
 \bibliography{rgbw}

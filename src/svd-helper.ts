@@ -77,9 +77,10 @@ function svd_post(uvq: {u: number[][]; v: number[][]; q: number[]}): {u: number[
 
   // reorder u, v, q
   reorder(uvq.q, id);
-  for (let i=0; i<uvq.u.length; i++)
+
+  for (let i=0; i<uvq.u.length; i++) // eslint-disable-line @typescript-eslint/prefer-for-of
     reorder(uvq.u[i], id);
-  for (let i=0; i<uvq.v.length; i++)
+  for (let i=0; i<uvq.v.length; i++) // eslint-disable-line @typescript-eslint/prefer-for-of
     reorder(uvq.v[i], id);
   return uvq;
 }
@@ -88,16 +89,18 @@ function qsort(a: number[], id: number[], l: number, r: number): void {
   // https://ja.wikipedia.org/wiki/クイックソート
   function med3(x: number, y: number, z: number): number {
     if (x < y) {
+      /* istanbul ignore else */
       if (y < z)
         return y;
-      else if (z < x)
+      else /* istanbul ignore next */ if (z < x)
         return x;
       else
         return z;
     } else {
       if (z < y)
         return y;
-      else if (x < z)
+      /* istanbul ignore if */
+      else  if (x < z)
         return x;
       else
         return z;

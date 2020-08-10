@@ -1,11 +1,13 @@
 # Kch RGBW Lib
 
-RGB/RGBW LED class library in typescript. It provides following functions,
+RGB/RGBW LED class library in typescript. It provides following classes and functions,
 
+- Composite LED class `RGBWLED` for multi-color LED. In addition to R-G-B (3 LEDs), R-G-B-W (4 LEDs), it can have **unlimited number of LEDs**.
+- Mathematically clear solution for many-LED problem.
 - Conversions between
-  - RGB, HSV and CIE 1931 Chromacity (XYZ, xyY) colorspace
-  - Optimized xyY => RGB(W) using LED's properties
-  - Color temperature <=> CIE (experimental)
+  - Composite LED color <=> Each LEDs ratio.
+  - RGB, HSV and CIE 1931 Chromaticity (XYZ, xy+Y) colorspace
+  - Color temperature <=> chromaticity (experimental)
   - Wavelength <=> CIE
 - Typical RGB LED properties
 
@@ -15,7 +17,10 @@ project.
 
 ## System Requirements
 
-- Node 11.15 or newer (perhaps older one with ES2015, but not tested)
+- Node 10.20.0 or newer except 11.x.
+- Unix systems with C++-17 compiler.
+
+These are limitation of [linear-program-solver](https://www.npmjs.com/package/linear-program-solver).
 
 ## Installation
 
@@ -25,21 +30,35 @@ Install with npm:
 npm install kch-rgbw-lib
 ```
 
+Some additional npm packages will be installed.
+
 ## API
 
 - [CSpace](./docs/CSpace.md)
   : Color conversion class.
-- [CIE_colorTemperature](./docs/CIE_colorTemperature.md)
+- [RGBWLED](./docs/RGBWLED.md)
+  : Composite LED class.
+- [LEDChip](./docs/LEDChip.md)
+  : Single color LED chip class.
+- [ColorTemperature](./docs/ColorTemperature.md)
   : Functions for color temperature of black body.
-- [CIE_waveLength](./docs/CIE_waveLength.md)
-  : Functions for CIE 1931 colorspace.
+- [WaveLength](./docs/WaveLength.md)
+  : Functions for CIE 1931 chromaticity and wave length.
+
+## More to read
+
+- [Solve RGB+ LEDs PWM from Chromaticity](./docs/rgbw_solver.pdf)
+  : A mathematical solution for many-LED problem.
 
 ## References
 
 - [A Beginner’s Guide to (CIE) Colorimetry - Color and Imaging](https://medium.com/hipster-color-science/a-beginners-guide-to-colorimetry-401f1830b65a)
+- [CIE 1931 color space](https://en.wikipedia.org/wiki/CIE_1931_color_space) / Wikipedia
+- [HSL and HSV](https://en.wikipedia.org/wiki/HSL_and_HSV) / Wikipedia
+- [sRGB](https://en.wikipedia.org/wiki/SRGB) / Wikipedia
 - [Blackbody color temperature datafile](http://www.vendian.org/mncharity/dir3/blackbody/)
   / Mitchell Charity
-- [新しいカラーマネージメントの方法](http://www.enveng.titech.ac.jp/nakamura/story/pdf/colormanagement.pdf)
+- [新しいカラーマネージメントの方法](http://www.nakamura.enveng.titech.ac.jp/story/pdf/colormanagement.pdf)
   / 中村芳樹
 - [AN1562 High Resolution RGB LED Color Mixing Application Note](http://ww1.microchip.com/downloads/en/AppNotes/00001562B.pdf)
   / Microchip

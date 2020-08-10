@@ -23,51 +23,54 @@ THE SOFTWARE.
 */
 
 /*
-  RGB/RGBW LED class library. It provides following functions,
+  Composite LED class library
 
-  Make Asayake to Wake Project.
+  Make Asayake to Wake Project
   Kiyo Chinzei
   https://github.com/kchinzei/kch-rgbw-lib
 */
 
-import { CSpace, CSpaceR } from './CSpace';
-import { checkCIExyInList, CIEfitxy2List } from './waveLength';
+import { CSpace } from './CSpace';
 import { LEDChip } from './LEDChip';
+import { checkCIExyInList, CIEfitxy2List } from './waveLength';
+import { makeSolverMatrix, alpha2XYZ, XYZ2Alpha, normalize } from './solver';
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
-const D65White: number[] = [ 0.3155, 0.3270, 0 ] ; // D65 White; https://en.wikipedia.org/wiki/SRGB
+const D65White: number[] = [ 0.3127, 0.3290, 1 ] ; // ITU Rec. 709 D65 White; https://en.wikipedia.org/wiki/SRGB
 
 export interface IRGBWLED {
   name: string;
   color: CSpace;
   brightness: number; // [0,1]
-  readonly rLED: LEDChip;
-  readonly gLED: LEDChip;
-  readonly bLED: LEDChip;
-  readonly xLED: LEDChip; // Extra LED such as white, amber
+  readonly maxLuminance: number;  // Sum of maxLuminance of all LEDs
   readonly LED: LEDChip[];
-  readonly nLED: number;
 }
 
-export class RGBWLED extends CSpaceR implements IRGBWLED {
+export class RGBWLED extends CSpace implements IRGBWLED {
   private _LED: LEDChip[];
   private _name: string;
-  private _maxB: number;
   private _gamutContour: CSpace[];
+  private _afwd: number[][];
+  private _ainv: number[][];
+  private _nvecs: number[][];
+  private _w: number[];
 
   // eslint-disable-next-line @typescript-eslint/naming-convention
   get LED(): LEDChip[] { return this._LED; }
-  get rLED(): LEDChip { return this.LED[0]; }
-  get gLED(): LEDChip { return this.LED[1]; }
-  get bLED(): LEDChip { return this.LED[2]; }
-  get xLED(): LEDChip { return this.LED[3]; }
-  get nLED(): number { return this.LED.length; }
   get name(): string { return this._name; }
   set name(s: string) { this._name = s; }
-  get brightness(): number { return this.Y / this._maxB; }
+  get maxLuminance(): number {
+    let maxB = 0;
+    for (const l of this._LED)
+      maxB += l.maxLuminance;
+    return maxB;
+  }
+  get brightness(): number {
+    return this.Y / this.maxLuminance;
+  }
   set brightness(b: number) {
     const xyY: CSpace = new CSpace(this);
-    xyY.Y = checkBrightness(b) * this._maxB;
+    xyY.Y = checkBrightness(b) * this.maxLuminance;
     this.updateLEDs(xyY);
   }
   get color(): CSpace {
@@ -75,54 +78,136 @@ export class RGBWLED extends CSpaceR implements IRGBWLED {
     return c;
   }
   set color(c: CSpace) {
-    let c1: CSpace = new CSpace(c);
-    if (c1.type !== 'xy')
-      c1 = c1.xyY();
-    const c2: CSpace = CIEfitxy2List(c1, this._gamutContour);
-    if (c.type !== 'xyY' && c.type !== 'XYZ' && c.type !== 'xy')
-      c2.Y = this.brightness;
-    this.updateLEDs(c2);
-  }
-
-  constructor(rLED: LEDChip, gLED: LEDChip, bLED: LEDChip, xLED?: LEDChip) {
-    super('xyY', D65White);
-    const nLED = (typeof(xLED) === 'object')? 4:3;
-    this._LED = new Array(nLED) as LEDChip[];
-    this._LED[0] = rLED;
-    this._LED[1] = gLED;
-    this._LED[2] = bLED;
-    if (nLED === 4)
-      this._LED[3] = xLED as LEDChip;
-    this._maxB = 0;
-    for (const l of this._LED)
-      this._maxB += l.maxBrightness;
-    this._name = '';
-    this._gamutContour = makeGamutContour(this.LED);
-  }
-
-  public addLED(led: LEDChip): void {
-    this.LED.push(led);
-    this._maxB += led.maxBrightness;
-    this._gamutContour = makeGamutContour(this.LED);
-    this.updateLEDs(this);
-  }
-
-  private updateLEDs(c: CSpace): void {
-    // Assume that c is already in the gamut
-    if (c.type !== 'xy')
-      c = c.xyY();
-    switch (this.nLED) {
-      case 3:
-      case 4:
-      default:
-        // ToDo
-        // throw new Error("updateLED(): sorry, we will implement");
+    // 1. Convert c to xyY or xy.
+    let c1: CSpace;
+    if (c.type === 'xy') {
+      c1 = new CSpace('xyY', c.a);
+    } else {
+      c1 = c.xyY();
     }
-    // ToDo remove when implement all
-    this.x = c.x;
-    this.y = c.y;
-    if (c.type === 'xyY')
-      this.Y = c.Y;
+
+    // 2. Fit c1 to the gamut.
+    c1 = CIEfitxy2List(c1, this._gamutContour);
+
+    // 3. When color didn't have luminance (xy, RGB or HSV), use current luminance.
+    if (c.type !== 'xyY' && c.type !== 'XYZ')
+      c1.Y = this.Y;
+
+    // 4. Do it.
+    this.updateLEDs(c1);
+  }
+
+  public maxLuminanceAt(c: CSpace): number {
+    // 1. Convert c to xyY
+    let c1: CSpace;
+    if (c.type === 'xy') {
+      c1 = new CSpace('xyY', c.a);
+    } else {
+      c1 = c.xyY();
+    }
+
+    // 2. Set Y as slightly larger than max
+    c1.Y = this.maxLuminance * 1.05;
+
+    // Solve
+    const { alpha, feasible } = XYZ2Alpha(c1.XYZ().a, this._w, this._ainv, this._nvecs);
+
+    if (feasible) {
+      const XYZ = this.brightness2Color(normalize(alpha));
+      return XYZ.Y;
+    } else {
+      return -1;
+    }
+  }
+
+  public maxBrightnessAt(c: CSpace): number {
+    const maxL = this.maxLuminanceAt(c);
+    if (maxL > 0)
+      return maxL / this.maxLuminance;
+    else
+      return -1;
+  }
+
+  constructor(name: string, lList: LEDChip[]) {
+    super('xyY', D65White);
+    if (lList.length < 3)
+      throw new Error('RGBWLED() needs at least 3 LEDs');
+
+    this._name = name;
+    this._LED = new Array(lList.length) as LEDChip[];
+    for (let i=0; i<lList.length; i++)
+      this._LED[i] = lList[i];
+
+    this._gamutContour = [];
+    this._afwd = [];
+    this._ainv = [];
+    this._nvecs = [];
+    this._w = [];
+
+    if (!this.setup()) {
+      throw new Error('RGBWLED() needs at least 3 LEDs in different colors');
+    }
+  }
+
+  public push(led: LEDChip): void {
+    this.LED.push(led);
+    this.setup();
+  }
+
+  public brightness2Color(bList: number[]): CSpace {
+    if (bList.length !== this.LED.length)
+      throw new Error('brightness2Color() Length of bList[] should be equal to number of LEDs.');
+
+    const xyz: number[] = alpha2XYZ(bList, this._afwd);
+    const c: CSpace = new CSpace('XYZ', xyz);
+    return c.xyY();
+  }
+
+  private updateLEDs(c: CSpace): boolean {
+    // Assume that c is already xyY in the gamut
+    const { alpha, feasible } = XYZ2Alpha(c.XYZ().a, this._w, this._ainv, this._nvecs);
+
+    /* istanbul ignore else */
+    if (feasible) {
+      const alpha2 = normalize(alpha);
+      this.x = c.x;
+      this.y = c.y;
+      this.Y = 0;
+      for (let i=0; i<this.LED.length; i++) {
+        this.LED[i].brightness = alpha2[i]; // update each LED.
+        this.Y += alpha2[i] * this.LED[i].maxLuminance;
+      }
+    }
+    return feasible;
+  }
+
+  private setup(): boolean {
+    function makeXYZMat(lList: LEDChip[]): number[][] {
+      const aa: number[][] = new Array(lList.length) as number[][];
+      for (let i=0; i<lList.length; i++) {
+        aa[i] = lList[i].XYZ().a;
+      }
+      return aa;
+    }
+
+    function makeWVec(lList: LEDChip[]): number[] {
+      const w: number[] = new Array(lList.length) as number[];
+      for (let i=0; i<lList.length; i++) {
+        w[i] = lList[i].maxW;
+      }
+      return w;
+    }
+
+    this._gamutContour = makeGamutContour(this.LED);
+    const {rank, a, ainv, nvecs} = makeSolverMatrix(makeXYZMat(this._LED));
+    if (rank < 3)
+      return false;
+    this._afwd = a;
+    this._ainv = ainv;
+    this._nvecs = nvecs;
+    this._w = makeWVec(this._LED);
+    this.updateLEDs(this);
+    return true;
   }
 }
 

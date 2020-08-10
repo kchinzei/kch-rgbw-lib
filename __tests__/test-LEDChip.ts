@@ -45,21 +45,21 @@ test(`${i++}. inistantiate LEDChip by copy constructor`, () => {
 
 test(`${i++}. inistantiate LEDChip by waveLength`, () => {
   expect(() => {
-    const led: LEDChip = new LEDChip('LED_R', { waveLength: 660, maxBrightness: 100 });
+    const led: LEDChip = new LEDChip('LED_R', { waveLength: 660, maxLuminance: 100 });
     led.brightness = 100;
   }).not.toThrow();
 });
 
 test(`${i++}. inistantiate LEDChip by colorTemp`, () => {
   expect(() => {
-    const led: LEDChip = new LEDChip('LED_W', { colorTemperature: 5700, maxBrightness: 100 });
+    const led: LEDChip = new LEDChip('LED_W', { colorTemperature: 5700, maxLuminance: 100 });
     led.brightness = 100;
   }).not.toThrow();
 });
 
 test(`${i++}. combination of waveLength and LED_W should fail`, () => {
   expect(() => {
-    const led: LEDChip = new LEDChip('LED_W', { waveLength: 660, maxBrightness: 100 });
+    const led: LEDChip = new LEDChip('LED_W', { waveLength: 660, maxLuminance: 100 });
     led.brightness = 100;
   }).toThrow();
 });
@@ -72,7 +72,7 @@ describe.each([
 ])('', (typ) => {
   test(`${i++}. combination of colorTemperature and ${typ} should fail`, () => {
     expect(() => {
-      const led: LEDChip = new LEDChip(typ as LEDChipTypes, { colorTemperature: 5700, maxBrightness: 100 });
+      const led: LEDChip = new LEDChip(typ as LEDChipTypes, { colorTemperature: 5700, maxLuminance: 100 });
       led.brightness = 100;
     }).toThrow();
   });
@@ -81,7 +81,7 @@ describe.each([
 
 test(`${i++}. inistantiate LEDChip by CIE(x,y)`, () => {
   expect(() => {
-    const led: LEDChip = new LEDChip('LED_G', { x: 0.3, y: 0.6, maxBrightness: 100 });
+    const led: LEDChip = new LEDChip('LED_G', { x: 0.3, y: 0.6, maxLuminance: 100 });
     led.brightness = 100;
   }).not.toThrow();
 });
@@ -95,9 +95,9 @@ describe.each([
   test(`${i++}. getters should work`, () => {
     let led!: LEDChip;
     if (typ === 'LED_W')
-      led = new LEDChip(typ as LEDChipTypes, { colorTemperature: a0, maxBrightness: maxB });
+      led = new LEDChip(typ as LEDChipTypes, { colorTemperature: a0, maxLuminance: maxB });
     else
-      led = new LEDChip(typ as LEDChipTypes, { waveLength: a0, maxBrightness: maxB });
+      led = new LEDChip(typ as LEDChipTypes, { waveLength: a0, maxLuminance: maxB });
     led.brightness = maxB;
     led.name = name;
 
@@ -110,29 +110,29 @@ describe.each([
     if (k !== 0)
       expect(led.colorTemperature).toBeCloseTo(k, 5);
     expect(led.brightness).toBeCloseTo(maxB, 5);
-    expect(led.maxBrightness).toBeCloseTo(maxB, 5);
+    expect(led.maxLuminance).toBeCloseTo(maxB, 5);
   });
 });
 
 test(`${i++}. inistantiate abnormal values should truncate.`, () => {
   let ledtype: LEDChipTypes = 'LED_R';
 
-  let led: LEDChip = new LEDChip(ledtype, { waveLength: 650, maxBrightness: 0 });
-  expect(led.maxBrightness).toBeCloseTo(1);
+  let led: LEDChip = new LEDChip(ledtype, { waveLength: 650, maxLuminance: 0 });
+  expect(led.maxLuminance).toBeCloseTo(1);
   expect(led.colorTemperature).toBe(undefined);
-  led = new LEDChip(ledtype, { waveLength: 100, maxBrightness: 1.0 }); // Too short
+  led = new LEDChip(ledtype, { waveLength: 100, maxLuminance: 1.0 }); // Too short
   expect(led.waveLength).toBeCloseTo(405);
-  led = new LEDChip(ledtype, { waveLength: 800, maxBrightness: 1.0 }); // Too long
+  led = new LEDChip(ledtype, { waveLength: 800, maxLuminance: 1.0 }); // Too long
   expect(led.waveLength).toBeCloseTo(700);
 
-  led = new LEDChip(ledtype, { waveLength: 650, maxBrightness: 1.0, maxW: 0});
+  led = new LEDChip(ledtype, { waveLength: 650, maxLuminance: 1.0, maxW: 0});
   expect(led.maxW).toBeCloseTo(1);
 
   ledtype = 'LED_W';
-  led = new LEDChip(ledtype, { colorTemperature: 100, maxBrightness: 1.0 }); // Too low
+  led = new LEDChip(ledtype, { colorTemperature: 100, maxLuminance: 1.0 }); // Too low
   expect(led.waveLength).toBe(undefined);
   expect(led.colorTemperature).toBeCloseTo(1000);
-  led = new LEDChip(ledtype, { colorTemperature: 30000, maxBrightness: 1.0 }); // Too high
+  led = new LEDChip(ledtype, { colorTemperature: 30000, maxLuminance: 1.0 }); // Too high
   expect(led.colorTemperature).toBeCloseTo(20000);
 
   led.brightness = -1;

@@ -31,7 +31,7 @@ export interface ILEDChip {
   readonly LEDChipType: LEDChipTypes;
   readonly waveLength: (number | undefined);
   readonly colorTemperature: (number | undefined);
-  readonly maxBrightness: number;
+  readonly maxLuminance: number;
   maxW: number;
   readonly x: number;
   readonly y: number;
@@ -55,12 +55,12 @@ Currently `wavelength` is limited to 405-700 nm as in WaveLength library, and co
 Internally both types are represented by `CSpace` in 'xyY' colorspace. 'Y' is used as the rated (max) brightness.
 For this purpose, class `LEDChip` is derived from `CSpaceR`, which is a read only CSpace.
 
-Most of parameters of LEDChip are read only, except `brightness`, `maxW` and `name`. It's because an LED does not change its optical properties, once instantiated, you don't need to change it.
-`maxW` is mutable because actual energy consumption depends on the circuit design and other conditions.
+Most of parameters of `LEDChip` are read only, except `brightness`, `maxW` and `name`.
+`maxW` is not read only because actual energy consumption depends on the circuit design and other conditions.
 
-`brightness` is relative, its range is between 0 and 1. Setting other value will be truncated.
+`brightness` is relative, its range is between 0 and 1. Setting other value will be truncated. The current luminance is calculated by `(luminance) = brightness * maxLuminance`.
 
-Although `maxBrightness` and `maxW` have their physical units, this class uses them as if unitless. However, when you use them with multiple LEDs, you need to use them consistently. When `maxW` is not given, it's 1.
+Although `maxLuminance` and `maxW` have physical units, this class uses them as if unitless. However, when you use them with multiple LEDs, you need to use them consistently.
 
 ### Constructors
 
@@ -75,14 +75,14 @@ A LEDChip with given `LEDChipTypes` and `param`. `param` is one of these:
 ```typescript
 export type LEDChipDefByWaveLength = {
   waveLength: number;
-  maxBrightness: number;
+  maxLuminance: number;
   maxW?: number;
   name?: string;
 };
 
 export type LEDChipDefByColorTemperature = {
   colorTemperature: number;
-  maxBrightness: number;
+  maxLuminance: number;
   maxW?: number;
   name?: string;
 };
@@ -90,7 +90,7 @@ export type LEDChipDefByColorTemperature = {
 export type LEDChipDefByCIExy = {
   x: number;
   y: number;
-  maxBrightness: number;
+  maxLuminance: number;
   maxW?: number;
   name?: string;
 };
@@ -98,6 +98,7 @@ export type LEDChipDefByCIExy = {
 
 `LEDChipDefByColorTemperature` is for `'LED_W'` only, `LEDChipDefByWaveLength` is for other type of LEDs only.
 `LEDChipDefByCIExy` can be used for both types.
+When `maxW` is not given, it's assumed 1.
 
 ##### new LEDChip(type: LEDChipTypes)
 
@@ -108,7 +109,7 @@ Similarly, other types return a copy of corresponding typical LEDs.
 
 Copy constructor.
 
-### constants
+### Constants
 
 ##### export LEDChipTypR, LEDChipTypG, LEDChipTypB, LEDChipTypW;
 
@@ -118,7 +119,12 @@ These are typical color/white LEDs, CREE MCE4CT-A2-0000-00A4AAAB1.
 
 Another example of LEDChip, parameters referenced from LC-S5050-04004-RGBW, Epistar.
 
-### reference
+### To do
+
+- Constructor will be rewritten to accept JSON object so that `LEDChip` can be instantiated from it.
+- Once JSON instantiation is implemented, static instance such as `LEDChipTypR` will be removed.
+
+### Reference
 
 - https://www.cree.com/led-components/media/documents/XLampMCE.pdf
 - http://ww1.microchip.com/downloads/jp/AppNotes/jp572250.pdf

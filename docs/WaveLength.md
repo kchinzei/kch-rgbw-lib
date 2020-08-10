@@ -1,7 +1,7 @@
 # WaveLength
 
 It is a part of [kch-rgbw-lib](https://github.com/kchinzei/kch-rgbw-lib).
-See [README.md](https://github.com/kchinzei/kch-rgbw-lib/blob/master/README.md)
+See [README.md](https://github.com/kchinzei/kch-rgbw-lib/#README.md)
 for general information.
 
 ### Code snippet
@@ -35,9 +35,11 @@ is on or the curve. It internally calls CIEfitxy2List().
 
 ##### checkCIExyInList(xy: CSpace, xyList?: CSpace[]): boolean
 
-Examine if a color `xy` is within the polygon given by `xyList`.
+Examine if a color `xy` is within the gamut contour given by `xyList`.
 If `xyList` is omitted, the CIE 1931 gamut is used.
-`checkCIExyInList()` can be used to check if a color is in the gamut represented by `xyList`. If you provide a CSpace list for R-G-B LEDs, you can use `checkCIExyInList()` to check if a color is in the RGB range.
+You can construct a gamut contour using `makeGamutContour()`, see [RGBWLED.md](https://github.com/kchinzei/kch-rgbw-lib/#RGBWLED.md).
+
+If you provide a gamut contour for R-G-B LEDs, you can use `checkCIExyInList()` to check if a color is in the RGB range.
 ![Gamut_sRGB](./figs/Gamut_sRGB.png "sRGB Gamut")
 
 `xy` and `xyList` should be in 'xy' or 'xyY' of `CSpaceTypes`.
@@ -75,13 +77,18 @@ You must append the first point at the end of array.
 
 ![CIEfitxy2nm](./figs/CIExy2nm.png "Mapping by CIEfitxy2nm()")
 
-- Whenever possible, it returns the @rpjected point on the curve (points 1-4).
+- Whenever possible, it returns the projected point on the curve (points 1-4).
 - It can determine the projection even the input is outside the curve.
 - Eventually it appears not exactly on the curve due to the interpolation (4).
 - However it does not interpolate between 405nm and 700 nm.
   In such case, it returns either 405 nm or 700 nm point (5, 6).
 - Note that it can return physically nonsense wave WaveLength
   if the input is far from the CIE 1931 curve (7).
+
+## To do
+
+- `CIEfitxy2List()` should be revised about under what condition it modifies the input color. Current code does not map color when it's inside the contour.
+- Names of exported function are not consistent. Need refactoring. 
 
 # License
 
