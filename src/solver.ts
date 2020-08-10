@@ -52,6 +52,7 @@ export function normalize(alpha: number[]): number[] {
   return alpha;
 }
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export function makeSolverMatrix(XYZList: number[][]): {rank: number; a: number[][]; ainv: number[][]; nvecs: number[][]} {
   // make [A]
   const n: number = XYZList.length;

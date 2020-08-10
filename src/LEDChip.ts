@@ -32,8 +32,8 @@ THE SOFTWARE.
 
 import { checkWaveLength, checkCIEx, checkCIEy, checkColorTemperature } from './const';
 import { CSpaceR } from './CSpace';
-import { CIEnm2x, CIEnm2y, CIExy2nm } from './waveLength';
-import { CIEk2x, CIEk2y, CIExy2k}  from './colorTemperature';
+import { nm2x, nm2y, xy2nm } from './waveLength';
+import { k2x, k2y, xy2k}  from './colorTemperature';
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
 const isLEDChipDefByWaveLength = (arg: any): arg is LEDChipDefByWaveLength => arg.waveLength !== undefined;
@@ -126,22 +126,22 @@ export class LEDChip extends CSpaceR implements ILEDChip {
         if (isLEDChipDefByWaveLength(arg) && typeOrLED !== 'LED_W') {
           // c1: waveLength specified in arg1
           w = checkWaveLength(arg.waveLength);
-          x = CIEnm2x(w);
-          y = CIEnm2y(w);
+          x = nm2x(w);
+          y = nm2y(w);
         } else if (isLEDChipDefByColorTemperature(arg) && typeOrLED === 'LED_W') {
           // c2: colorTemperature given in arg1.
           t = checkColorTemperature(arg.colorTemperature);
-          x = CIEk2x(t);
-          y = CIEk2y(t);
+          x = k2x(t);
+          y = k2y(t);
         } else if (isLEDChipDefByCIExy(arg)) {
           x = checkCIEx(arg.x);
           y = checkCIEy(arg.y);
           switch (typeOrLED) {
             case 'LED_W':
-              t = CIExy2k(x, y);
+              t = xy2k(x, y);
 	      break;
 	    default:
-	      w = CIExy2nm(x, y);
+	      w = xy2nm(x, y);
 	      break;
           }
         } else {

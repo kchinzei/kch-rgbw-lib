@@ -30,7 +30,7 @@ THE SOFTWARE.
   https://github.com/kchinzei/kch-rgbw-lib
 */
 
-import { CSpace, CSpaceTypes, CIEnm2x, CIEnm2y, checkCIExy, CIExy2nm, checkCIExyInList, CIEfitxy2List } from '../src/index';
+import { CSpace, CSpaceTypes, nm2x, nm2y, xy2nm, xyIsInGamut, xyFit2Gamut, xyMap2Gamut } from '../src/index';
 
 function makeRgbList(ii: number): CSpace[] {
   const rgbr: CSpace[] = Array(4) as CSpace[];
@@ -61,12 +61,12 @@ describe.each([
   [200, 0.173134328, 0.004477612], // nm in UV
   [800, 0.735483871, 0.264516129], // nm in NIR
 ])('[nm: %i => CIE(%f, %f)]', (nm, x, y) => {
-  test(`${i++}. CIEnm2x(${nm}): should return ${x}`, () => {
-    expect(CIEnm2x(nm)).toBeCloseTo(x, 0);
+  test(`${i++}. nm2x(${nm}): should return ${x}`, () => {
+    expect(nm2x(nm)).toBeCloseTo(x, 0);
   });
 
-  test(`${i++}. CIEnm2y(${nm}): should return ${y}`, () => {
-    expect(CIEnm2y(nm)).toBeCloseTo(y, 0);
+  test(`${i++}. nm2y(${nm}): should return ${y}`, () => {
+    expect(nm2y(nm)).toBeCloseTo(y, 0);
   });
 });
 
@@ -80,12 +80,12 @@ describe.each([
   [0.173134328, 0, 405], // too small y (correct: 0.003858521 = yMin)
   [0.074339401, 0.84, 520], // too large y (correct: 0.833822666 = yMax)
 ])('[CIE(%f, %f) => nm: %i]', (x, y, nm) => {
-  test(`${i++}. CIExy2nm(${x}, ${y}): should return ${nm}`, () => {
+  test(`${i++}. xy2nm(${x}, ${y}): should return ${nm}`, () => {
     let c: CSpace = new CSpace('xy', [x, y]);
-    expect(CIExy2nm(c)).toBeCloseTo(nm, -2);
+    expect(xy2nm(c)).toBeCloseTo(nm, -2);
     c = new CSpace('xyY', [x, y, 1]);
-    expect(CIExy2nm(c)).toBeCloseTo(nm, -2);
-    expect(CIExy2nm(x, y)).toBeCloseTo(nm, -2);
+    expect(xy2nm(c)).toBeCloseTo(nm, -2);
+    expect(xy2nm(x, y)).toBeCloseTo(nm, -2);
   });
 });
 
@@ -94,18 +94,18 @@ describe.each([
   ['rgb', 0.2, 0.3, 0.4],
   ['XYZ', 0.2, 0.3, 0.4]
 ])('[CIE(%f, %f) => k]', (typ, a0, a1, a2) => {
-  test(`${i++}. CIExy2nm(): should fail when not xy or xyY`, () => {
+  test(`${i++}. xy2nm(): should fail when not xy or xyY`, () => {
     expect(() => {
       let c: CSpace = new CSpace(typ as CSpaceTypes, [a0, a1, a2]);
-      let ret: number = CIExy2nm(c); // wrong! rgb etc is not acceptable
+      let ret: number = xy2nm(c); // wrong! rgb etc is not acceptable
       console.log(ret);
     }).toThrow();
   });
 });
 
-test(`${i++}. CIExy2nm(): should fail when only one number given`, () => {
+test(`${i++}. xy2nm(): should fail when only one number given`, () => {
     expect(() => {
-      let ret: number = CIExy2nm(0.5); // wrong! if number given, two numbers necessary
+      let ret: number = xy2nm(0.5); // wrong! if number given, two numbers necessary
       console.log(ret);
     }).toThrow();
   });
@@ -135,11 +135,11 @@ describe.each([
   [0.3, 0.4, true],
   [0.05, 0.8, true]
 ])('[CIE(%f, %f) => in: %i]', (x, y, res) => {
-  test(`${i++}. checkCIExy(${x}, ${y}): should return ${res}`, () => {
+  test(`${i++}. xyIsInGamut(${x}, ${y}): should return ${res}`, () => {
     let c: CSpace = new CSpace('xy', [x, y]);    
-    expect(checkCIExy(c) == true).toBe(res == true);
+    expect(xyIsInGamut(c) == true).toBe(res == true);
     c = new CSpace('xyY', [x, y, 1]);
-    expect(checkCIExy(c) == true).toBe(res == true);
+    expect(xyIsInGamut(c) == true).toBe(res == true);
   });
 });
 
@@ -148,10 +148,10 @@ describe.each([
   ['rgb', 0.2, 0.3, 0.4],
   ['XYZ', 0.2, 0.3, 0.4]
 ])('[CIE(%f, %f) => k]', (typ, a0, a1, a2) => {
-  test(`${i++}. checkCIExy(): should fail when not xy or xyY`, () => {
+  test(`${i++}. xyIsInGamut(): should fail when not xy or xyY`, () => {
     expect(() => {
       let c: CSpace = new CSpace(typ as CSpaceTypes, [a0, a1, a2]);
-      let ret = checkCIExy(c); // wrong! rgb etc is not acceptable
+      let ret = xyIsInGamut(c); // wrong! rgb etc is not acceptable
       console.log(ret);
     }).toThrow();
   });
@@ -168,12 +168,12 @@ describe.each([
   [0.1547, 0.8058, false], // Near 530 nm, same y.
   [0.7355, 0.2645, false], // Near 700 nm
 ])('[CIE(%f, %f) => in: %i]', (x, y, res) => {
-  test(`${i++}. checkCIExyInList(${x}, ${y}): should return ${res}`, () => {
+  test(`${i++}. xyIsInGamut(${x}, ${y}): should return ${res}`, () => {
     const rgbList: CSpace[] = makeRgbList(i);
     let c: CSpace = new CSpace('xy', [x, y]);    
-    expect(checkCIExyInList(c, rgbList) == true).toBe(res == true);
+    expect(xyIsInGamut(c, rgbList) == true).toBe(res == true);
     c = new CSpace('xyY', [x, y, 1]);
-    expect(checkCIExyInList(c, rgbList) == true).toBe(res == true);
+    expect(xyIsInGamut(c, rgbList) == true).toBe(res == true);
   });
 });
 
@@ -182,11 +182,11 @@ describe.each([
   ['rgb', 0.2, 0.3, 0.4],
   ['XYZ', 0.2, 0.3, 0.4]
 ])('[CIE(%f, %f) => k]', (typ, a0, a1, a2) => {
-  test(`${i++}. checkCIExy(): should fail when not xy or xyY`, () => {
+  test(`${i++}. xyIsInGamut(): should fail when not xy or xyY`, () => {
     expect(() => {
       const rgbList: CSpace[] = makeBadRgbList(i);
       let c: CSpace = new CSpace(typ as CSpaceTypes, [a0, a1, a2]);
-      let ret = checkCIExyInList(c, rgbList); // wrong! rgb etc is not acceptable
+      let ret = xyIsInGamut(c, rgbList); // wrong! rgb etc is not acceptable
       console.log(ret);
     }).toThrow();
   });
@@ -205,17 +205,55 @@ describe.each([
   [0.4000, 0.1000, 0.1731, 0.0045, 405.00],
   [0.0500, 0.2500, 0.0562, 0.2515, 487.70],
 ])('[CIE(%f, %f) => CIE(%f, %f) w/ %f nm]', (x, y, rx, ry, rnm) => {
-  test(`${i++}. CIEfitxy2List(${x}, ${y}): should return (${rx},${ry},${rnm})`, () => {
-    let c: CSpace = new CSpace('xy', [x, y]);
-    let ret: CSpace = CIEfitxy2List(c);
-    expect(ret.x).toBeCloseTo(rx, 1);
-    expect(ret.y).toBeCloseTo(ry, 1);
-    expect(ret.q).toBeCloseTo(rnm, 0);
+  test(`${i++}. xyFit2Gamut(${x}, ${y}): should return (${rx},${ry},${rnm})`, () => {
+    let c = new CSpace('xy', [x, y]);
+    let inside = xyIsInGamut(c);
+
+    let ret = xyFit2Gamut(c);
+    if (inside) {
+      expect(ret.x).toBeCloseTo(x, 1);
+      expect(ret.y).toBeCloseTo(y, 1);
+      expect(ret.q).toBeCloseTo(rnm, 0);
+    } else {
+      expect(ret.x).toBeCloseTo(rx, 1);
+      expect(ret.y).toBeCloseTo(ry, 1);
+      expect(ret.q).toBeCloseTo(rnm, 0);
+    }
+
     c = new CSpace('xyY', [x, y, 1]);
-    ret = CIEfitxy2List(c);
-    expect(ret.x).toBeCloseTo(rx, 1);
-    expect(ret.y).toBeCloseTo(ry, 1);
-    expect(ret.q).toBeCloseTo(rnm, 0);
+    ret = xyFit2Gamut(c);
+    if (inside) {
+      expect(ret.x).toBeCloseTo(x, 1);
+      expect(ret.y).toBeCloseTo(y, 1);
+      expect(ret.q).toBeCloseTo(rnm, 0);
+    } else {
+      expect(ret.x).toBeCloseTo(rx, 1);
+      expect(ret.y).toBeCloseTo(ry, 1);
+      expect(ret.q).toBeCloseTo(rnm, 0);
+    }
+
+    c = new CSpace('xy', [x, y]);
+    ret = xyMap2Gamut(c);
+    if (inside) {
+      expect(ret.x).toBeCloseTo(rx, 1);
+      expect(ret.y).toBeCloseTo(ry, 1);
+      expect(ret.q).toBeCloseTo(rnm, 0);
+    } else {
+      expect(ret.x).toBeCloseTo(rx, 1);
+      expect(ret.y).toBeCloseTo(ry, 1);
+      expect(ret.q).toBeCloseTo(rnm, 0);
+    }
+    c = new CSpace('xyY', [x, y, 1]);
+    ret = xyMap2Gamut(c);
+    if (inside) {
+      expect(ret.x).toBeCloseTo(rx, 1);
+      expect(ret.y).toBeCloseTo(ry, 1);
+      expect(ret.q).toBeCloseTo(rnm, 0);
+    } else {
+      expect(ret.x).toBeCloseTo(rx, 1);
+      expect(ret.y).toBeCloseTo(ry, 1);
+      expect(ret.q).toBeCloseTo(rnm, 0);
+    }
   });
 });
 
@@ -224,10 +262,15 @@ describe.each([
   ['rgb', 0.2, 0.3, 0.4],
   ['XYZ', 0.2, 0.3, 0.4]
 ])('[CIE(%f, %f) => k]', (typ, a0, a1, a2) => {
-  test(`${i++}. CIEfitxy2List(): should fail when not xy or xyY`, () => {
+  test(`${i++}. xyFit2Gamut(): should fail when not xy or xyY`, () => {
     expect(() => {
       let c: CSpace = new CSpace(typ as CSpaceTypes, [a0, a1, a2]);
-      let ret: CSpace = CIEfitxy2List(c); // wrong! rgb etc is not acceptable
+      let ret: CSpace = xyFit2Gamut(c); // wrong! rgb etc is not acceptable
+      console.log(ret);
+    }).toThrow();
+    expect(() => {
+      let c: CSpace = new CSpace(typ as CSpaceTypes, [a0, a1, a2]);
+      let ret: CSpace = xyMap2Gamut(c); // wrong! rgb etc is not acceptable
       console.log(ret);
     }).toThrow();
   });
@@ -238,7 +281,6 @@ describe.each([
 
 describe.each([
   // [x, y, result]
-  [ 0.3500, 0.3500, 0.3500, 0.3500 ],
   [ 0.2500, 0.0500, 0.2224, 0.0999 ],
   [ 0.3500, 0.6000, 0.3307, 0.5756 ],
   [ 0.1000, 0.0500, 0.1500, 0.0600 ],
@@ -249,16 +291,56 @@ describe.each([
   [ 0.7000, 0.3000, 0.6400, 0.3300 ],
   [ 0.6500, 0.3000, 0.6350, 0.3272 ]
 ])('[CIE(%f, %f) => (%f, %f]', (x, y, rx, ry) => {
-  test(`${i++}. checkCIExyInList(${x}, ${y}) to fit RGB gamut`, () => {
+  test(`${i++}. xyIsInGamut(${x}, ${y}) to fit RGB gamut`, () => {
     const rgbList: CSpace[] = makeRgbList(i);
-    let c: CSpace = new CSpace('xy', [x, y]);
-    let ret: CSpace = CIEfitxy2List(c, rgbList);
-    expect(ret.x).toBeCloseTo(rx, 1);
-    expect(ret.y).toBeCloseTo(ry, 1);
-    c = new CSpace('xyY', [x, y, 1]);
-    ret = CIEfitxy2List(c, rgbList);
-    expect(ret.x).toBeCloseTo(rx, 1);
-    expect(ret.y).toBeCloseTo(ry, 1);
+    let c = new CSpace('xy', [x, y, 3.14]);
+    let inside = xyIsInGamut(c, rgbList);
+
+    let ret = xyFit2Gamut(c, rgbList);
+    if (inside) {
+      expect(ret.x).toBeCloseTo(x, 1);
+      expect(ret.y).toBeCloseTo(y, 1);
+      expect(ret.q).toBeCloseTo(3.14, 1);
+    } else {
+      expect(ret.x).toBeCloseTo(rx, 1);
+      expect(ret.y).toBeCloseTo(ry, 1);
+      expect(ret.q).toBeCloseTo(3.14, 1);
+    }
+
+    c = new CSpace('xyY', [x, y, 3.14]);
+    ret = xyFit2Gamut(c, rgbList);
+    if (inside) {
+      expect(ret.x).toBeCloseTo(x, 1);
+      expect(ret.y).toBeCloseTo(y, 1);
+      expect(ret.q).toBeCloseTo(3.14, 1);
+    } else {
+      expect(ret.x).toBeCloseTo(rx, 1);
+      expect(ret.y).toBeCloseTo(ry, 1);
+      expect(ret.q).toBeCloseTo(3.14, 1);
+    }
+
+    ret = xyMap2Gamut(c, rgbList);
+    if (inside) {
+      expect(ret.x).toBeCloseTo(rx, 1);
+      expect(ret.y).toBeCloseTo(ry, 1);
+      expect(ret.q).toBeCloseTo(3.14, 1);
+    } else {
+      expect(ret.x).toBeCloseTo(rx, 1);
+      expect(ret.y).toBeCloseTo(ry, 1);
+      expect(ret.q).toBeCloseTo(3.14, 1);
+    }
+
+    c = new CSpace('xyY', [x, y, 3.14]);
+    ret = xyMap2Gamut(c, rgbList);
+    if (inside) {
+      expect(ret.x).toBeCloseTo(rx, 1);
+      expect(ret.y).toBeCloseTo(ry, 1);
+      expect(ret.q).toBeCloseTo(3.14, 1);
+    } else {
+      expect(ret.x).toBeCloseTo(rx, 1);
+      expect(ret.y).toBeCloseTo(ry, 1);
+      expect(ret.q).toBeCloseTo(3.14, 1);
+    }
   });
 });
 
@@ -268,11 +350,11 @@ describe.each([
   ['rgb', 0.2, 0.3, 0.4],
   ['XYZ', 0.2, 0.3, 0.4]
 ])('[CIE(%f, %f) => k]', (typ, a0, a1, a2) => {
-  test(`${i++}. checkCIExy(): should fail when not xy or xyY`, () => {
+  test(`${i++}. xyIsInGamut(): should fail when not xy or xyY`, () => {
     expect(() => {
       const rgbList: CSpace[] = makeBadRgbList(i);
       const c: CSpace = new CSpace(typ as CSpaceTypes, [a0, a1, a2]);
-      const ret: CSpace = CIEfitxy2List(c, rgbList); // wrong! rgb etc is not acceptable
+      const ret: CSpace = xyFit2Gamut(c, rgbList); // wrong! rgb etc is not acceptable
       console.log(ret);
     }).toThrow();
   });

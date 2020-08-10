@@ -31,7 +31,7 @@ THE SOFTWARE.
   https://github.com/kchinzei/kch-rgbw-lib
 */
 
-import { CIEk2x, CIEk2y, CIExy2k, CIEfadein, CSpace, CSpaceTypes } from '../src/index';
+import { k2x, k2y, xy2k, fadeInK, fadeOutK, CSpace, CSpaceTypes } from '../src/index';
 
 let i = 1;
 
@@ -43,12 +43,12 @@ describe.each([
   [21000, 0.2580, 0.2574], // very hot k as Sirius
 
 ])('[k: %i => CIE(%f, %f)]', (k, x, y) => {
-  test(`${i++}. CIEk2x(${k}): should return ${x}`, () => {
-    expect(CIEk2x(k)).toBeCloseTo(x, 0);
+  test(`${i++}. k2x(${k}): should return ${x}`, () => {
+    expect(k2x(k)).toBeCloseTo(x, 0);
   });
 
-  test(`${i++}. CIEk2y(${k}): should return ${y}`, () => {
-    expect(CIEk2y(k)).toBeCloseTo(y, 0);
+  test(`${i++}. k2y(${k}): should return ${y}`, () => {
+    expect(k2y(k)).toBeCloseTo(y, 0);
   });
 });
 
@@ -69,15 +69,15 @@ describe.each([
   [0.4, 0.1, 20000],
   [0.6, 0.2, 1000],
 ])('[CIE(%f, %f) => k: %i]', (x, y, k) => {
-  test(`${i++}. CIExy2k(${x}, ${y}): should return ${k}`, () => {
+  test(`${i++}. xy2k(${x}, ${y}): should return ${k}`, () => {
     let c: CSpace = new CSpace('xy', [x, y]);
-    let ret: number = CIExy2k(c);
+    let ret: number = xy2k(c);
     expect(ret).toBeCloseTo(k, -2);
     c = new CSpace('xyY', [x, y, 1]);
-    ret = CIExy2k(c);
+    ret = xy2k(c);
     expect(ret).toBeCloseTo(k, -2);
     // It also works with (x, y) given.
-    expect(CIExy2k(x, y)).toBeCloseTo(k, -2);
+    expect(xy2k(x, y)).toBeCloseTo(k, -2);
   });
 });
 
@@ -86,18 +86,18 @@ describe.each([
   ['rgb', 0.2, 0.3, 0.4],
   ['XYZ', 0.2, 0.3, 0.4]
 ])('[CIE(%f, %f) => k]', (typ, a0, a1, a2) => {
-  test(`${i++}. CIExy2k(): should fail when not xy or xyY`, () => {
+  test(`${i++}. xy2k(): should fail when not xy or xyY`, () => {
     expect(() => {
       let c: CSpace = new CSpace(typ as CSpaceTypes, [a0, a1, a2]);
-      let ret: number = CIExy2k(c); // wrong! rgb etc is not acceptable
+      let ret: number = xy2k(c); // wrong! rgb etc is not acceptable
       console.log(ret);
     }).toThrow();
   });
 });
 
-test(`${i++}. CIExy2k(): should fail when only one number given`, () => {
+test(`${i++}. xy2k(): should fail when only one number given`, () => {
     expect(() => {
-      let ret: number = CIExy2k(0.5); // wrong! two numbers necessary.
+      let ret: number = xy2k(0.5); // wrong! two numbers necessary.
       console.log(ret);
     }).toThrow();
   });
@@ -105,10 +105,16 @@ test(`${i++}. CIExy2k(): should fail when only one number given`, () => {
 describe.each([
   [0.3155, 0.3270, 50, 6500], // 6500k
 ])('[CIE(%f, %f, %i) => k: %i]', (x, y, s, k) => {
-  test(`${i++}. CIEfadeout(${x}, ${y}): should return array of ${s}`, () => {
+  test(`${i++}. fadeIn/OutK(${x}, ${y}): should return array of ${s}`, () => {
     const c: CSpace = new CSpace('xy', [x, y]);
-    const ret: CSpace[] = CIEfadein(c, s);
-    const len = ret.length;
+    let ret: CSpace[] = fadeInK(c, s);
+    let len = ret.length;
+    expect(len).toBe(s);
+    expect(ret[len-1].x).toBeCloseTo(x, -2);
+    expect(ret[len-1].y).toBeCloseTo(y, -2);
+
+    ret = fadeOutK(c, s);
+    len = ret.length;
     expect(len).toBe(s);
     expect(ret[len-1].x).toBeCloseTo(x, -2);
     expect(ret[len-1].y).toBeCloseTo(y, -2);
@@ -118,11 +124,17 @@ describe.each([
 describe.each([
   [0.3155, 0.3270, 50, 6500], // 6500k
 ])('[CIE(%f, %f, %i) => k: %i]', (x, y, s, k) => {
-  test(`${i++}. CIEfadeout(${x}, ${y}): should return array of ${s}`, () => {
+  test(`${i++}. fadeIn/OutK(${x}, ${y}): should return array of ${s}`, () => {
     const exponential = (r: number) => (1 - Math.exp(-4*r));
     const c = new CSpace('xyY', [x, y, 1]);
-    const ret = CIEfadein(c, s, exponential);
-    const len = ret.length;
+    let ret = fadeInK(c, s, exponential);
+    let len = ret.length;
+    expect(len).toBe(s);
+    expect(ret[len-1].x).toBeCloseTo(x, -2);
+    expect(ret[len-1].y).toBeCloseTo(y, -2);
+
+    ret = fadeOutK(c, s, exponential);
+    len = ret.length;
     expect(len).toBe(s);
     expect(ret[len-1].x).toBeCloseTo(x, -2);
     expect(ret[len-1].y).toBeCloseTo(y, -2);
@@ -134,10 +146,15 @@ describe.each([
   ['rgb', 0.2, 0.3, 0.4],
   ['XYZ', 0.2, 0.3, 0.4]
 ])('', (typ, a0, a1, a2) => {
-  test(`${i++}. CIEfadeout(): should fail if not xy or xyY`, () => {
+  test(`${i++}. fadeIn/OutK(): should fail if not xy or xyY`, () => {
     expect(() => {
       let c: CSpace = new CSpace(typ as CSpaceTypes, [a0, a1, a2]);
-      const ret = CIEfadein(c, 30); // Fail; XYZ etc is not acceptable.
+      const ret = fadeInK(c, 30); // Fail; XYZ etc is not acceptable.
+      ret.length = 10;
+    }).toThrow();
+    expect(() => {
+      let c: CSpace = new CSpace(typ as CSpaceTypes, [a0, a1, a2]);
+      const ret = fadeOutK(c, 30); // Fail; XYZ etc is not acceptable.
       ret.length = 10;
     }).toThrow();
   });

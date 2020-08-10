@@ -58,9 +58,9 @@ By adding LEDs of different colors, the gamut can be extended.
 
 You can construct a gamut contour using `makeGamutContour()`.
 
-To test if a color is within the gamut, you can use `checkCIExy(xy: CSpace, xyList?: CSpace[])`.
+To test if a color is within the gamut, you can use `xyIsInGamut(xy: CSpace, xyList?: CSpace[])`.
 Here you provide a gamut contour as `xyList`.
-You can fit a color inside the gamut contour using `CIEfitxy2InList()`.
+You can fit a color inside the gamut contour using `xyFit2Gamut()`.
 About those functions, see [WaveLength.md](https://github.com/kchinzei/kch-rgbw-lib/#README.md).
 
 ### Constructors
@@ -95,7 +95,7 @@ Modifying `LEDChip` in this array will result in unexpected behavior.
 ##### .color = c: CSpace
 
 Set the color of `RGBWLED` to the given color `c`.
-If `c` is not inside the gamut, it is fit into the gamut using `CIEfitxy2List()`.
+If `c` is not inside the gamut, it is fit into the gamut using `xyFit2Gamut()`.
 
 If type of `c` is `'xyY'` or `'XYZ'`, the `Y` component of `c` is used as the new luminance.
 In other cases, it maintains the current luminance.
@@ -137,7 +137,7 @@ Gamut contour is the outermost polygon made by colors in `cList`.
 You need to provide at least 3 different colors in `cList`.
 Order of colors does not matter.
 
-Returned array has the first color at the end of array also so that it can be used by `CIEfitxy2List()` and `checkCIExyInList()`.
+Returned array has the first color at the end of array also so that it can be used by `xyFit2Gamut()` and `xyIsInGamut()`.
 
 ### To do
 

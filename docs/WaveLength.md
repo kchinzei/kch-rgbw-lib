@@ -3,6 +3,7 @@
 It is a part of [kch-rgbw-lib](https://github.com/kchinzei/kch-rgbw-lib).
 See [README.md](https://github.com/kchinzei/kch-rgbw-lib/#README.md)
 for general information.
+Functions in this documents are in CIE 1931 chromaticity for `(x, y)` and in nanometer (nm) for wave length.
 
 ### Code snippet
 
@@ -10,84 +11,91 @@ In TypeScript/ES2015:
 
 ```TypeScript
 import { CSpace, CSpaceTypes } from 'kch-rgbw-lib';
-import { CIEnm2x, CIEnm2y, CIExy2nm } from 'kch-rgbw-lib';
-import { checkCIExy, CIEfitxy2InList } from 'kch-rgbw-lib';
+import { nm2x, nm2y, xy2nm } from 'kch-rgbw-lib';
+import { xyIsInGamut, xyFit2Gamut } from 'kch-rgbw-lib';
 ```
 
 ## API
 
 ### Functions
 
-##### CIEnm2x(nm: number): number
+##### nm2x(nm: number): number
 
-##### CIEnm2y(nm: number): number
+##### nm2y(nm: number): number
 
 Return CIE-x or CIE-y value corresponding to the given wavelength in nm.
 
-##### function CIExy2nm(xy: CSpace): number
+##### function xy2nm(xy: CSpace): number
 
-##### function CIExy2nm(x: number, y: number): number
+##### function xy2nm(x: number, y: number): number
 
 Return wavelength that corresponds to CIE (x, y), in nanometer [nm].
 When (x, y) is not on the CIE 1931 curve, it returns the projected point to the
 curve. Note that the returned wavelength is meaningful only when (x, y)
-is on or the curve. It internally calls CIEfitxy2List().
+is on or the curve. It internally calls xyFit2Gamut().
 
-##### checkCIExyInList(xy: CSpace, xyList?: CSpace[]): boolean
+##### xyIsInGamut(xy: CSpace, xyList?: CSpace[]): boolean
 
-Examine if a color `xy` is within the gamut contour given by `xyList`.
-If `xyList` is omitted, the CIE 1931 gamut is used.
+Examine if a color `xy` is inside the gamut contour given by `xyList`.
+`xyList` is an array of CSpace, each element represents a vertex of the gamut contour.
+If `xyList` is omitted, the CIE 1931 chromaticity gamut is used.
 You can construct a gamut contour using `makeGamutContour()`, see [RGBWLED.md](https://github.com/kchinzei/kch-rgbw-lib/#RGBWLED.md).
 
-If you provide a gamut contour for R-G-B LEDs, you can use `checkCIExyInList()` to check if a color is in the RGB range.
+If you provide a gamut contour for R-G-B colors, you can use `xyIsInGamut()` to check if a color is in the RGB range.
 ![Gamut_sRGB](./figs/Gamut_sRGB.png "sRGB Gamut")
 
 `xy` and `xyList` should be in 'xy' or 'xyY' of `CSpaceTypes`.
 Other types will throw an exception.
-Order of entries in xyList can be both clockwise and counter clockwise.
+Order of entries in `xyList` can be both clockwise and counter clockwise.
 
-`checkCIExyInList()`` uses an algorithm in https://www.nttpc.co.jp/technology/number_algorithm.html.
-
-`xyList` is an array of CSpace, each element represents a vertex of the polygon.
-
-IMPORTANT: when it's an n-vertex polygon, `xyList` requires n+1 elements,
+**IMPORTANT:** when it's an n-vertex polygon, `xyList` requires n+1 elements,
 where `xyList[n] = xyList[0]`, for the simpleness of the algorithm.
 
-Rotation order of the points can be both CW and CCW.
 The polygon can be concave, but the edges should not cross each other.
 
 Note: For the purpose of checking the coverage of color sources, concave polygon is physically not meaningful.
-You should use the outmost polygon made by the color sources.
+You should use the outermost polygon made by the color sources.
+`makeGamutContour()` does it for you.
 
-###### function CIEfitxy2List(xy: CSpace, xyList?: CSpace[]): CSpace
+`xyIsInGamut()` uses an algorithm in https://www.nttpc.co.jp/technology/number_algorithm.html.
 
-Return the nearest point on the polygon given by `xyList`.
-If `xyList` is omitted, the CIE 1931 gamut is used.
-`CIEfitxy2List()` calculates the corresponding wave length on the CIE 1931 curve when `xyList` is omitted.
+##### function xyFit2Gamut(xy: CSpace, xyList?: CSpace[]): CSpace
+
+##### function xyMap2Gamut(xy: CSpace, xyList?: CSpace[]): CSpace
+
+`xyFit2Gamut()` examines if `xy` is inside the gamut contour given by `xyList`.
+If not, `xyFit2Gamut()` projects `xy` to the nearest point on `xyList`.
+
+`xyMap2Gamut()` projects `xy` to the nearest point on `xyList`.
+
+If `xyList` is omitted, the CIE 1931 chromaticity gamut is used.
+
+`xyMap2Gamut()` calculates the corresponding wave length on the CIE 1931 chromaticity curve when `xyList` is omitted.
+
 You can obtain the wave length by
 
 ```TypeScript
 let c: CSpace = new CSpace('xy', [0.4, 0.6]);
-c = CIEfitxy2List(c);
-let waveLength = c.q; // in K
+c = xyFit2Gamut(c);
+let waveLength = c.q; // in nm
 ```
 
-`xyList` is in the same format as `checkCIExyInList()`.
+`xyList` is in the same format as `xyIsInGamut()`.
 You must append the first point at the end of array.
 
-![CIEfitxy2nm](./figs/CIExy2nm.png "Mapping by CIEfitxy2nm()")
+![CIEfitxy2nm](./figs/xy2nm.png "Mapping by CIEfitxy2nm()")
 
 - Whenever possible, it returns the projected point on the curve (points 1-4).
 - It can determine the projection even the input is outside the curve.
 - Eventually it appears not exactly on the curve due to the interpolation (4).
 - However it does not interpolate between 405nm and 700 nm.
   In such case, it returns either 405 nm or 700 nm point (5, 6).
-- Note that it can return physically nonsense wave WaveLength
-  if the input is far from the CIE 1931 curve (7).
+- Note that it can return physically nonsense wave length
+  if the input is far from the CIE 1931 chromaticity curve (7).
 
 ## To do
 
-- `CIEfitxy2List()` should be revised about under what condition it modifies the input color. Current code does not map color when it's inside the contour.
+- `xyFit2Gamut()` should be revised about under what condition it modifies the input color. Current code does not map color when it's inside the contour.
 - Names of exported function are not consistent. Need refactoring.
 
 # License

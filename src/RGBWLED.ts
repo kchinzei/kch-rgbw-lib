@@ -32,7 +32,7 @@ THE SOFTWARE.
 
 import { CSpace } from './CSpace';
 import { LEDChip } from './LEDChip';
-import { checkCIExyInList, CIEfitxy2List } from './waveLength';
+import { xyIsInGamut, xyFit2Gamut } from './waveLength';
 import { makeSolverMatrix, alpha2XYZ, XYZ2Alpha, normalize } from './solver';
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -87,7 +87,7 @@ export class RGBWLED extends CSpace implements IRGBWLED {
     }
 
     // 2. Fit c1 to the gamut.
-    c1 = CIEfitxy2List(c1, this._gamutContour);
+    c1 = xyFit2Gamut(c1, this._gamutContour);
 
     // 3. When color didn't have luminance (xy, RGB or HSV), use current luminance.
     if (c.type !== 'xyY' && c.type !== 'XYZ')
@@ -234,7 +234,7 @@ export function makeGamutContour(cList: CSpace[]): CSpace[] {
   // if cList[3>] is outside polygon
   for (let l=3, m=3; m<cList.length; m++) {
     const xC = cList[m];
-    if (!checkCIExyInList(xC, gList)) {
+    if (!xyIsInGamut(xC, gList)) {
       // Outside the polygon
       // How we should order them?
       // Change the order of xC in polygon, and select the order that maximize

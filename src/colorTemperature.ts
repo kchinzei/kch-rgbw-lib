@@ -32,7 +32,7 @@ THE SOFTWARE.
 
 import { checkColorTemperature, kMin, kMax } from './const';
 import { CSpace } from './CSpace';
-import { checkCIExy, CIEfitxy2List } from './waveLength';
+import { xyIsInGamut, xyFit2Gamut } from './waveLength';
 
 const kStep = 100; // step of temperature in colorTemperatureTable
 
@@ -248,8 +248,7 @@ function makeColorTemperatureTable() {
   return t;
 }
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
-export function CIEk2x(k: number): number {
+export function k2x(k: number): number {
   k = checkColorTemperature(k);
   const i = kIndex(k);
   const k1 = i * kStep + kMin;
@@ -265,8 +264,7 @@ export function CIEk2x(k: number): number {
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
-export function CIEk2y(k: number): number {
+export function k2y(k: number): number {
   k = checkColorTemperature(k);
   const i = kIndex(k);
   const k1 = i * kStep + kMin;
@@ -282,8 +280,7 @@ export function CIEk2y(k: number): number {
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
-export function CIExy2k(xx: CSpace|number, yy?: number): number {
+export function xy2k(xx: CSpace|number, yy?: number): number {
   let xy!: CSpace;
   let x!: number;
   let y!: number;
@@ -291,7 +288,7 @@ export function CIExy2k(xx: CSpace|number, yy?: number): number {
   if (typeof(xx) === 'object') {
     xy = xx;
     if (xy.type !== 'xy' && xy.type !== 'xyY')
-      throw new Error('CIExy2k() requires a CSpace in xy or xyY');
+      throw new Error('xy2k() requires a CSpace in xy or xyY');
     x = xy.x;
     y = xy.y;
   } else if (typeof(yy) === 'number') {
@@ -299,11 +296,11 @@ export function CIExy2k(xx: CSpace|number, yy?: number): number {
     y = yy;
     xy = new CSpace('xy', [x, y]);
   } else {
-    throw new Error('CIExy2k() requires a pair of (x, y) or CSpace');
+    throw new Error('xy2k() requires a pair of (x, y) or CSpace');
   }
 
-  if (checkCIExy(xy) === false) {
-    const nmxy: CSpace = CIEfitxy2List(xy);
+  if (xyIsInGamut(xy) === false) {
+    const nmxy: CSpace = xyFit2Gamut(xy);
     x = nmxy.x;
     y = nmxy.y;
   }
@@ -365,16 +362,15 @@ export function CIExy2k(xx: CSpace|number, yy?: number): number {
 
 const linearFade = (r: number) => (r);
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
-export function CIEfadeout(xy0: CSpace, steps: number, fade?: (r: number) => number): CSpace[] {
+export function fadeOutK(xy0: CSpace, steps: number, fade?: (r: number) => number): CSpace[] {
   if (xy0.type !== 'xy' && xy0.type !== 'xyY')
-    throw new Error('CIEfadeout() requires a start color in xy or xyY');
+    throw new Error('fadeOutK() requires a start color in xy or xyY');
 
   if (typeof(fade) === 'undefined') fade = linearFade;
 
   const x = xy0.x;
   const y = xy0.y;
-  const kStart = CIExy2k(xy0);
+  const kStart = xy2k(xy0);
   const kEnd = 1000;
   const fadeVals: CSpace[] = new Array(steps) as CSpace[];
 
@@ -383,17 +379,16 @@ export function CIEfadeout(xy0: CSpace, steps: number, fade?: (r: number) => num
     const r0 = 1 - r1;
     const k = kStart*r0 + kEnd*r1;
 
-    fadeVals[i] = new CSpace('xy', [x*r0 + CIEk2x(k)*r1, y*r0 + CIEk2y(k)*r1, k]);
+    fadeVals[i] = new CSpace('xy', [x*r0 + k2x(k)*r1, y*r0 + k2y(k)*r1, k]);
   }
-  fadeVals[steps-1] = new CSpace('xy', [CIEk2x(kEnd), CIEk2y(kEnd), kEnd]);
+  fadeVals[steps-1] = new CSpace('xy', [k2x(kEnd), k2y(kEnd), kEnd]);
 
   return fadeVals;
 }
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
-export function CIEfadein(xy0: CSpace, steps: number, fade?: (r: number) => number): CSpace[] {
+export function fadeInK(xy0: CSpace, steps: number, fade?: (r: number) => number): CSpace[] {
   // FixMe: fade should be reversed also.
-  const fadeArray: CSpace[] = CIEfadeout(xy0, steps, fade);
+  const fadeArray: CSpace[] = fadeOutK(xy0, steps, fade);
 
   // Reverse
   const iCount = Math.floor(steps/2);

@@ -38,11 +38,9 @@ const nmStep = 5; // step of temperature in waveLengthTable
 // Obtain index to access waveLengthTable.
 const nmIndex = (nm: number) => Math.floor((nm - nmMin) / nmStep);
 
-export const checkCIExy: (xy: CSpace) => boolean = (xy: CSpace) => checkCIExyInList(xy);
-
-export function checkCIExyInList(xy: CSpace, xyList?: CSpace[]): boolean {
+export function xyIsInGamut(xy: CSpace, xyList?: CSpace[]): boolean {
   if (xy.type !== 'xy' && xy.type !== 'xyY')
-    throw new Error('checkCIExyInList() requires a color in xy or xyY');
+    throw new Error('xyIsInGamut() requires a color in xy or xyY');
   const x = xy.x;
   const y = xy.y;
 
@@ -58,7 +56,7 @@ export function checkCIExyInList(xy: CSpace, xyList?: CSpace[]): boolean {
   let crossNum = 0;
   for (let i=0; i<xyList.length - 1; i++) {
     if (xyList[i].type !== 'xy' && xyList[i].type !== 'xyY')
-      throw new Error('checkCIExyInList() requires array of CSpace of xy or xyY');
+      throw new Error('xyIsInGamut() requires array of CSpace of xy or xyY');
 
     // Rule 1: Upward vertex.
     if (((xyList[i].y <= y) && (xyList[i+1].y > y)) ||
@@ -155,8 +153,7 @@ function makeWaveLengthTable(): CSpace[] {
   return t;
 }
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
-export function CIEnm2x(nm: number): number {
+export function nm2x(nm: number): number {
   nm = checkWaveLength(nm);
   const i = nmIndex(nm);
   const nm1 = i*nmStep + nmMin;
@@ -174,8 +171,7 @@ export function CIEnm2x(nm: number): number {
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
-export function CIEnm2y(nm: number): number {
+export function nm2y(nm: number): number {
   nm = checkWaveLength(nm);
   const i = nmIndex(nm);
   const nm1 = i*nmStep + nmMin;
@@ -192,41 +188,46 @@ export function CIEnm2y(nm: number): number {
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
-export function CIExy2nm(x: CSpace|number, y?: number): number {
+export function xy2nm(x: CSpace|number, y?: number): number {
   let xy!: CSpace;
   if (typeof(x) === 'object') {
     xy = x;
   } else if (typeof(y) === 'number') {
     xy = new CSpace('xy', [x, y]);
   } else {
-    throw new Error('CIExy2nm() requires a pair of (x, y) or CSpace');
+    throw new Error('xy2nm() requires a pair of (x, y) or CSpace');
   }
-  const ret: CSpace = CIEfitxy2List(xy);
+  const ret: CSpace = xyFit2Gamut(xy);
   return ret.q;
+}
+
+export function xyFit2Gamut(xy: CSpace, xyList: CSpace[] = waveLengthTable): CSpace {
+  return xyProjection2Gamut(xy, false, xyList);
+}
+
+export function xyMap2Gamut(xy: CSpace, xyList: CSpace[] = waveLengthTable): CSpace {
+  return xyProjection2Gamut(xy, true, xyList);
 }
 
 /*
   Project (x, y) to the polygon made of points in xyList,
   return the projected (= interpolated) (x, y) and the wavelength.
   If xyList is omitted, waveLengthTable[] is used, which is the gamut of the chromaticity space.
-  checkCIExy(interpotaled point) should be true, but numerical error may exist.
+  xyIsInGamut(interpotaled point) should be true, but numerical error may exist.
 */
-// eslint-disable-next-line @typescript-eslint/naming-convention
-export function CIEfitxy2List(xy: CSpace, xyList?: CSpace[]): CSpace {
+function xyProjection2Gamut(xy: CSpace, projectWhenInside: boolean, xyList: CSpace[]): CSpace {
   if (xy.type !== 'xy' && xy.type !== 'xyY')
-    throw new Error('CIEfitxy2List() requires a start color in xy or xyY');
+    throw new Error('xyFit2Gamut() requires a start color in xy or xyY');
   const x = xy.x;
   const y = xy.y;
   let isOpen = false;
 
-  if (typeof(xyList) === 'undefined') {
-    xyList = waveLengthTable;
+  if (xyList ===  waveLengthTable) {
     // When waveLengthTable is used, we don't interpolate between UV and NIR.
     isOpen = true;
   }
 
-  const isInside = checkCIExyInList(xy, xyList);
+  const isInside = xyIsInGamut(xy, xyList);
 
   // Not smart but working solution... check every distance!
   // Find the nearest point.
@@ -323,7 +324,7 @@ export function CIEfitxy2List(xy: CSpace, xyList?: CSpace[]): CSpace {
   ret.y = xyList[i0].y *(1-t0) + xyList[i1].y * t0;
   if (xyList === waveLengthTable)
     ret.q = xyList[i0].q *(1-t0) + xyList[i1].q * t0; // wave length.
-  if (isInside) {
+  if (isInside && !projectWhenInside) {
     ret.x = x;
     ret.y = y;
   }
