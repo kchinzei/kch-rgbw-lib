@@ -93,11 +93,6 @@ You must append the first point at the end of array.
 - Note that it can return physically nonsense wave length
   if the input is far from the CIE 1931 chromaticity curve (7).
 
-## To do
-
-- `xyFit2Gamut()` should be revised about under what condition it modifies the input color. Current code does not map color when it's inside the contour.
-- Names of exported function are not consistent. Need refactoring.
-
 # License
 
 The MIT License (MIT)
