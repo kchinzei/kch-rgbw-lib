@@ -88,7 +88,7 @@ You must append the first point at the end of array.
 ## To do
 
 - `CIEfitxy2List()` should be revised about under what condition it modifies the input color. Current code does not map color when it's inside the contour.
-- Names of exported function are not consistent. Need refactoring. 
+- Names of exported function are not consistent. Need refactoring.
 
 # License
 

@@ -139,7 +139,6 @@ Order of colors does not matter.
 
 Returned array has the first color at the end of array also so that it can be used by `CIEfitxy2List()` and `checkCIExyInList()`.
 
-
 ### To do
 
 - Populate pop() and other array manipulation functions.
