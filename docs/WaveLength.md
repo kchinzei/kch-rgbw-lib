@@ -12,7 +12,7 @@ In TypeScript/ES2015:
 ```TypeScript
 import { CSpace, CSpaceTypes } from 'kch-rgbw-lib';
 import { nm2x, nm2y, xy2nm } from 'kch-rgbw-lib';
-import { xyIsInGamut, xyFit2Gamut } from 'kch-rgbw-lib';
+import { xyIsInGamut, xyFit2Gamut, xyMap2Gamut } from 'kch-rgbw-lib';
 ```
 
 ## API
@@ -70,7 +70,7 @@ If not, `xyFit2Gamut()` projects `xy` to the nearest point on `xyList`.
 
 If `xyList` is omitted, the CIE 1931 chromaticity gamut is used.
 
-`xyMap2Gamut()` calculates the corresponding wave length on the CIE 1931 chromaticity curve when `xyList` is omitted.
+`xyFit2Gamut()` and `xyMap2Gamut()` calculate the corresponding wave length on the CIE 1931 chromaticity curve when `xyList` is omitted.
 
 You can obtain the wave length by
 
