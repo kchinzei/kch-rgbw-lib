@@ -1,5 +1,10 @@
 # Kch RGBW Lib
 
+[![npm version](https://badge.fury.io/js/kch-rgbw-lib.svg)](https://badge.fury.io/js/kch-rgbw-lib)
+[![Build Status](https://travis-ci.org/kchinzei/kch-rgbw-lib.svg?branch=master)](https://travis-ci.org/kchinzei/kch-rgbw-lib)
+[![Coverage Status](https://coveralls.io/repos/github/kchinzei/kch-rgbw-lib/badge.svg?branch=master)](https://coveralls.io/github/kchinzei/kch-rgbw-lib?branch=master)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 RGB/RGBW LED class library in typescript. It provides following classes and functions,
 
 - Composite LED class `RGBWLED` for multi-color LED. In addition to R-G-B (3 LEDs), R-G-B-W (4 LEDs), it can have **unlimited many number of LEDs**.
