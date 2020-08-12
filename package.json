@@ -14,7 +14,7 @@
     "lint:prettier": "prettier -l \"**/*.{json,md,yml}\"",
     "lint:type": "tsc --noEmit",
     "test": "run-s lint test:*",
-    "test:unit": "jest --coverage && coveralls < coverage/lcov.info"
+    "test:unit": "jest --coverage && coveralls < coverage/lcov.info",
     "tslint": "tslint 'src/**/*.ts'"
   },
   "keywords": [
