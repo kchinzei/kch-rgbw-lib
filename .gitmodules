@@ -1,0 +1,3 @@
+[submodule "docs/more"]
+	path = docs/more
+	url = https://github.com/kchinzei/kch-rgbw-docs-more.git
