@@ -42,6 +42,7 @@ If `xyList` is omitted, the CIE 1931 chromaticity gamut is used.
 You can construct a gamut contour using `makeGamutContour()`, see [RGBWLED.md](https://github.com/kchinzei/kch-rgbw-lib/#RGBWLED.md).
 
 If you provide a gamut contour for R-G-B colors, you can use `xyIsInGamut()` to check if a color is in the RGB range.
+
 ![Gamut_sRGB](./figs/Gamut_sRGB.png "sRGB Gamut")
 
 `xy` and `xyList` should be in 'xy' or 'xyY' of `CSpaceTypes`.

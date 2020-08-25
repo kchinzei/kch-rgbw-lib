@@ -40,11 +40,11 @@ This article\footnote{To cite, please refer to https://github.com/kchinzei/kch-r
 Obtaining accurate colors by mixing R-G-B color sources has been utilized as color displays since 1950s. As various colors are available by LED, recent topics are solutions of color composite with additional color sources typically for OLED applications \cite{Chi2011, Lee2014}. Usually white light sources are used as an additional light source \cite{AN1562, Chi2011, Lee2014}. For display purposes additional colors other than R-G-B have been also used to expand the possible color ranges (gamut)\cite{Wikipedia_multicolor}. Sharp once added yellow in Aquos flat-panel TV, but they initially researched 5-primary color display \cite{Sharp2011}. Amber \cite{AN2026}, turquoise, and violet can be other colors to expand the gamut.
 
 \subsection{Given parameters and assumptions}\label{s_assumptions}
-We have $N \geq 3$ color sources (LEDs) with chromaticity $(x_i, y_i)$ and maximum luminance $Y_i$, where $i=1 \ldots N$. Our problem is to find the optimum composite output ratio (PWM output) $\boldsymbol{\alpha} = [\alpha_1 \ldots \alpha_N]^T$ where $0 \leq \alpha_i \leq 1$ to represent a given color input with chromaticity $(x, y)$ and luminance $Y$.
+We have $N \geq 3$ color sources (LEDs) with chromaticity $(x_i, y_i)$ and maximum luminance $Y_i$, where $i=1 \ldots N$. Our problem is to find the optimum composite output ratio (PWM output) $\boldsymbol{\alpha} = [\alpha_1 \cdots \alpha_N]^T$ where $0 \leq \alpha_i \leq 1$ to represent a given color input with chromaticity $(x, y)$ and luminance $Y$.
 
 Here, we set our goal of optimization as the following:
 \begin{enumerate}
-  \item\label{I_max_luminance} Under physical constraint $0 \leq Y \leq  Y_1 + \ldots + Y_N$,
+  \item\label{I_max_luminance} Under physical constraint $0 \leq Y \leq  Y_1 + \cdots + Y_N$,
   \item\label{I_solution} Obtain exact composite color to represent $(x, y, Y)$.
   \item\label{I_inside_gamut} If $(x, y)$ is outside the gamut of color source, the nearest color in it is used.
   It can be achieved by projecting the input to the gamut contour.
@@ -64,7 +64,7 @@ It is a typical linear programming (LP) problem. When $N=3$, e.g. R-G-B color so
 We first derive a general description of the problem and solve it for $N=3$, $N=4$ and $N > 4$ cases.
 
 \section{General solution}
-We use XYZ color space because a composite of color source in XYZ color space can be obtained as a simple sum of each term.  In XYZ color space, our problem is to determine $\boldsymbol{\alpha} = [\alpha_1 \ldots \alpha_N]$ which gives an equation between input color $[X, Y, Z]^T$ and color source $[X_{i}, Y_{i}, Z_{i}]^T$, $i=1 \ldots N$;
+We use XYZ color space because a composite of color source in XYZ color space can be obtained as a simple sum of each term.  In XYZ color space, our problem is to determine $\boldsymbol{\alpha} = [\alpha_1 \cdots \alpha_N]$ which gives an equation between input color $[X, Y, Z]^T$ and color source $[X_{i}, Y_{i}, Z_{i}]^T$, $i=1 \ldots N$;
 
 \begin{equation}
   \label{E_XYZcomposite}
@@ -83,7 +83,7 @@ We use XYZ color space because a composite of color source in XYZ color space ca
         Z_1
     \end{array}
   \right]
-   + \ldots + \alpha_N
+   + \cdots + \alpha_N
   \left[
     \begin{array}{c}
         X_N \\
@@ -116,22 +116,22 @@ where
 
 \begin{eqnarray}
   \left[ \boldsymbol{X} \right] &=&
-  \left[ X, Y, Z \right]^T \label{E_XYZ^T} \\
+  \left[ X \:1 Y \, Z \right]^T \label{E_XYZ^T} \\
 %
   \left[ \boldsymbol{A} \right] &=&
   \left[
     \begin{array}{ccc}
-      \frac{x_1}{y_1} Y_1 & \ldots & \frac{x_N}{y_N} Y_N \\
-      Y_1 & \ldots & Y_N \\
-      \frac{1 - x_1 - y_1}{y_1}Y_1 & \ldots & \frac{1 - x_N - y_N}{y_N}Y_N
+      \frac{x_1}{y_1} Y_1 & \cdots & \frac{x_N}{y_N} Y_N \\
+      Y_1 & \cdots & Y_N \\
+      \frac{1 - x_1 - y_1}{y_1}Y_1 & \cdots & \frac{1 - x_N - y_N}{y_N}Y_N
     \end{array}
   \right] \\
 %
   \left[ \boldsymbol{\alpha} \right] &=&
-  \left[ \alpha_1,\ \ldots\ , \alpha_N \right]^T
+  \left[ \alpha_1\, \cdots\, \alpha_N \right]^T
 \end{eqnarray}
 
-Our goal is to solve Eq.~\eqref{E_X=AY} with respect to $ \boldsymbol{\alpha} = [\alpha_1 \ldots \alpha_N]^T $. To solve it, we can use the singular value decomposition (SVD) (Eq.~\eqref{E_SVD})~\cite{SVD_NRC}.
+Our goal is to solve Eq.~\eqref{E_X=AY} with respect to $ \boldsymbol{\alpha} = [\alpha_1 \cdots \alpha_N]^T $. To solve it, we can use the singular value decomposition (SVD) (Eq.~\eqref{E_SVD})~\cite{SVD_NRC}.
 
 \begin{equation}
   \label{E_SVD}
@@ -140,7 +140,7 @@ Our goal is to solve Eq.~\eqref{E_X=AY} with respect to $ \boldsymbol{\alpha} = 
   \left[
     \begin{array}{cccc}
       \omega_1 & \\
-        & \omega_2 &   &  0 \ldots 0 \\
+        & \omega_2 &   &  0 \cdots 0 \\
         &  & \omega_3 &
     \end{array}
   \right]
@@ -150,7 +150,7 @@ Our goal is to solve Eq.~\eqref{E_X=AY} with respect to $ \boldsymbol{\alpha} = 
 \noindent
 where $ \boldsymbol{A} $ is $ 3 \times N $,
 $ \boldsymbol{U} $ is $ 3 \times 3 $,
-$ [\omega_1 \ddots \omega_3, 0 \ldots 0] $ is $ 3 \times N $,
+$ [\omega_1 \ddots \omega_3, 0 \cdots 0] $ is $ 3 \times N $,
 $ \boldsymbol{V}^T $ is $ N \times N $ matrixes
 \footnote{Many implementations of SVD return 'economy' $\boldsymbol{V}$ in $ N \times 3$ instead of calculating full $N \times N$ size. Matlab, Octave without 'econ' option and \href{https://www.npmjs.com/package/svd-js}{svd-js} javascript package in NPM with 'f' option (This is my contribution!) give full $\boldsymbol{V}$.}
 in this specific case, since $ \boldsymbol{A} $ is a $ 3 \times N $ matrix and there are upto 3 $\omega$'s. When $ N \geq 4 $, $ [\omega_1 \ddots \omega_3 ] $ is null-padded in $ 3 \times (N-3) $.
@@ -170,7 +170,7 @@ The pseudo-inverse matrix $ \boldsymbol{A}^{-1} $ is obtained by
 \end{equation}
 
 \noindent
-where $ \boldsymbol{V}_{1-3} $ is the first 3 columns of $ \boldsymbol{V} $, those correspond to $ \omega_1 \ldots \omega_3 $
+where $ \boldsymbol{V}_{1-3} $ is the first 3 columns of $ \boldsymbol{V} $, those correspond to $ \omega_1, \omega_2, \omega_3 $
 \footnote{Many implementations of SVD do not sort $ \boldsymbol{U}, \boldsymbol{V}$ by $\omega$s. Matlab and Octave do sort. Algorithm in 'Numerical Recipes in C' and \href{https://www.npmjs.com/package/svd-js}{svd-js} in NPM do not.}.
 Using $ \boldsymbol{A}^{-1} $, we obtain
 
@@ -188,7 +188,7 @@ By the way, what about the rest of columns in $ \boldsymbol{V} $? They are null 
   \left[ \boldsymbol{\alpha} \right] =
   \left[ \boldsymbol{A} \right]^{-1}
   \left[ \boldsymbol{X} \right]
-  + \beta_4 \boldsymbol{n}_4 + \ldots + \beta_N \boldsymbol{n}_N
+  + \beta_4 \boldsymbol{n}_4 + \cdots + \beta_N \boldsymbol{n}_N
 \end{equation}
 \noindent
 where $ \beta_4 \ldots \beta_N $ are arbitrary numbers. By choosing these using other constraints, we can obtain the optimum solution.
@@ -243,7 +243,7 @@ Since it is always $ 0 \leq \alpha_i \leq 1$, by solving it for $\beta$ (hereaft
 \end{eqnarray}
 
 \noindent
-where $ [b_1,\, \ldots\, , b_4]^T = [ \boldsymbol{A} ]^{-1} [\boldsymbol{X}] $, $n_i$ are the elements of $\boldsymbol{n}$. Eq.~\eqref{E_energy_n4} is from Eq.~\eqref{E_min_energy}. Finding the largest and smallest values of the right hand side of Eqs.~\eqref{E_betamin} and \eqref{E_betamax}, denoted as $\beta_{min}$ and $\beta_{max}$, Eqs.~\eqref{E_betamin} and \eqref{E_betamax} are rewritten as
+where $ [b_1,\, \ldots{}\, , b_4]^T = [ \boldsymbol{A} ]^{-1} [\boldsymbol{X}] $, $n_i$ are the elements of $\boldsymbol{n}$. Eq.~\eqref{E_energy_n4} is from Eq.~\eqref{E_min_energy}. Finding the largest and smallest values of the right hand side of Eqs.~\eqref{E_betamin} and \eqref{E_betamax}, denoted as $\beta_{min}$ and $\beta_{max}$, Eqs.~\eqref{E_betamin} and \eqref{E_betamax} are rewritten as
 
 \begin{equation}
   \beta_{min} \leq \beta \leq \beta_{max}
@@ -294,9 +294,9 @@ To use linear programming we need to rewrite our problem into the \textit{normal
 Since our constraints $0 \leq \alpha_i \leq 1$ are unequal and $\beta_i$ can be negative, we introduce \textit{slack variables} $\gamma_i, \delta_i$ and $\epsilon_i, \zeta_i$ to replace $\beta$.
 
 \begin{itemize}
-  \item Introduce $\gamma_i \geq 0$ such that $b_i + \beta_4 n_{4i} + \ldots + \beta_N n_{Ni} - \gamma_i = 0$,
+  \item Introduce $\gamma_i \geq 0$ such that $b_i + \beta_4 n_{4i} + \cdots + \beta_N n_{Ni} - \gamma_i = 0$,
 
-  \item Introduce $\delta_i \geq 0$ such that $b_i + \beta_4 n_{4i} + \ldots + \beta_n n_{Ni} + \delta_i = 1$,
+  \item Introduce $\delta_i \geq 0$ such that $b_i + \beta_4 n_{4i} + \cdots + \beta_n n_{Ni} + \delta_i = 1$,
 
   \item Replace $\beta_i = \epsilon_i - \zeta_i$, such that $\epsilon_i \geq 0 $ and $\zeta_i \geq 0$.
 \end{itemize}
@@ -306,13 +306,13 @@ After this modification, we have $2N$ equations with $2N$ variables (for $\gamma
 \begin{eqnarray}
 %
   \label{E_min_energy5}
-  \sum_{i=1}^N (n_{4i} \epsilon_4 - n_{4i} \zeta_4 + \ldots +  n_{Ni} \epsilon_N - n_{Ni} \zeta_N + b_{i}) W_i &\to& min \\
+  \sum_{i=1}^N (n_{4i} \epsilon_4 - n_{4i} \zeta_4 + \cdots +  n_{Ni} \epsilon_N - n_{Ni} \zeta_N + b_{i}) W_i &\to& min \\
 %
   \label{E_bmin5}
-  n_{4i} \epsilon_4  - n_{4i} \zeta_4 + \ldots + n_{Ni} \epsilon_N  - n_{Ni} \zeta_N  - \gamma_i + b_i &=& 0 \\
+  n_{4i} \epsilon_4  - n_{4i} \zeta_4 + \cdots + n_{Ni} \epsilon_N  - n_{Ni} \zeta_N  - \gamma_i + b_i &=& 0 \\
 %
   \label{E_bmax5}
-  n_{4i} \epsilon_4  - n_{4i} \zeta_4 + \ldots + n_{Ni} \epsilon_N  - n_{Ni} \zeta_N  + \delta_i + b_i &=& 1
+  n_{4i} \epsilon_4  - n_{4i} \zeta_4 + \cdots + n_{Ni} \epsilon_N  - n_{Ni} \zeta_N  + \delta_i + b_i &=& 1
 \end{eqnarray}
 
 \noindent
@@ -338,7 +338,7 @@ This strategy requires computation of gradient of $Y$ in $\boldsymbol{\alpha}$ s
 
 
 \subsection{LED's lifetime averaging}
-In section \ref{s_assumptions} '\nameref{s_assumptions}' we introduced an optional condition \ref{I_lifetime}, 'When possible, average turn-on time of LEDs to equalize LEDs lifetime'. It is equivalent to minimize the variance of $\alpha_1 \ldots \alpha_N$. It can be an optimization of a quadratic function.
+In section \ref{s_assumptions} '\nameref{s_assumptions}' we introduced an optional condition \ref{I_lifetime}, 'When possible, average turn-on time of LEDs to equalize LEDs lifetime'. It is equivalent to minimize the variance of $\alpha_1, \, \ldots\, , \alpha_N$. It can be an optimization of a quadratic function.
 
 In $N = 4$ case, we have only one variable $\beta$ therefore we can optimize only one condition. This means we need to chose between the energy minimization and this condition.
 
