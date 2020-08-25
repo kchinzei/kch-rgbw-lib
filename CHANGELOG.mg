@@ -15,12 +15,26 @@ Versioning policy is based on [Semantic Versioning](https://semver.org/spec/v2.0
   - Instead `maxLuminanceAtAsync()` and `maxBrightnessAtAsync()` will be added.
 - LED properties will be parsed from JSON format.
 
-- CHANGELOG.md Added.
-- Some of heavy files in docs/ removed, as these are not essential to build library.
-These files are in an independent folder 'docs/more'.
+## [1.0.1](https://github.com/kchinzei/kch-rgbw-lib/releases/tag/1.0.1) - 2020-08-26
 
-## 1.0.0 - 2020-08-17
+Some of heavy files in docs/ removed, as these are not essential to build library.
+These files are moved to an independent repository, linked as 'docs/more'.
 
-### added
+### Added
+
+- CHANGELOG.md
+- docs/more/ as a submodule from https://github.com/kchinzei/kch-rgbw-docs-more.git
+
+### Changed
+
+- Figures in docs/figs/ resized smaller.
+
+### Deleted
+
+- Large files in docs/
+
+## [1.0.0](https://github.com/kchinzei/kch-rgbw-lib/releases/tag/1.0.0) - 2020-08-17
+
+### Added
 
 - Initial release.
