@@ -23,7 +23,7 @@ THE SOFTWARE.
 */
 
 /*
-  Test SVD
+  Solve many LED problem
 
   Make Asayake to Wake Project.
   Kiyo Chinzei
@@ -32,18 +32,28 @@ THE SOFTWARE.
 
 // eslint-disable-next-line camelcase
 import { svd_matlab } from './svd-helper';
+import { GamutError } from './GamutError';
 import Fraction from 'fraction.js';
-import { parse, Fpi } from 'linear-program-parser';
-import { simplex, findSolution, simplexIsOK } from 'linear-program-solver';
+import { solveAsync, findSolution, simplexIsOK } from 'linear-program-solver';
 import { SimplexSolution } from 'linear-program-solver';
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-var-requires
 const { transpose, column, diag, multiply, flatten } = require('mathjs');
 
 const qSmall = 1e-6;
+const nonnegative = (val: number) => (val > -qSmall);
+function round(val: number): number {
+  if (1 < val && val < 1+qSmall)
+    return 1;
+  else if (val < qSmall)
+    return 0;
+  else
+    return val;
+}
 
 export function normalize(alpha: number[]): number[] {
   let aMax = 0;
+  alpha = alpha.map(round);
   for (const a of alpha)
     if (a > aMax)
       aMax = a;
@@ -105,47 +115,54 @@ export function alpha2XYZ(aList: number[], a: number[][]): number[] {
   return XYZ;
 }
 
+/*
+  Result of XYZ2Alpha() can be alpha: number[] when success, an exception when error.
+  When sucess, alpha[] is non-negative. Small value is truncated to 0. It's NOT NORMALIZED.
+  When error, variable e of catch(e) is either alpha[] or Error.
+  When e is alpha[], solution available but physically not meaningful, likely out of gamut.
+  When e is Error, something fatal happened that cannot be recovered.
+  You can chect e is alpha[] by isAlpha()
+*/
 // eslint-disable-next-line @typescript-eslint/naming-convention
-export function XYZ2Alpha(XYZ: number[], wList: number[], ainv: number[][], nvecs: number[][]): {alpha: number[]; feasible: boolean} {
+export async function XYZ2Alpha(XYZ: number[], wList: number[], ainv: number[][], nvecs: number[][]): Promise<number[]> {
   // Assume ainv, nvecs are from XYZList by makeSolverMatrix(). No size check.
 
   if (XYZ[1] < qSmall) {
     // Don't attempt to solve.
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const alpha: number[] = Array(wList.length).fill(0);
-    const feasible = true;
-    return { alpha, feasible };
+    return alpha;
   }
 
   switch (wList.length) {
     case 3:
-      return XYZ2Alpha3(XYZ, ainv);
+      return await XYZ2Alpha3(XYZ, ainv);
       /* istanbul ignore next */
       break;
     case 4:
-      return XYZ2Alpha4(XYZ, wList, ainv, nvecs[0]);
+      return await XYZ2Alpha4(XYZ, wList, ainv, nvecs[0]);
       /* istanbul ignore next */
       break;
     default:
-      return XYZ2AlphaX(XYZ, wList, ainv, nvecs);
+      return await XYZ2AlphaX(XYZ, wList, ainv, nvecs);
   }
 }
 
-const nonnegative = (val: number) => (val > -qSmall);
-
 // eslint-disable-next-line @typescript-eslint/naming-convention
-function XYZ2Alpha3(XYZ: number[], ainv: number[][]): {alpha: number[]; feasible: boolean} {
+async function XYZ2Alpha3(XYZ: number[], ainv: number[][]): Promise<number[]> {
   // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment
-  let alpha: number[] = flatten(multiply(ainv, XYZ));
+  const alpha: number[] = flatten(multiply(ainv, XYZ));
 
   // Check if range of aList is physically meaningful.
   const feasible = alpha.every(nonnegative);
-  /* istanbul ignore if: this most unlikely happen. insurance */
-  if (!feasible)
-    return { alpha, feasible };
 
-  alpha = alpha.map((val) => (val < qSmall? 0:val));
-  return { alpha, feasible };
+  return new Promise<number[]>((resolv, reject) => {
+    if (feasible) {
+      resolv(alpha.map(round));
+    } else {
+      reject(new GamutError(alpha, 'XYZ2Alpha3()'));
+    }
+  });
 }
 
 /*
@@ -153,9 +170,9 @@ function XYZ2Alpha3(XYZ: number[], ainv: number[][]): {alpha: number[]; feasible
   Number in comments are Eqs. in it.
  */
 // eslint-disable-next-line @typescript-eslint/naming-convention
-function XYZ2Alpha4(XYZ: number[], wList: number[], ainv: number[][], n: number[]): { alpha: number[]; feasible: boolean} {
+async function XYZ2Alpha4(XYZ: number[], wList: number[], ainv: number[][], n: number[]): Promise<number[]> {
   // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment
-  let alpha: number[] = flatten(multiply(ainv, XYZ)); // 1.3.12
+  const alpha: number[] = flatten(multiply(ainv, XYZ)); // first term of 4.0.1
 
   // Find possible range of beta
   let betaMin: number = Number.NEGATIVE_INFINITY;
@@ -205,16 +222,18 @@ function XYZ2Alpha4(XYZ: number[], wList: number[], ainv: number[][], n: number[
 
   // Solve
   for (let i=0; i<4; i++)
-    alpha[i] += beta*n[i];
+    alpha[i] += beta*n[i]; // 4.0.1
 
   // Check if range of aList is physically meaningful.
   const feasible = alpha.every(nonnegative);
-  /* istanbul ignore if: this most unlikely happen. insurance */
-  if (!feasible)
-    return { alpha, feasible };
 
-  alpha = alpha.map((val) => (val < qSmall? 0:val));
-  return { alpha, feasible };
+  return new Promise<number[]>((resolv, reject) => {
+    if (feasible) {
+      resolv(alpha.map(round));
+    } else {
+      reject(new GamutError(alpha, 'XYZ2Alpha4()'));
+    }
+  });
 }
 
 /*
@@ -222,16 +241,49 @@ function XYZ2Alpha4(XYZ: number[], wList: number[], ainv: number[][], n: number[
   Number in comments are Eqs. in it.
  */
 // eslint-disable-next-line @typescript-eslint/naming-convention
-function XYZ2AlphaX(XYZ: number[], wList: number[], ainv: number[][], nvecs: number[][], ignoreMinMax = 0): { alpha: number[]; feasible: boolean } {
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment
-  let alpha: number[] = flatten(multiply(ainv, XYZ));
-  let feasible = simplexIsOK();
-
-  /* istanbul ignore if: it's true only when simplex is not available. */
-  if (!feasible) {
-    return { alpha, feasible };
+async function XYZ2AlphaX(XYZ: number[], wList: number[], ainv: number[][], nvecs: number[][]): Promise<number[]> {
+  /* istanbul ignore if: it's false only when simplex is not available. */
+  if (simplexIsOK() === false) {
+    return new Promise<number[]>((resolv, reject) => {
+      reject(new Error('XYZ2AlphaX(): simplexIsNotOK. solution infeasible.'));
+    });
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment
+  const b: number[] = flatten(multiply(ainv, XYZ)); // b_i in 5.0.1, 5.0.2, 5.0.3
+
+  try {
+    let maxAlpha = 1;
+    let minAlpha = 0;
+    let alpha: number[] = await solveX(b, wList, ainv, nvecs, maxAlpha, minAlpha);
+
+    if ((alpha.length > 0) && alpha.every(nonnegative)) {
+      return alpha.map(round);
+    } else {
+      // When result of solveX() is not good, we try relax constraints.
+      // Case 1: Y of XYZ[] is too large. Remove maxAlpha constraint
+      maxAlpha = Number.POSITIVE_INFINITY;
+      alpha = await solveX(b, wList, ainv, nvecs, maxAlpha, minAlpha);
+      if (alpha.length > 0) {
+        return alpha.map(round);
+      }
+      // Case 2: Solution near 0 may fail infeasible due to numerical error.
+      minAlpha = -qSmall/2;
+      alpha = await solveX(b, wList, ainv, nvecs, maxAlpha, minAlpha);
+      if (alpha.length > 0) {
+        return alpha.map(round);
+      }
+      // Case 3: Solution negative due to XYZ[] out of gamut.
+      minAlpha = -1024;
+      alpha = await solveX(b, wList, ainv, nvecs, maxAlpha, minAlpha);
+      throw new GamutError(alpha, 'XYZ2AlphaX()');
+    }
+  } catch(err) {
+    throw err;
+  }
+}
+
+async function solveX(b: number[], w: number[], ainv: number[][], nvecs: number[][], maxAlpha: number, minAlpha: number): Promise<number[]> {
   /*
     Solve linear programming using linear-program-parser and simplex by jeronimonunes.
 
@@ -241,50 +293,32 @@ function XYZ2AlphaX(XYZ: number[], wList: number[], ainv: number[][], nvecs: num
     This requires numbers are rational, i.e., fraction.
     0.05 => 1/20, etc. Here we use fraction.js
   */
-  const fpi: Fpi = generateFpi(wList, nvecs, alpha, ignoreMinMax);
-  // const { tabloid, vars }  = generateTabloid(fpi);
-  // console.log(tabloid);
-  // console.log(vars);
+  const problem: string = generateProblem(w, nvecs, b, maxAlpha, minAlpha);
+  try {
+    const result: SimplexSolution = await solveAsync(problem);
 
-  const result: SimplexSolution = simplex(fpi.toMatrix());
-
-  // console.log(result);
-
-  feasible = (result.result === 'otima');
-  if (feasible) {
-    for (let j=0; j < nvecs.length; j++) {
-      const beta = findSolution(vx('b', j), result.solution, result.vars);
-      for (let i=0; i < alpha.length; i++) {
-        alpha[i] += beta*nvecs[j][i];
+    if (result.result === 'otima') {
+      const alpha = b.slice(); // copy
+      for (let j=0; j < nvecs.length; j++) {
+        const beta = findSolution(vx('b', j), result.solution, result.vars);
+        for (let i=0; i < alpha.length; i++) {
+          alpha[i] += beta*nvecs[j][i];
+        }
       }
-    }
-
-    // Check if range of aList is physically meaningful.
-    feasible = alpha.every(nonnegative);
-    /* istanbul ignore if: this shouldn't happen whenever simplex() maintains the constraints. insurance */
-    if (!feasible)
-      return { alpha, feasible };
-
-    alpha = alpha.map((val) => (val < qSmall? 0:val));
-    return { alpha, feasible };
-  } else {
-    // When result of simplex() is not 'limited', we relax constraints.
-    if (ignoreMinMax === 0) {
-      // First we try to solve without max < 1 constraint.
-      return XYZ2AlphaX(XYZ, wList, ainv, nvecs, 1);
-    } else if (ignoreMinMax === 1) {
-      // Second we try to solve with min > -qSmall/2 constraint.
-      return XYZ2AlphaX(XYZ, wList, ainv, nvecs, -1);
+      return alpha;
     } else {
-      // When solving ignoring both max < 1 and min > 0 constraints yet resulting infeasible, give up
-      return { alpha, feasible };
+      // console.log(`not feasible (min=${minAlpha}, max=${maxAlpha})`);
+      return [];
     }
+  } catch(err) {
+    /* istanbul ignore next */
+    throw err;
   }
 }
 
 const vx = (s1: string, n: number, s2 = '') => `${s1}${n}${s2}`;
 
-function generateFpi(wList: number[], nvecs: number[][], b: number[], ignoreMinMax: number): Fpi {
+function generateProblem(w: number[], nvecs: number[][], b: number[], maxAlpha: number, minAlpha: number): string {
   // Helper functions
   const signedFrac = (n: number) => ((n >= 0)? '+':'') + new Fraction(n).toFraction();
 
@@ -294,7 +328,7 @@ function generateFpi(wList: number[], nvecs: number[][], b: number[], ignoreMinM
   for (let j=0; j<nvecs.length; j++) { // 0 ... N-3
     let sumNW = 0;
     for (let i=0; i<nvecs[0].length; i++) { // 0 ... N
-      sumNW += nvecs[j][i] * wList[i];
+      sumNW += nvecs[j][i] * w[i];
     }
 
     const nwPos = signedFrac( sumNW);
@@ -315,19 +349,16 @@ function generateFpi(wList: number[], nvecs: number[][], b: number[], ignoreMinM
     }
     let constraintMax = constraintMin.slice(); // copy
 
-    // when ignoreMinMax === -1, we relax min > 0 constraint by giving small negative value.
-    // when ignoreMinMax === 1, we ignore max < 1 constraint.
     const bStr = signedFrac(b[i]);
-    if (ignoreMinMax === -1) {
-      const qStr = signedFrac(-qSmall/2);
-      constraintMin += ` ${bStr} >= ${qStr};\n`; // 5.0.2 when solution close to 0.
-    } else {
-      constraintMin += ` ${bStr} >= 0;\n`; // 5.0.2
+    /* istanbul ignore else */
+    if (minAlpha !== Number.NEGATIVE_INFINITY) {
+      const qStr = signedFrac(minAlpha);
+      constraintMin += ` ${bStr} >= ${qStr};\n`; // 5.0.2
+      objectiveF += constraintMin;
     }
-    objectiveF += constraintMin;
-
-    if (ignoreMinMax !== 1) {
-      constraintMax += ` ${bStr} <= 1;\n`; // 5.0.3
+    if (maxAlpha !== Number.POSITIVE_INFINITY) {
+      const qStr = signedFrac(maxAlpha);
+      constraintMax += ` ${bStr} <= ${qStr};\n`; // 5.0.3
       objectiveF += constraintMax;
     }
   }
@@ -339,11 +370,7 @@ function generateFpi(wList: number[], nvecs: number[][], b: number[], ignoreMinM
   // For debug purpose, you can try output of the following at
   // https://jeronimonunes.github.io/simplex-web/
   // console.log(objectiveF);
-
-  // Solve
-  const linearProgram = parse(objectiveF);
-  const fpi: Fpi = linearProgram.toFPI();
-  return fpi;
+  return objectiveF;
 }
 
 /* istanbul ignore next */

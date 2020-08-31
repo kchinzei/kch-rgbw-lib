@@ -30,10 +30,8 @@ THE SOFTWARE.
   https://github.com/kchinzei/kch-rgbw-lib
 */
 // @ts-ignore: TS6133 List all available items for future tests
-import { CSpace, CSpaceTypes, RGBWLED, makeGamutContour } from '../src/index';
+import { CSpace, CSpaceTypes, LEDChip, RGBWLED, makeGamutContour, GamutError } from '../src/index';
 // @ts-ignore: TS6133 List all available items for future tests
-import { LEDChip } from '../src/index';
-
 
 const LEDChipR: LEDChip = new LEDChip('LED_R', { x: 0.6857, y: 0.3143, maxLuminance: 30.6, name: 'Red' });
 const LEDChipG: LEDChip = new LEDChip('LED_G', { x: 0.2002, y: 0.6976, maxLuminance: 67.2, name: 'Green' });
@@ -59,25 +57,43 @@ const T: idLED = new idLED(LEDChipT, 5);
 const V: idLED = new idLED(LEDChipV, 6);
 const idLEDs: idLED[] = [ R,G,B,W,A,T,V ];
 
+const defaultIDList = [
+  [ 0, 1, 2 ],
+  [ 0, 2, 5 ],
+  [ 0, 1, 2, 3 ],
+  [ 0, 1, 2, 4 ],
+  [ 0, 1, 2, 3, 4 ],
+  [ 0, 1, 2, 4, 5 ],
+  [ 0, 1, 2, 3, 4, 5 ],
+  [ 0, 1, 2, 4, 5, 6 ],
+  [ 0, 1, 2, 3, 4, 5, 6 ]
+];
+
 let i = 1;
 
+
 describe.each([
-  [3, -1,-1,-1,-1,-1],
-  [4,  3,-1,-1,-1,-1],
-  [5,  3, 4,-1,-1,-1],
-  [6,  3, 4, 5,-1,-1],
-  [7,  3, 4, 5, 6,-1],
-  [8,  3, 4, 5, 6, 0]
-])('', (N, a3, a4, a5, a6, a7) => {
-  test(`${i++}. Constructor using ${N} LEDs (R,G,B,${a3},${a4},${a5},${a6},${a7}))`, () => {
-    expect(() => {
-      const l: RGBWLED = new RGBWLED('sample', [R, G, B]);
-      for (let j=3; j<N; j++) {
-        const val = eval(`a${j}`);
-        l.push(idLEDs[val]);
-      }
-      l.brightness = 0.1;
-    }).not.toThrow();
+  [ [] ],
+  [ [3] ],
+  [ [3, 4] ],
+  [ [3, 4, 5] ],
+  [ [3, 4, 5, 6] ],
+  [ [3, 4, 5, 6, 0] ]
+])('', (lIDList) => {
+  test(`${i++}. Constructor using LEDs (R,G,B) + ${lIDList})`, () => {
+    const N = lIDList.length;
+
+    if (N+3 <= RGBWLED.maxLEDNumber) {
+      expect(() => {
+        const l: RGBWLED = new RGBWLED('sample', [R, G, B]);
+        for (let j=0; j<N; j++) {
+          const val = lIDList[j];
+          l.push(idLEDs[val]);
+        }
+      }).not.toThrow();
+    } else {
+      expect.assertions(0);
+    }
   });
 });
 
@@ -85,32 +101,38 @@ describe.each([
 test(`${i++}. Constructor fail: insufficient LEDs.`, () => {
   expect(() => {
     const l: RGBWLED = new RGBWLED('sample', [R]); // fail!
-    l.brightness = 0.1;
+    console.log(l.brightness);
   }).toThrow();
   expect(() => {
     const l: RGBWLED = new RGBWLED('sample', [R, G]); // fail!
-    l.brightness = 0.1;
+    console.log(l.brightness);
   }).toThrow();
 });
 
 describe.each([
-  [3,  0, 1, 0,-1,-1,-1,-1,-1],
-  [4,  0, 2, 0, 2,-1,-1,-1,-1],
-  [5,  3, 4, 3, 4, 3,-1,-1,-1],
-  [6,  5, 6, 5, 6, 5, 6,-1,-1],
-  [7,  2, 4, 2, 2, 2, 2, 4,-1],
-  [8,  3, 6, 3, 6, 3, 6, 3, 6]
-])('', (N, a0, a1, a2, a3, a4, a5, a6, a7) => {
+  [ [ 0, 1, 0 ] ],
+  [ [ 0, 2, 0, 2 ] ],
+  [ [ 3, 4, 3, 4, 3 ] ],
+  [ [ 5, 6, 5, 6, 5, 6 ] ],
+  [ [ 2, 4, 2, 2, 2, 2, 4 ] ],
+  [ [ 3, 6, 3, 6, 3, 6, 3, 6] ]
+])('', (lIDList) => {
   test(`${i++}. Constructor fail: many LEDs but less than 3 different colors`, () => {
-    expect(() => {
-      const lList: idLED[] = new Array(N) as idLED[];
-      for (let j=0; j<N; j++) {
-        const val = eval(`a${j}`);
-        lList[j] = idLEDs[val];
-      }
-      const l: RGBWLED = new RGBWLED('sample', lList); // fail!
-      l.brightness = 0.1;
-    }).toThrow();
+    const N = lIDList.length;
+
+    if (N <= RGBWLED.maxLEDNumber) {
+      expect(() => {
+        const lList: idLED[] = new Array(N) as idLED[];
+        for (let j=0; j<N; j++) {
+          const val = lIDList[j];
+          lList[j] = idLEDs[val];
+        }
+        const l: RGBWLED = new RGBWLED('sample', lList); // fail!
+        console.log(l.brightness);
+      }).toThrow();
+    } else {
+      expect.assertions(0);
+    }
   });
 });
 
@@ -125,35 +147,41 @@ describe.each([
 
 
 describe.each([
-  [4, 3,-1,-1,-1,-1, 0.1, 4],
-  [5, 3, 4,-1,-1,-1, 0.1, 4],
-  [6, 3, 4, 5,-1,-1, 0.1, 4],
-  [7, 3, 4, 5, 6,-1, 0.1, 4],
-  [8, 3, 4, 5, 6, 0, 0.1, 4]
-])('', (N, a3, a4, a5, a6, a7, b, precision) => {
-  test(`${i++}. Setter/getter ${N} LEDs (R,G,B,${a3},${a4},${a5},${a6},${a7}`, () => {
-    let lName = 'RGB';
-    const lList: idLED[] = [R, G, B];
-    for (let j=3; j<N-1; j++) {
-      // We leave the last one for later use.
-      const val = eval(`a${j}`);
-      lList.push(idLEDs[val]);
-      lName = idLEDs[val].name;
+  [ [ 3 ],             0.1, 4],
+  [ [ 3, 4 ],          0.1, 4],
+  [ [ 3, 4, 5 ],       0.1, 4],
+  [ [ 3, 4, 5, 6 ],    0.1, 4],
+  [ [ 3, 4, 5, 6, 0 ], 0.1, 4]
+])('', (lIDList, b, precision) => {
+  test(`${i++}. Setter/getter LEDs (R,G,B) + ${lIDList}`, async () => {
+    const N = lIDList.length;
+
+    if (N+3 <= RGBWLED.maxLEDNumber) {
+      let lName = 'RGB';
+      const lList: idLED[] = [R, G, B];
+      for (let j=0; j<N-1; j++) {
+        // We leave the last one for later use.
+        const val = lIDList[j];
+        lList.push(idLEDs[val]);
+        lName = idLEDs[val].name;
+      }
+      const l: RGBWLED = new RGBWLED('sample', lList);
+
+      // Add the last one
+      const lastLED = idLEDs[lIDList[N-1]];
+      l.push(lastLED);
+
+      // Test
+      expect(l.LED.length).toBe(N+3);
+      await l.setLuminanceAsync(b*l.maxLuminance);
+      const maxB = await l.maxBrightnessAtAsync(l);
+      if (b < maxB)
+        expect(l.brightness).toBeCloseTo(b, precision);
+      l.name = lName;
+      expect(l.name).toBe(lName);
+    } else {
+      expect.assertions(0);
     }
-    const l: RGBWLED = new RGBWLED('sample', lList);
-
-    // Add the last one
-    const lastLED = idLEDs[eval(`a${N-1}`)];
-    l.push(lastLED);
-
-    // Test
-    expect(l.LED.length).toBe(N);
-    l.brightness = b;
-    const maxB = l.maxBrightnessAt(l);
-    if (b < maxB)
-      expect(l.brightness).toBeCloseTo(b, precision);
-    l.name = lName;
-    expect(l.name).toBe(lName);
   });
 });
 
@@ -164,9 +192,9 @@ describe.each([
   [1.0],
   [1.5]
 ])('', (brightness) => {
-  test(`${i++}. set extreme brightness ${brightness}`, () => {
+  test(`${i++}. set extreme brightness ${brightness}`, async () => {
     const l: RGBWLED = new RGBWLED('sample', [R, G, B, W]);
-    l.brightness = brightness;
+    await l.setLuminanceAsync(brightness*l.maxLuminance);
     expect(l.brightness).toBeLessThanOrEqual(1);
     expect(l.brightness).toBeGreaterThanOrEqual(0);
   });
@@ -182,46 +210,79 @@ describe.each([
 
 
 describe.each([
-  ['rgb', 0.2,  0.3,  0.4, 0.1, 4],
-  ['hsv', 150,  0.3,  0.4, 0.2, 4],
-  ['XYZ', 0.2,  0.2,  0.4, 0.1, 4],
-  ['xyY', 0.2,  0.4,  10, 0.1, 4],
-  ['xy',  0.2,  0.4,  0.1, 0.2, 4]
+  ['rgb', 0.2,  0.3,  0.4, 0.1, 1],
+  ['hsv', 150,  0.3,  0.4, 0.2, 1],
+  ['XYZ', 0.2,  0.2,  0.4, 0.1, 1],
+  ['xyY', 0.2,  0.4,  10,  0.1, 1],
+  ['xy',  0.2,  0.4,  0.1, 0.2, 1]
 ])('', (t1, q0, q1, q2, brightness, precision) => {
-  test(`${i++}. set color().`, () => {
-    const l: RGBWLED = new RGBWLED('sample', [R, G, B, W]);
-    l.brightness = brightness;
+  test(`${i++}. set color().`, async () => {
+    for (let j=0; j<defaultIDList.length; j++) {
+      const N = defaultIDList[j].length;
+      if (N <= RGBWLED.maxLEDNumber) {
+        const lList: idLED[] = new Array(N) as idLED[];
+        for (let k=0; k<N; k++) {
+          const val = defaultIDList[j][k];
+          lList[k] = idLEDs[val];
+        }
+        const l: RGBWLED = new RGBWLED('sample', lList);
+        await l.setLuminanceAsync(brightness*l.maxLuminance);
 
-    const c: CSpace = new CSpace(t1 as CSpaceTypes, [q0, q1, q2]);
-    l.color = c;
+        const c: CSpace = new CSpace(t1 as CSpaceTypes, [q0, q1, q2]);
+        await l.setColorAsync(c);
 
-    // If c is 'xyY' or 'XYZ', lumanance is set to c.Y.
-    if (c.type === 'xyY' || c.type === 'XYZ')
-      brightness = c.Y / l.maxLuminance;
+        // If c is 'xyY' or 'XYZ', lumanance is set to c.Y.
+        if (c.type === 'xyY' || c.type === 'XYZ')
+          brightness = c.Y / l.maxLuminance;
 
-    // We need 'xy' or 'xyY' to compare resulting chromaticity
-    let c1: CSpace = c;
-    if (c1.type !== 'xy')
-      c1 = c.xyY();
+        // We need 'xy' or 'xyY' to compare resulting chromaticity
+        let c1: CSpace = c;
+        if (c1.type !== 'xy' && c1.type != 'xyY')
+          c1 = c.xyY();
 
-    expect(l.color.x).toBeCloseTo(c1.x, precision);
-    expect(l.color.y).toBeCloseTo(c1.y, precision);
-    expect(l.brightness).toBeCloseTo(brightness, precision);
+        expect(l.color.x).toBeCloseTo(c1.x, precision);
+        expect(l.color.y).toBeCloseTo(c1.y, precision);
+        expect(l.brightness).toBeCloseTo(brightness, precision);
+      }
+    }
   });
 });
+
+
 
 describe.each([
   ['xyY', 0.7,  0.2,  0.2, 4],
   ['xyY', 0.2,  0.8,  0.2, 4],
   ['xy',  0.4,  0.6,  0.2, 4],
-  ['xy', 0.05,  0.1,  0.2, 4]
+  ['xy',  0.05, 0.1,  0.2, 4]
 ])('', (t1, q0, q1, q2, precision) => {
-  test(`${i++}. Extreme color maxLuminanceAt() It does not fit in to the gamut.`, () => {
-    const l: RGBWLED = new RGBWLED('sample', [R, G, B, W]);
+  test(`${i++}. Extreme color maxLuminanceAt() It does not fit into the gamut.`, async () => {
+    for (let j=0; j<defaultIDList.length; j++) {
+      const N = defaultIDList[j].length;
+      if (N <= RGBWLED.maxLEDNumber) {
+        const lList: idLED[] = new Array(N) as idLED[];
+        for (let k=0; k<N; k++) {
+          const val = defaultIDList[j][k];
+          lList[k] = idLEDs[val];
+        }
+        const l: RGBWLED = new RGBWLED('sample', lList);
+        const c: CSpace = new CSpace(t1 as CSpaceTypes, [q0, q1, q2]);
+        const maxB = await l.maxBrightnessAtAsync(c);
+        expect(maxB).toBeCloseTo(-1, precision);
 
-    const c: CSpace = new CSpace(t1 as CSpaceTypes, [q0, q1, q2]);
-    const maxB = l.maxBrightnessAt(c);
-    expect(maxB).toBeCloseTo(-1, precision);
+        try {
+          const alpha = await l.color2BrightnessAsync(c);
+          const c1: CSpace = l.brightness2Color(alpha);
+          expect(c1.x).toBeCloseTo(q0, precision);
+          expect(c1.y).toBeCloseTo(q1, precision);
+          expect(c1.Y).toBeCloseTo(q2, precision);
+        } catch (e) {
+          console.log(`${i} UNEXPECTED! solution failed beyond recover for (${q0}, ${q1}, ${q2})`);
+          console.log(e);
+          throw e;
+        }
+      }
+    }
   });
 });
 

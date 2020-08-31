@@ -30,11 +30,9 @@ THE SOFTWARE.
   https://github.com/kchinzei/kch-rgbw-lib
 */
 
-// @ts-ignore: TS6198 These will remain for future testing
-const { row, column, multiply, flatten } = require('mathjs');
+import { GamutError } from '../src/GamutError';
 import * as Solver from '../src/solver';
-
-let i=0;
+import { simplexIsOK } from 'linear-program-solver';
 
 const xyYs = [
   //  x       y     Y   watt ID
@@ -87,6 +85,8 @@ function XYZ2xyY(a: number[]): number[] {
   return [ X/xyz, Y/xyz, Y ];
 }
 
+let iTest=0;
+
 const sRGB = [
   [0.20, 0.10], [0.20, 0.15], [0.20, 0.20],
   [0.25, 0.15], [0.25, 0.20], [0.25, 0.25], [0.25, 0.30], [0.25, 0.35], [0.25, 0.40],
@@ -107,40 +107,47 @@ const outOfGamut = [
   [0.65, 0.25], [0.20, 0.05]
 ];
 
-describe.each([
-  [3, 0, 1, 2, 0, 0, 0, 10, 4],
-  [4, 0, 1, 2, 3, 0, 0, 10, 4],
-  [4, 0, 1, 2, 0, 0, 0, 10, 4], // Insufficient LED.
-  [5, 0, 1, 2, 3, 4, 0, 10, 4],
-  [5, 0, 1, 2, 3, 0, 0, 10, 4], // Insufficient LED.
-  [5, 0, 1, 2, 1, 0, 0, 10, 4], // Insufficient LED.
-  [6, 0, 1, 2, 3, 4, 5, 10, 4],
-  [6, 0, 1, 2, 3, 2, 0, 10, 4], // Insufficient LED.
-  [6, 0, 1, 2, 2, 1, 0, 10, 4]  // Insufficient LED.
-])('', (N, a0, a1, a2, a3, a4, a5, Y, precision) => {
 
-  test(`${i++}. LED=${N} LEDs(${a0},${a1},${a2},${a3},${a4},${a5}) in gamut, not saturated)`, () => {
+describe.each([
+  [ [0, 1, 2],          10, 4],
+  [ [0, 1, 2, 3],       10, 4],
+  [ [0, 1, 2, 0],       10, 4], // Insufficient LED.
+  [ [0, 1, 2, 3, 4],    10, 4],
+  [ [0, 1, 2, 3, 0],    10, 4], // Insufficient LED.
+  [ [0, 1, 2, 1, 0],    10, 4], // Insufficient LED.
+  [ [0, 1, 2, 3, 4, 5], 10, 4],
+  [ [0, 1, 2, 3, 2, 0], 10, 4], // Insufficient LED.
+  [ [0, 1, 2, 2, 1, 0], 10, 4]  // Insufficient LED.
+])('', (lIDList, Y, precision) => {
+
+  test(`1: ${iTest++}. LEDs ${lIDList} in gamut, not saturated)`, async () => {
+    const simplexAvailable = simplexIsOK();
 
     // Prepare solver
+    const N = lIDList.length;
     const lList: number[][] = new Array(N) as number[][];
     for (let i=0; i<N; i++) {
-      const val = eval(`a${i}`);
+      const val = lIDList[i];
       lList[i] = XYZs[val];
     }
+
     const {rank, a, ainv, nvecs} = Solver.makeSolverMatrix(lList);
     expect(rank).toBe(3);
-    if (rank === 3) {
+
+    if (rank === 3 && (N < 5 || simplexAvailable)) {
       const wList: number[] = makeWList(lList);
 
       // Do it.
+      expect.assertions(sRGB.length*3+1);
+
       for (let i=0; i<sRGB.length; i++) {
         const x = sRGB[i][0];
         const y = sRGB[i][1];
         let xyY = [x, y, Y];
-        const { alpha, feasible } = Solver.XYZ2Alpha(xyY2XYZ(xyY), wList, ainv, nvecs);
 
-        // Examine
-        if (feasible) {
+        try {
+          const alpha: number[] = await Solver.XYZ2Alpha(xyY2XYZ(xyY), wList, ainv, nvecs);
+
           const alpha2 = Solver.normalize(alpha);
           const XYZ: number[] = Solver.alpha2XYZ(alpha2, a);
           xyY = XYZ2xyY(XYZ);
@@ -148,31 +155,37 @@ describe.each([
           expect(xyY[0]).toBeCloseTo(x, precision);
           expect(xyY[1]).toBeCloseTo(y, precision);
           expect(xyY[2]).toBeCloseTo(Y, precision);
-        } else {
-          console.log(`Solution INFEASIBLE for (${x}, ${y}, ${Y})`);
-          expect(feasible).toBe(true); // will raise fail.
+        } catch (e) {
+          if (e instanceof GamutError) {
+            console.log(`[1: ${iTest} UNEXPECTED! Solution out of gamut at (${x}, ${y}, ${Y})`);
+          } else {
+            console.log(`[1: ${iTest} UNEXPECTED! Solution infeasible at (${x}, ${y}, ${Y})`);
+          }
+          console.log(e);
+          throw e;
         }
       }
     }
   });
 });
 
-
 //------------------- Saturated case; Y does not match -------------------
 
 describe.each([
-  [3, 0, 1, 2, 0, 0, 0, 100, 4],
-  [4, 0, 1, 2, 3, 0, 0, 200, 4],
-  [4, 0, 1, 2, 0, 0, 0, 200, 4], // Insufficient LED.
-  [5, 0, 1, 2, 3, 4, 0, 300, 4],
-  [6, 0, 1, 2, 3, 4, 5, 400, 4]
-])('', (N, a0, a1, a2, a3, a4, a5, Y, precision) => {
-  test(`i=${i++}, N=${N}. LEDs(${a0},${a1},${a2},${a3},${a4},${a5}) in gamut, saturated Y (${Y})`, () => {
+  [ [0, 1, 2],          100, 4],
+  [ [0, 1, 2, 3],       200, 4],
+  [ [0, 1, 2, 0],       200, 4], // Insufficient LED.
+  [ [0, 1, 2, 3, 4],    300, 4],
+  [ [0, 1, 2, 3, 4, 5], 400, 4]
+])('', (lIDList, Y, precision) => {
+  test(`2: ${iTest++}, LEDs ${lIDList} in gamut, saturated Y (${Y})`, async () => {
+    const simplexAvailable = simplexIsOK();
 
     // Prepare solver
+    const N = lIDList.length;
     const lList: number[][] = new Array(N) as number[][];
     for (let j=0; j<N; j++) {
-      const val = eval(`a${j}`);
+      const val = lIDList[j];
       lList[j] = XYZs[val];
     }
 
@@ -185,19 +198,21 @@ describe.each([
 
     const {rank, a, ainv, nvecs} = Solver.makeSolverMatrix(lList);
     expect(rank).toBe(3);
-    if (rank === 3) {
+
+    if (rank === 3 && (N < 5 || simplexAvailable)) {
       const wList: number[] = makeWList(lList);
 
       // Do it.
+      expect.assertions(sRGB.length*6+1);
+
       for (let j=0; j<sRGB.length; j++) {
         const x = sRGB[j][0];
         const y = sRGB[j][1];
         let xyY = [x, y, Y];
 
-        const { alpha, feasible } = Solver.XYZ2Alpha(xyY2XYZ(xyY), wList, ainv, nvecs);
+        try {
+          const alpha: number[] = await Solver.XYZ2Alpha(xyY2XYZ(xyY), wList, ainv, nvecs);
 
-        // Examine: here we expect both feasible and infeasible
-        if (feasible) {
           let XYZ: number[] = Solver.alpha2XYZ(alpha, a);
           xyY = XYZ2xyY(XYZ);
           expect(xyY[0]).toBeCloseTo(x, precision);
@@ -211,10 +226,14 @@ describe.each([
           expect(xyY[0]).toBeCloseTo(x, precision);
           expect(xyY[1]).toBeCloseTo(y, precision);
           expect(xyY[2]).toBeLessThan(Y); // This Y is the maximum Y at each (x,y) by the given LED combination.
-        } else {
-          // Just curious what result is.
-          console.log(`Obtain infeasible at (${x}, ${y}, ${Y})`);
-          console.log(alpha);
+        } catch (e) {
+          if (e instanceof GamutError) {
+            console.log(`[2: ${iTest}] UNEXPECTED! Solution out of gamut at (${x}, ${y}, ${Y})`);
+          } else {
+            console.log(`[2: ${iTest}] UNEXPECTED! Obtain infeasible at (${x}, ${y}, ${Y})`);
+          }
+          console.log(e);
+          throw e;
         }
       }
     }
@@ -226,43 +245,50 @@ describe.each([
 
 
 describe.each([
-  [3, 0, 1, 0, 0, 0, 0.3, 0.3, 10, 4],
-  [4, 0, 1, 0, 1, 0, 0.3, 0.3, 10, 4],
-  [5, 0, 2, 0, 2, 0, 0.3, 0.3, 10, 4]
-])('', (N, a0, a1, a2, a3, a4, x, y, Y, precision) => {
+  [ [0, 1, 0],       0.3, 0.3, 10, 4],
+  [ [0, 1, 0, 1],    0.3, 0.3, 10, 4],
+  [ [0, 2, 0, 2, 0], 0.3, 0.3, 10, 4]
+])('', (lIDList, x, y, Y, precision) => {
 
-  test(`${i++}. Singular cases; insufficient LEDs.`, () => {
+  test(`3: ${iTest++}. LEDs ${lIDList} Singular cases; insufficient LEDs.`, async () => {
+    const simplexAvailable = simplexIsOK();
 
     // Prepare solver
+    const N = lIDList.length;
     const lList: number[][] = new Array(N) as number[][];
     for (let j=0; j<N; j++) {
-      const val = eval(`a${j}`);
+      const val = lIDList[j];
       lList[j] = XYZs[val];
     }
 
     const {rank, a, ainv, nvecs} = Solver.makeSolverMatrix(lList);
-
     expect(rank).toBeLessThan(3);
     
-    if (rank === 3) {
+    if (rank === 3 && (N < 5 || simplexAvailable)) {
       // Will never come here.
       const wList: number[] = makeWList(lList);
 
+      expect.assertions(4);
+
       // Do it.
       let xyY = [x, y, Y];
-      const { alpha, feasible } = Solver.XYZ2Alpha(xyY2XYZ(xyY), wList, ainv, nvecs);
-
-      // Examine
-      if (feasible) {
-        const XYZ: number[] = Solver.alpha2XYZ(alpha, a);
+      try {
+        const alpha = await Solver.XYZ2Alpha(xyY2XYZ(xyY), wList, ainv, nvecs);
+        const alpha2 = Solver.normalize(alpha);
+        const XYZ: number[] = Solver.alpha2XYZ(alpha2, a);
         xyY = XYZ2xyY(XYZ);
 
         expect(xyY[0]).toBeCloseTo(x, precision);
         expect(xyY[1]).toBeCloseTo(y, precision);
         expect(xyY[2]).toBeCloseTo(Y, precision);
-      } else {
-        console.log(`Solution INFEASIBLE for (${x}, ${y}, ${Y})`);
-        expect(feasible).toBe(true); // will raise fail.
+      } catch(e) {
+        if (e instanceof GamutError) {
+          console.log(`[3: ${iTest}] UNEXPECTED! Solution out of gamut for (${x}, ${y}, ${Y})`);
+        } else {
+          console.log(`[3: ${iTest}] UNEXPECTED! Solution INFEASIBLE for (${x}, ${y}, ${Y})`);
+        }
+        console.log(e);
+        throw e;
       }
     }
   });
@@ -273,42 +299,53 @@ describe.each([
 
 
 describe.each([
-  [3, 0, 1, 2, 0, 0, 1e-10, 4],
-  [4, 0, 1, 2, 3, 1, 1e-10, 4],
-  [5, 0, 1, 2, 3, 4, 1e-10, 4]
-])('', (N, a0, a1, a2, a3, a4, Y, precision) => {
-  test(`${i++}. When Y is too small, answer is 0,0,0`, () => {
+  [ [0, 1, 2],       1e-10, 4],
+  [ [0, 1, 2, 3],    1e-10, 4],
+  [ [0, 1, 2, 3, 4], 1e-10, 4]
+])('', (lIDList, Y, precision) => {
+  test(`4: ${iTest++}. LEDs ${lIDList} When Y is too small, answer is 0,0,0`, async () => {
+    const simplexAvailable = simplexIsOK();
 
     // Prepare solver
+    const N = lIDList.length;
     const lList: number[][] = new Array(N) as number[][];
     for (let j=0; j<N; j++) {
-      const val = eval(`a${j}`);
+      const val = lIDList[j];
       lList[j] = XYZs[val];
     }
 
     const {rank, a, ainv, nvecs} = Solver.makeSolverMatrix(lList);
     expect(rank).toBe(3);
-    if (rank === 3) {
+
+    if (rank === 3 && (N < 5 || simplexAvailable)) {
       const wList: number[] = makeWList(lList);
 
       // Do it.
+      expect.assertions(sRGB.length*N+1);
+
       for (let j=0; j<sRGB.length; j++) {
         const x = sRGB[j][0];
         const y = sRGB[j][1];
         let xyY = [x, y, Y];
-        const { alpha, feasible } = Solver.XYZ2Alpha(xyY2XYZ(xyY), wList, ainv, nvecs);
 
-        if (feasible) {
+        try {
+          const alpha: number[] = await Solver.XYZ2Alpha(xyY2XYZ(xyY), wList, ainv, nvecs);
+
           // Result in zeros
           for (let k=0; k<alpha.length; k++)
             expect(alpha[k]).toBe(0);
 
-          // dummy code to use a
+          // dummy code to consume a
           const XYZ: number[] = Solver.alpha2XYZ(alpha, a);
           xyY = XYZ2xyY(XYZ);
-        } else {
-          console.log(`Solution unexpectedly INFEASIBLE for (${x}, ${y}, ${Y})`);
-          expect(feasible).toBe(true); // will raise fail.
+        } catch(e) {
+          if (e instanceof GamutError) {
+            console.log(`[4: ${iTest}] UNEXPECTED! Solution out of gamut for (${x}, ${y}, ${Y})`);
+          } else {
+            console.log(`[4: ${iTest}] UNEXPECTED! Solution INFEASIBLE for (${x}, ${y}, ${Y})`);
+          }
+          console.log(e);
+          throw e;
         }
       }
     }
@@ -316,51 +353,119 @@ describe.each([
 });
 
 
+
 //------------------- Extreme cases; (x,y) on one of RGB LED -------------------
 
 
 describe.each([
-  [3, 0, 1, 2, 0, 0, 0.6857, 0.3143, 10, 4],
-  [3, 0, 1, 2, 0, 0, 0.2002, 0.6976, 10, 4],
-  [3, 0, 1, 2, 0, 0, 0.1417, 0.0618,  8, 4],
-  [4, 0, 1, 2, 3, 0, 0.6857, 0.3143, 10, 4],
-  [4, 0, 1, 2, 3, 0, 0.2002, 0.6976, 10, 4],
-  [4, 0, 1, 2, 3, 0, 0.1417, 0.0618,  8, 4],
-  [5, 0, 1, 2, 3, 4, 0.6857, 0.3143, 10, 3],
-  [5, 0, 1, 2, 3, 4, 0.2002, 0.6976, 10, 3],
-  [5, 0, 1, 2, 3, 4, 0.1417, 0.0618,  8, 3]
-])('', (N, a0, a1, a2, a3, a4, x, y, Y, precision) => {
+  [ [0, 1, 2],       0.6857, 0.3143, 10, 4],
+  [ [0, 1, 2],       0.2002, 0.6976, 10, 4],
+  [ [0, 1, 2],       0.1417, 0.0618,  8, 4],
+  [ [0, 1, 2, 3],    0.6857, 0.3143, 10, 4],
+  [ [0, 1, 2, 3],    0.2002, 0.6976, 10, 4],
+  [ [0, 1, 2, 3],    0.1417, 0.0618,  8, 4],
+  [ [0, 1, 2, 3, 4], 0.6857, 0.3143, 10, 3],
+  [ [0, 1, 2, 3, 4], 0.2002, 0.6976, 10, 3],
+  [ [0, 1, 2, 3, 4], 0.1417, 0.0618,  8, 3]
+])('', (lIDList, x, y, Y, precision) => {
 
-  test(`${i++}. Extreme cases; on one of RGB LED.`, () => {
+  test(`5: ${iTest++}. LEDs ${lIDList} Extreme cases; on one of RGB LED.`, async () => {
+    const simplexAvailable = simplexIsOK();
 
     // Prepare solver
+    const N = lIDList.length;
     const lList: number[][] = new Array(N) as number[][];
     for (let j=0; j<N; j++) {
-      const val = eval(`a${j}`);
+      const val = lIDList[j];
       lList[j] = XYZs[val];
     }
 
     const {rank, a, ainv, nvecs} = Solver.makeSolverMatrix(lList);
+    expect(rank).toBe(3);
 
-    if (rank === 3) {
+    if (rank === 3 && (N < 5 || simplexAvailable)) {
       const wList: number[] = makeWList(lList);
+
+      expect.assertions(4);
 
       // Do it.
       let xyY = [x, y, Y];
-      const { alpha, feasible } = Solver.XYZ2Alpha(xyY2XYZ(xyY), wList, ainv, nvecs);
-      // console.log(alpha);
+
+      try {
+        let alpha: number[] = await Solver.XYZ2Alpha(xyY2XYZ(xyY), wList, ainv, nvecs);
+        alpha = Solver.normalize(alpha);
+        // console.log(alpha);
       
-      // Examine
-      if (feasible) {
         const XYZ: number[] = Solver.alpha2XYZ(alpha, a);
         xyY = XYZ2xyY(XYZ);
 
         expect(xyY[0]).toBeCloseTo(x, precision);
         expect(xyY[1]).toBeCloseTo(y, precision);
         expect(xyY[2]).toBeCloseTo(Y, precision);
-      } else {
-        console.log(`Solution INFEASIBLE for (${x}, ${y}, ${Y})`);
-        expect(feasible).toBe(true); // will raise fail.
+      } catch(e) {
+        if (e instanceof GamutError) {
+          console.log(`[5: ${iTest}] UNEXPECTED! Solution out of gamut for (${x}, ${y}, ${Y})`);
+        } else {
+          console.log(`[5: ${iTest}] UNEXPECTED! Solution INFEASIBLE for (${x}, ${y}, ${Y})`);
+        }
+        console.log(e);
+        throw e;
+      }
+    }
+  });
+});
+
+
+describe.each([
+  [ [0, 1, 2],       [1, 0, 0], 4],
+  [ [0, 1, 2],       [0, 1, 1], 4],
+  [ [0, 1, 2],       [1, 1, 1], 4],
+  [ [0, 1, 2, 3],    [0, 1, 0, 0], 4],
+  [ [0, 1, 2, 4],    [0, 0, 1, 0], 4],
+  [ [0, 1, 2, 5],    [0, 0, 0, 1], 4],
+  [ [0, 1, 2, 4, 5], [1, 0, 0, 0, 0], 4],
+  [ [0, 1, 2, 4, 5], [0, 1, 0, 0, 0], 4],
+  [ [0, 1, 2, 4, 5], [0, 0, 1, 0, 0], 4],
+  [ [0, 1, 2, 5, 6], [0, 0, 0, 1, 0], 4],
+  [ [0, 1, 2, 5, 6], [0, 0, 0, 0, 1], 4]
+])('', (lIDList, alpha0, precision) => {
+
+  test(`6: ${iTest++}. LEDs ${lIDList}; on one of RGB LED / Foward - reverse solution would agree?.`, async () => {
+    const simplexAvailable = simplexIsOK();
+
+    // Prepare solver
+    const N = lIDList.length;
+    const lList: number[][] = new Array(N) as number[][];
+    for (let j=0; j<N; j++) {
+      const val = lIDList[j];
+      lList[j] = XYZs[val];
+    }
+
+    const {rank, a, ainv, nvecs} = Solver.makeSolverMatrix(lList);
+    expect(rank).toBe(3);
+
+    if (rank === 3 && (N < 5 || simplexAvailable)) {
+      const wList: number[] = makeWList(lList);
+      const XYZ: number[] = Solver.alpha2XYZ(alpha0, a);
+
+      expect.assertions(N+1);
+
+      try {
+        let alpha: number[] = await Solver.XYZ2Alpha(XYZ, wList, ainv, nvecs);
+        alpha = Solver.normalize(alpha);
+        // console.log(alpha);
+
+        for (let j=0; j<N; j++) {
+          expect(alpha0[j]).toBeCloseTo(alpha[j], precision);
+        }
+      } catch(e) {
+        if (e instanceof GamutError) {
+          console.log(`[6: ${iTest}] UNEXPECTED! Solution out of gamut for (${alpha0})`);
+        } else {
+          console.log(`[6: ${iTest}] UNEXPECTED! Solution INFEASIBLE for (${alpha0})`);
+        }
+        console.log(e);
+        throw e;
       }
     }
   });
@@ -370,30 +475,35 @@ describe.each([
 //------------------- Extreme cases; Out of LED gamut -------------------
 
 describe.each([
-  [3, 0, 1, 2, 0, 0, 5, 4],
-  [3, 0, 1, 2, 0, 0, 5, 4],
-  [3, 0, 1, 2, 0, 0, 5, 4],
-  [4, 0, 1, 2, 3, 0, 5, 4],
-  [4, 0, 1, 2, 3, 0, 5, 4],
-  [4, 0, 1, 2, 3, 0, 5, 4],
-  [5, 0, 1, 2, 3, 4, 5, 4],
-  [5, 0, 1, 2, 3, 4, 5, 4],
-  [5, 0, 1, 2, 3, 4, 5, 4]
-])('', (N, a0, a1, a2, a3, a4, Y, precision) => {
+  [ [0, 1, 2],       5, 4],
+  [ [0, 1, 2],       5, 4],
+  [ [0, 1, 2],       5, 4],
+  [ [0, 1, 2, 3],    5, 4],
+  [ [0, 1, 2, 3],    5, 4],
+  [ [0, 1, 2, 3],    5, 4],
+  [ [0, 1, 2, 3, 4], 5, 4],
+  [ [0, 1, 2, 3, 4], 5, 4],
+  [ [0, 1, 2, 3, 4], 5, 4]
+])('', (lIDList, Y, precision) => {
 
-  test(`${i++}. N=${N} Extreme cases; out of gamut.`, () => {
+  test(`7: ${iTest++}. LEDs ${lIDList}; Extreme cases; out of gamut.`, async () => {
+    const simplexAvailable = simplexIsOK();
 
     // Prepare solver
+    const N = lIDList.length;
     const lList: number[][] = new Array(N) as number[][];
     for (let j=0; j<N; j++) {
-      const val = eval(`a${j}`);
+      const val = lIDList[j];
       lList[j] = XYZs[val];
     }
 
     const {rank, a, ainv, nvecs} = Solver.makeSolverMatrix(lList);
+    expect(rank).toBe(3);
 
-    if (rank === 3) {
+    if (rank === 3 && (N < 5 || simplexAvailable)) {
       const wList: number[] = makeWList(lList);
+
+      expect.assertions(outOfGamut.length*3+1);
 
       // Do it.
       for (let j=0; j<outOfGamut.length; j++) {
@@ -402,43 +512,50 @@ describe.each([
         let xyY = [x, y, Y];
 
         // Do it.
-        const { alpha, feasible } = Solver.XYZ2Alpha(xyY2XYZ(xyY), wList, ainv, nvecs);
+        try {
+          const alpha = await Solver.XYZ2Alpha(xyY2XYZ(xyY), wList, ainv, nvecs);
       
-        // Examine
-        if (feasible) {
           const XYZ: number[] = Solver.alpha2XYZ(alpha, a);
           xyY = XYZ2xyY(XYZ);
 
-          console.log(`Solution FEASIBLE for (${x}, ${y}, ${Y})`);
+          console.log(`[7: ${iTest}] UNEXPECTED! Solution FEASIBLE for (${x}, ${y}, ${Y})`);
           console.log(alpha);
-          expect(xyY[0]).toBeCloseTo(x, precision);
-          expect(xyY[1]).toBeCloseTo(y, precision);
-          expect(xyY[2]).toBeCloseTo(Y, precision);
-        } else {
-          expect(feasible).toBe(false); // as expected.
+        } catch(e) {
+          if (e instanceof GamutError) {
+            // Out of gamut cases should throw GamutError.
+            const XYZ: number[] = Solver.alpha2XYZ(e.alpha, a);
+            xyY = XYZ2xyY(XYZ);
+
+            expect(xyY[0]).toBeCloseTo(x, precision);
+            expect(xyY[1]).toBeCloseTo(y, precision);
+            expect(xyY[2]).toBeCloseTo(Y, precision);
+          } else {
+            // This is not what we expect.
+            console.log(e);
+            throw e;
+          }
         }
       }
     }
   });
 });
 
-
+/*
 
 //------------------- Test alpha2XYZ extreme input -------------------
 
-/*
+
 describe.each([
   [3, 0, 1, 0, 0, 0, 4],
   [4, 0, 1, 0, 1, 0, 4],
   [5, 0, 2, 0, 2, 0, 4]
-])('', (N, a0, a1, a2, a3, a4, precision) => {
+])('', (N, l0, l1, l2, l3, l4, precision) => {
 
-  test(`${i++}. alpha2XYZ() truncate alpha=[0,1].`, () => {
-
+  test(`8: ${iTest++}. alpha2XYZ() normalize alpha=[0,1].`, () => {
     // Prepare solver
     const lList: number[][] = new Array(N) as number[][];
     for (let j=0; j<N; j++) {
-      const val = eval(`a${j}`);
+      const val = eval(`l${j}`);
       lList[j] = XYZs[val];
     }
 
@@ -450,7 +567,7 @@ describe.each([
     // 1) Out of range
     for (let j=0; j<N; j++)
       alpha[j] = (j%2)*3 - 1; // Either 2 or -1
-    const XYZ: number[] = Solver.alpha2XYZ(alpha, a);
+    const XYZ: number[] = Solver.alpha2XYZ(Solver.normalize(alpha), a);
 
     // 2) In the range
     for (let j=0; j<N; j++)

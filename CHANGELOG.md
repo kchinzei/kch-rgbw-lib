@@ -5,15 +5,33 @@ Versioning policy is based on [Semantic Versioning](https://semver.org/spec/v2.0
 
 ## Unrelased
 
-- Heavy computation (due to linear programming) in `RGBWLED` class will be async.
-  This will affect the following member functions and properties.
-  - `constructor()` will initially set brightness to 0.
-  - `color` and `brightness` will be readonly. These setters will be removed.
-  - Instead `setColorAsync()` and `setBrighnessAsync()` will be added.
-  - `setBrightness(bList: number[])` will be added.
-  - `maxLuminanceAt()` and `maxBrightnessAt()` will be removed.
-  - Instead `maxLuminanceAtAsync()` and `maxBrightnessAtAsync()` will be added.
-- LED properties will be parsed from JSON format.
+- LED properties parsed from JSON format.
+- Solve `RGBWLED` composite color by linear interpolation.
+- Setter of brightness in `RGBWLED`
+
+### [2.0.0](https://github.com/kchinzei/kch-rgbw-lib/releases/tag/2.0.0) - 2020-09-01
+
+Heavy computation (due to linear programming) in `RGBWLED` class is now asynchronous. Asynchronous functions are suffixed ...Async().
+Following member functions and properties are changed.
+
+### Added
+
+- `setColorAsync()` and `setLuminanceAsync()` instead of setters.
+- `maxLuminanceAtAsync()` and `maxBrightnessAtAsync()`
+- `setBrightness(bList: number[])`
+- `brightness2Color()` and `color2BrightnessAsync()`
+- `RGBWLED.maxLEDNumber` to obtain limit of LEDs.
+
+### Changed
+
+- `constructor()` will initially set brightness to 0.
+- `color` and `brightness` are readonly.
+- `push()` does not update LED brightness.
+
+### Deleted
+
+- Setters of `color` and `brightness`.
+- `maxLuminanceAt()` and `maxBrightnessAt()`.
 
 ## [1.0.1](https://github.com/kchinzei/kch-rgbw-lib/releases/tag/1.0.1) - 2020-08-26
 
