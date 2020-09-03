@@ -5,32 +5,42 @@ Versioning policy is based on [Semantic Versioning](https://semver.org/spec/v2.0
 
 ## Unrelased
 
-- LED properties parsed from JSON format.
-- Solve `RGBWLED` composite color by linear interpolation.
-- Setter of brightness in `RGBWLED`
+To avoid heavy computation (of linear programming),
 
-### [2.0.0](https://github.com/kchinzei/kch-rgbw-lib/releases/tag/2.0.0) - 2020-09-01
+- LED properties parsed from JSON format.
+- Solve `RGBWLED` composite color by linear interpolation of alpha[].
+- Function to load a lookup table of alpha[].
+
+Solution of linear programming in case a solution including brightness > 1 is not necessarily optimized in the sense that value exceeding 1 is not a 'best effort' to close it to 1. Function to provide optimum solution will be provided.
+
+Sample and utility node scripts
+
+- Sample script to compute alpha[] (LED's PWM) from a color, or v.v.
+- Utility to generate lookup table of alpha[] from given set of LED.
+- Utility to compute chromaticity and luminosity of an LED from spectroscopic measurement data obtained by [SparkFun Triad Spectroscopy Sensor AS7265x](https://github.com/sparkfun/SparkFun_AS7265x_Arduino_Library).
+
+### [2.0.0](https://github.com/kchinzei/kch-rgbw-lib/releases/tag/2.0.0) - 2020-09-04
 
 Heavy computation (due to linear programming) in `RGBWLED` class is now asynchronous. Asynchronous functions are suffixed ...Async().
 Following member functions and properties are changed.
 
 ### Added
 
-- `setColorAsync()` and `setLuminanceAsync()` instead of setters.
+- `setColorAsync()` instead of the setter.
 - `maxLuminanceAtAsync()` and `maxBrightnessAtAsync()`
-- `setBrightness(bList: number[])`
-- `brightness2Color()` and `color2BrightnessAsync()`
+- `setAlpha(alpha: number[])`
+- `alpha2Color()` and `color2AlphaAsync()`
 - `RGBWLED.maxLEDNumber` to obtain limit of LEDs.
 
 ### Changed
 
 - `constructor()` will initially set brightness to 0.
-- `color` and `brightness` are readonly.
+- `color` is readonly.
 - `push()` does not update LED brightness.
 
 ### Deleted
 
-- Setters of `color` and `brightness`.
+- Setters of `color`.
 - `maxLuminanceAt()` and `maxBrightnessAt()`.
 
 ## [1.0.1](https://github.com/kchinzei/kch-rgbw-lib/releases/tag/1.0.1) - 2020-08-26

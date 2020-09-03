@@ -170,10 +170,11 @@ describe.each([
       // Add the last one
       const lastLED = idLEDs[lIDList[N-1]];
       l.push(lastLED);
+      await l.setColorAsync(new CSpace('xyY', [ 0.3127, 0.3290, 0 ]));
 
       // Test
       expect(l.LED.length).toBe(N+3);
-      await l.setLuminanceAsync(b*l.maxLuminance);
+      l.setLuminance(b*l.maxLuminance);
       const maxB = await l.maxBrightnessAtAsync(l);
       if (b < maxB)
         expect(l.brightness).toBeCloseTo(b, precision);
@@ -194,7 +195,8 @@ describe.each([
 ])('', (brightness) => {
   test(`${i++}. set extreme brightness ${brightness}`, async () => {
     const l: RGBWLED = new RGBWLED('sample', [R, G, B, W]);
-    await l.setLuminanceAsync(brightness*l.maxLuminance);
+    await l.setColorAsync(new CSpace('xyY', [ 0.3127, 0.3290, 0 ]));
+    l.setLuminance(brightness*l.maxLuminance);
     expect(l.brightness).toBeLessThanOrEqual(1);
     expect(l.brightness).toBeGreaterThanOrEqual(0);
   });
@@ -226,7 +228,7 @@ describe.each([
           lList[k] = idLEDs[val];
         }
         const l: RGBWLED = new RGBWLED('sample', lList);
-        await l.setLuminanceAsync(brightness*l.maxLuminance);
+        l.brightness = brightness;
 
         const c: CSpace = new CSpace(t1 as CSpaceTypes, [q0, q1, q2]);
         await l.setColorAsync(c);
@@ -271,8 +273,8 @@ describe.each([
         expect(maxB).toBeCloseTo(-1, precision);
 
         try {
-          const alpha = await l.color2BrightnessAsync(c);
-          const c1: CSpace = l.brightness2Color(alpha);
+          const alpha = await l.color2AlphaAsync(c);
+          const c1: CSpace = l.alpha2Color(alpha);
           expect(c1.x).toBeCloseTo(q0, precision);
           expect(c1.y).toBeCloseTo(q1, precision);
           expect(c1.Y).toBeCloseTo(q2, precision);
@@ -327,7 +329,7 @@ describe.each([
 
 
 
-// ---------------------------------- brightness2Color test ----------------------------------
+// ---------------------------------- alpha2Color test ----------------------------------
 
 
 
@@ -337,7 +339,7 @@ describe.each([
   [4,  0, 1, 2, 3,-1],
   [5,  0, 1, 2, 3, 4]
 ])('', (N, a0, a1, a2, a3, a4) => {
-  test(`${i++}. brightness2Color should fail for wrong length of brightness`, () => {
+  test(`${i++}. alpha2Color should fail for wrong length of brightness`, () => {
     expect(() => {
       const lList: idLED[] = new Array(N) as idLED[];
       for (let j=0; j<N; j++) {
@@ -347,7 +349,7 @@ describe.each([
       const l: RGBWLED = new RGBWLED('sample', lList);
 
       const bList: number[] = new Array(N+1).fill(0) as number[];
-      const c: CSpace = l.brightness2Color(bList); // fail!
+      const c: CSpace = l.alpha2Color(bList); // fail!
       c.a[0] *= 0.5;
     }).toThrow();
     expect(() => {
@@ -359,7 +361,7 @@ describe.each([
       const l: RGBWLED = new RGBWLED('sample', lList);
 
       const bList: number[] = new Array(N-1).fill(0) as number[];
-      const c: CSpace = l.brightness2Color(bList); // fail!
+      const c: CSpace = l.alpha2Color(bList); // fail!
       c.a[0] *= 0.5;
     }).toThrow();
   });

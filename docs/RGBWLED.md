@@ -21,7 +21,7 @@ import { RGBWLED, makeGamutContour } from 'kch-rgbw-lib';
 export interface IRGBWLED {
   name: string;
   readonly color: CSpace;
-  readonly brightness: number; // [0,1]
+  brightness: number; // [0,1]
   readonly maxLuminance: number;  // Sum of maxLuminance of all LEDs
   readonly LED: LEDChip[];
   readonly nLED: number;
@@ -37,6 +37,9 @@ Although the name of the class may imply that it has R-G-B-W 4 LEDs, `RGBWLED` c
 It is possible to have LEDs with a same color.
 LEDs are stored as an array.
 
+For more than 5 LEDs we need to solve it using linear programming (LP).
+Since LP is a heavy computation, operations that involve LP are asynchronous.
+
 ### Luminance and brightness
 
 Relation of `brightness` and `maxLuminance` and the current luminance is
@@ -48,6 +51,12 @@ Actual maximum luminance that can be represented by a combination of LEDs is dep
 Color-dependent maximum luminance is obtained by `getMaxLuminanceAt()`.
 
 Therefore, `brightness` cannot reach to 1 in most of colors.
+
+### Alpha
+
+Some member functions of `RGBWLED` use `alpha: number[]` as in/output.
+`alpha[]` is a set of brightness of each LED.
+Therefor length of `alpha[]` should always match to number of LEDs.
 
 ### Gamut contour
 
@@ -72,6 +81,8 @@ A new `RGBWLED` from an array of `LEDChip`, `lList`.
 If number of LEDs or number of different colors is less than 3, it throws an exception.
 Due to limitation of solver, some node/C++ environment has limitation of number of LEDs less than 5.
 
+After initialization, `RGBWLED` is turned off (all LEDs off) while its color is set to 'all LED on'. Before using `RGBWLED` you must set an initial color using `setColorAsync()`.
+
 ### Getter
 
 ##### .color: CSpace
@@ -91,11 +102,11 @@ Return the maximum luminance obtained when turning on all LEDs.
 Return the array of current LEDs.
 Modifying `LEDChip` in this array will result in unexpected behavior.
 
-<!--
-
 ### Setter
 
--->
+##### .brightness: number
+
+Set brightness. Resulting brightness may be less that the input, when it is saturated.
 
 ### Member functions
 
@@ -120,17 +131,18 @@ These does not check if `c` is within the gamut.
 
 ##### push(l: LEDChip): void
 
-Push (insert) the given `l` in the `RGBWLED`.
+Push (append) the given `l` in the `RGBWLED`.
+After pushing `l`, the state of `l` is 'off' (unused) until next `setColorAsync()` call.
 
-##### brightness2Color(bList: number[]): CSpace
+##### alpha2Color(aplha: number[]): CSpace
 
-Return the composite color using an array of brightness of LEDs `bList`.
+Return the composite color using an array of brightness of LEDs `alpha`.
 It does not check the brightness is in range of [0,1].
-`bList.length` should match the number of LEDs in `RGBWLED`.
+`alpha.length` should match the number of LEDs in `RGBWLED`.
 Otherwise it throws an exception.
 Returned `CSpace` is in `'xyY'` type.
 
-##### color2BrightnessAsync(c: CSpace): Promise<number[]>
+##### color2AlphaAsync(c: CSpace): Promise<number[]>
 
 Return an array of brightness of each LED for a given color `c`. It does not check `c` is within the gamut. If it is outside the gamut, some values in the return array will be negative.
 `c` can be in any color space except `'xy'`.
