@@ -30,23 +30,27 @@ THE SOFTWARE.
   https://github.com/kchinzei/kch-rgbw-lib
 */
 
-import { CSpace } from './CSpace';
+import { CSpace, CSpaceR } from './CSpace';
 import { LEDChip } from './LEDChip';
 import { xyIsInGamut, xyFit2Gamut } from './waveLength';
 import { makeSolverMatrix, alpha2XYZ, XYZ2Alpha, normalize } from './solver';
+import { simplexIsOK } from 'linear-program-solver';
+import { GamutError } from '../src/GamutError';
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
-const D65White: number[] = [ 0.3127, 0.3290, 1 ] ; // ITU Rec. 709 D65 White; https://en.wikipedia.org/wiki/SRGB
+const D65White: number[] = [ 0.3127, 0.3290, 0 ] ; // ITU Rec. 709 D65 White; https://en.wikipedia.org/wiki/SRGB
+
+const qSmall = 1e-6;
 
 export interface IRGBWLED {
   name: string;
-  color: CSpace;
+  readonly color: CSpace;
   brightness: number; // [0,1]
   readonly maxLuminance: number;  // Sum of maxLuminance of all LEDs
   readonly LED: LEDChip[];
 }
 
-export class RGBWLED extends CSpace implements IRGBWLED {
+export class RGBWLED extends CSpaceR implements IRGBWLED {
   private _LED: LEDChip[];
   private _name: string;
   private _gamutContour: CSpace[];
@@ -54,6 +58,7 @@ export class RGBWLED extends CSpace implements IRGBWLED {
   private _ainv: number[][];
   private _nvecs: number[][];
   private _w: number[];
+  private _unitAlpha: number[];
 
   // eslint-disable-next-line @typescript-eslint/naming-convention
   get LED(): LEDChip[] { return this._LED; }
@@ -65,19 +70,27 @@ export class RGBWLED extends CSpace implements IRGBWLED {
       maxB += l.maxLuminance;
     return maxB;
   }
+
   get brightness(): number {
     return this.Y / this.maxLuminance;
   }
   set brightness(b: number) {
-    const xyY: CSpace = new CSpace(this);
-    xyY.Y = checkBrightness(b) * this.maxLuminance;
-    this.updateLEDs(xyY);
+    this.setLuminance(b * this.maxLuminance);
   }
+
+  // eslint-disable-next-line @typescript-eslint/naming-convention, camelcase
+  public setLuminance(Y: number): number {
+    Y = this.checkLuminance(Y);
+    this.setAlpha(this._unitAlpha.map(a => a*Y));
+    return this.Y;
+  }
+
   get color(): CSpace {
     const c: CSpace = new CSpace(this);
     return c;
   }
-  set color(c: CSpace) {
+
+  public async setColorAsync(c: CSpace): Promise<void> {
     // 1. Convert c to xyY or xy.
     let c1: CSpace;
     if (c.type === 'xy') {
@@ -93,11 +106,30 @@ export class RGBWLED extends CSpace implements IRGBWLED {
     if (c.type !== 'xyY' && c.type !== 'XYZ')
       c1.Y = this.Y;
 
-    // 4. Do it.
-    this.updateLEDs(c1);
+    // 4. Do it
+    let Y = c1.Y;
+    if (Y < qSmall) {
+      // When Y is 0, compute unit alpha and set it to unitAlpha.
+      c1.Y = 1;
+      Y = 0;
+    }
+
+    let alpha!: number[];
+    try {
+      alpha = await this.color2AlphaAsync(c1);
+    } catch (e) {
+      /* istanbul ignore next */
+      throw e;
+    }
+    this.a_internal()[0] = c1.x;
+    this.a_internal()[1] = c1.y;
+    this.a_internal()[2] = Y;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    this.setAlpha((Y === 0)? alpha.map(a => 0) : alpha);
+    this._setupUnitAlpha(alpha, c1.Y);
   }
 
-  public maxLuminanceAt(c: CSpace): number {
+  public async maxLuminanceAtAsync(c: CSpace): Promise<number> {
     // 1. Convert c to xyY
     let c1: CSpace;
     if (c.type === 'xy') {
@@ -106,82 +138,128 @@ export class RGBWLED extends CSpace implements IRGBWLED {
       c1 = c.xyY();
     }
 
-    // 2. Set Y as slightly larger than max
+    // 2. Is c1 in the gamut?
+    if (xyIsInGamut(c1, this._gamutContour) === false)
+      return -1;
+
+    // 3. Set Y as slightly larger than max
     c1.Y = this.maxLuminance * 1.05;
 
-    // Solve
-    const { alpha, feasible } = XYZ2Alpha(c1.XYZ().a, this._w, this._ainv, this._nvecs);
-
-    if (feasible) {
-      const XYZ = this.brightness2Color(normalize(alpha));
-      return XYZ.Y;
-    } else {
-      return -1;
+    // 4. Solve
+    let alpha!: number[];
+    try {
+      alpha = await this.color2AlphaAsync(c1);
+    } catch(e) {
+      /* istanbul ignore next */
+      throw e;
     }
+    const XYZ = this.alpha2Color(normalize(alpha));
+    return XYZ.Y;
   }
 
-  public maxBrightnessAt(c: CSpace): number {
-    const maxL = this.maxLuminanceAt(c);
-    if (maxL > 0)
-      return maxL / this.maxLuminance;
-    else
-      return -1;
+  public async maxBrightnessAtAsync(c: CSpace): Promise<number> {
+    try {
+      const maxL = await this.maxLuminanceAtAsync(c);
+      if (maxL > 0)
+        return maxL / this.maxLuminance;
+      else
+        return -1;
+    } catch (e) {
+      /* istanbul ignore next */
+      throw e;
+    }
   }
 
   constructor(name: string, lList: LEDChip[]) {
     super('xyY', D65White);
     if (lList.length < 3)
       throw new Error('RGBWLED() needs at least 3 LEDs');
-
+    /* istanbul ignore if */
+    if (lList.length >= 5 && !simplexIsOK())
+      throw new Error('RGBWLED() requires simplex() to have 5 or more LEDs');
     this._name = name;
     this._LED = new Array(lList.length) as LEDChip[];
-    for (let i=0; i<lList.length; i++)
-      this._LED[i] = lList[i];
+    for (let i=0; i<lList.length; i++) {
+      this._LED[i] = new LEDChip(lList[i]);
+      this._LED[i].brightness = 0;
+    }
 
     this._gamutContour = [];
     this._afwd = [];
     this._ainv = [];
     this._nvecs = [];
     this._w = [];
+    this._unitAlpha = [];
 
-    if (!this.setup()) {
-      throw new Error('RGBWLED() needs at least 3 LEDs in different colors');
+    if (!this._setup()) {
+      /* istanbul ignore next */
+      throw new Error('RGBWLED() needs LEDs of at least 3 different colors');
     }
+
+    // Set dummy color using sync functions only
+    // This is insurance in case forgetting setColorAsync or setAlpha
+    const dummy: number[] = new Array(this._LED.length).fill(0.1) as number[];
+    this.setAlpha(dummy);
+    this.setLuminance(0);
   }
 
   public push(led: LEDChip): void {
-    this.LED.push(led);
-    this.setup();
+    /* istanbul ignore if */
+    if (this.LED.length >= 4 && !simplexIsOK()) {
+      throw new Error('RGBWLED() requires simplex() to have 5 or more LEDs');
+    }
+    const lTmp: LEDChip = new LEDChip(led);
+    lTmp.brightness = 0;
+    this.LED.push(lTmp);
+    this._setup();
   }
 
-  public brightness2Color(bList: number[]): CSpace {
-    if (bList.length !== this.LED.length)
-      throw new Error('brightness2Color() Length of bList[] should be equal to number of LEDs.');
+  public setAlpha(alpha: number[]): void {
+    alpha = normalize(alpha);
+    const xyY: CSpace = this.alpha2Color(alpha);
+    if (xyY.Y > qSmall) {
+      this.a_internal()[0] = xyY.x;
+      this.a_internal()[1] = xyY.y;
+      this.a_internal()[2] = xyY.Y;
+    } else {
+      this.a_internal()[2] =0;
+    }
+    this._setupUnitAlpha(alpha, this.Y);
+  }
 
-    const xyz: number[] = alpha2XYZ(bList, this._afwd);
+  public alpha2Color(alpha: number[]): CSpace {
+    if (alpha.length !== this.LED.length)
+      throw new Error('alpha2Color() Length of alpha[] should be equal to number of LEDs.');
+
+    const xyz: number[] = alpha2XYZ(alpha, this._afwd);
     const c: CSpace = new CSpace('XYZ', xyz);
     return c.xyY();
   }
 
-  private updateLEDs(c: CSpace): boolean {
-    // Assume that c is already xyY in the gamut
-    const { alpha, feasible } = XYZ2Alpha(c.XYZ().a, this._w, this._ainv, this._nvecs);
-
-    /* istanbul ignore else */
-    if (feasible) {
-      const alpha2 = normalize(alpha);
-      this.x = c.x;
-      this.y = c.y;
-      this.Y = 0;
-      for (let i=0; i<this.LED.length; i++) {
-        this.LED[i].brightness = alpha2[i]; // update each LED.
-        this.Y += alpha2[i] * this.LED[i].maxLuminance;
-      }
+  public async color2AlphaAsync(c: CSpace): Promise<number[]> {
+    if (c.type === 'xy') {
+      // We cannot convert xy to other type. Second best.
+      c = new CSpace('xyY', c.a);
     }
-    return feasible;
+    try {
+      return await XYZ2Alpha(c.XYZ().a, this._w, this._ainv, this._nvecs);
+    } catch (e) {
+      /* istanbul ignore else */
+      if (e instanceof GamutError)
+        return e.alpha;
+      else
+        throw e;
+    }
   }
 
-  private setup(): boolean {
+  // eslint-disable-next-line @typescript-eslint/naming-convention, camelcase
+  private _setupUnitAlpha(alpha: number[], Y: number) {
+    if (Y !== 0)
+      this._unitAlpha = alpha.map(a => a/Y);
+  }
+
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  private _setup(): boolean {
     function makeXYZMat(lList: LEDChip[]): number[][] {
       const aa: number[][] = new Array(lList.length) as number[][];
       for (let i=0; i<lList.length; i++) {
@@ -206,15 +284,27 @@ export class RGBWLED extends CSpace implements IRGBWLED {
     this._ainv = ainv;
     this._nvecs = nvecs;
     this._w = makeWVec(this._LED);
-    this.updateLEDs(this);
+    this._unitAlpha = [];
+
     return true;
   }
+
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  private checkLuminance(Y: number): number {
+    if (Y < 0) Y = 0;
+    if (Y > this.maxLuminance) Y = this.maxLuminance;
+    return Y;
+  }
+
+  static readonly maxLEDNumber: number = getMaxLED();
 }
 
-function checkBrightness(b: number): number {
-  if (b < 0) b = 0;
-  if (b > 1) b = 1;
-  return b;
+function getMaxLED(): number {
+  /* istanbul ignore else */
+  if (simplexIsOK())
+    return Number.MAX_SAFE_INTEGER;
+  else
+    return 4;
 }
 
 /*

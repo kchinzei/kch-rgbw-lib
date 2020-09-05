@@ -84,18 +84,14 @@ export class CSpace implements ICSpace {
   get q(): number { return this._a[2]; }
   set q(a: number) { this._a[2] = a; }
 
-  get a(): number[] {
-    const tmp: number[] = new Array(this._a.length) as number[];
-    // TODO use ...
-    for (let i=0; i<this._a.length; i++)
-      tmp[i] = this._a[i];
-    return tmp;
-  }
+  get a(): number[] { return this._a.slice(); }
   set a(arr: number[]) {
     if (copyArray(arr, this._a, this.type) === false)
       throw new Error('Class CSpace: Unexpected setter a() parameter.');
     checkValues(this._a, this.type);
   }
+  // eslint-disable-next-line @typescript-eslint/naming-convention, camelcase
+  a_internal(): number[] { return this._a; } // risk of tampering a[], it's not hidden from CSpaceR. All in purpose...
 
   get type(): CSpaceTypes { return this._type; }
   set type(typeTo: CSpaceTypes) {
@@ -418,9 +414,25 @@ export interface ICSpaceR { // Readonly CSpace
 }
 
 export class CSpaceR extends CSpace implements ICSpaceR {
+  get r(): number { return super.r; }
+  get g(): number { return super.g; }
+  get b(): number { return super.b; }
+  get h(): number { return super.h; }
+  get s(): number { return super.s; }
+  get v(): number { return super.v; }
+  get X(): number { return super.X; } // eslint-disable-line @typescript-eslint/naming-convention
+  get Y(): number { return super.Y; } // eslint-disable-line @typescript-eslint/naming-convention
+  get Z(): number { return super.Z; } // eslint-disable-line @typescript-eslint/naming-convention
+  get x(): number { return super.x; }
+  get y(): number { return super.y; }
+  get q(): number { return super.q; }
+  get a(): number[] { return super.a; }
+  get type(): CSpaceTypes { return super.type; }
+  /*
   constructor(p0?: (CSpaceTypes | CSpace), p1?: (number[] | number)) {
     super(p0, p1);
   }
+  */
 }
 
 // Apply reverse of gamma for sRGB

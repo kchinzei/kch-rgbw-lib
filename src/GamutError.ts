@@ -23,16 +23,22 @@ THE SOFTWARE.
 */
 
 /*
-  RGB/RGBW LED class library.
+  GamutError
 
   Make Asayake to Wake Project.
   Kiyo Chinzei
   https://github.com/kchinzei/kch-rgbw-lib
+
+  Solving composite LED can be eventually infeasible, when the color to
+  solve is out of the gamut of LEDs. GamutError is a class for such case.
+
+  Ref: https://future-architect.github.io/typescript-guide/exception.html#error [JP]
 */
 
-export * from './CSpace';
-export * from './waveLength';
-export * from './colorTemperature';
-export * from './LEDChip';
-export * from './RGBWLED';
-export * from './GamutError';
+export class GamutError extends RangeError {
+  constructor(public alpha: number[], e: string) {
+    super('Out of gamut: '+e);
+    this.name = new.target.name;
+    // Object.setPrototypeOf(this, new.target.prototype);
+  }
+}
