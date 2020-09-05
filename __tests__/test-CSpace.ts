@@ -30,7 +30,7 @@ THE SOFTWARE.
   https://github.com/kchinzei/kch-rgbw-lib
 */
 
-import { CSpace, CSpaceTypes } from '../src/index';
+import { CSpace, CSpaceR, CSpaceTypes } from '../src/index';
 
 // const agh = require('agh.sprintf');
 
@@ -460,3 +460,48 @@ describe.each([
     }
   });
 });
+
+describe.each([
+  ['rgb', 0.2,  0.3,  0.4],
+  ['hsv', 150,  0.3,  0.4],
+  ['XYZ', 0.2,  0.3,  0.4],
+  ['xyY', 0.2,  0.4,  0.5],
+  ['xy',  0.2,  0.4,  3.14]
+])('', (t1, q0, q1, q2) => {
+  test(`${i++}. 'CSpaceR getters.`, () => {
+    const q: number[] = [q0, q1, q2];
+    const c: CSpace  = new CSpaceR(t1 as CSpaceTypes, q);
+
+    switch (t1) {
+      case 'xy':
+        expect(c.x).toBeCloseTo(q0, 5);
+        expect(c.y).toBeCloseTo(q1, 5);
+        expect(c.q).toBeCloseTo(q2, 5);
+        break;
+      case 'xyY':
+        expect(c.x).toBeCloseTo(q0, 5);
+        expect(c.y).toBeCloseTo(q1, 5);
+        expect(c.Y).toBeCloseTo(q2, 5);
+        break;
+      case 'XYZ':
+        expect(c.X).toBeCloseTo(q0, 5);
+        expect(c.Y).toBeCloseTo(q1, 5);
+        expect(c.Z).toBeCloseTo(q2, 5);
+        break;
+      case 'rgb':
+        expect(c.r).toBeCloseTo(q0, 5);
+        expect(c.g).toBeCloseTo(q1, 5);
+        expect(c.b).toBeCloseTo(q2, 5);
+        break;
+      case 'hsv':
+        expect(c.h).toBeCloseTo(q0, 5);
+        expect(c.s).toBeCloseTo(q1, 5);
+        expect(c.v).toBeCloseTo(q2, 5);
+        break;
+    }
+    const a = c.a;
+    for (let j=0; j<3; j++)
+      expect(a[j]).toBeCloseTo(q[j], 5);
+  });
+});
+
