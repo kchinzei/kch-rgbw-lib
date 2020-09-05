@@ -30,7 +30,7 @@ THE SOFTWARE.
   https://github.com/kchinzei/kch-rgbw-lib
 */
 
-import { CSpace } from './CSpace';
+import { CSpace, CSpaceR } from './CSpace';
 import { LEDChip } from './LEDChip';
 import { xyIsInGamut, xyFit2Gamut } from './waveLength';
 import { makeSolverMatrix, alpha2XYZ, XYZ2Alpha, normalize } from './solver';
@@ -50,7 +50,7 @@ export interface IRGBWLED {
   readonly LED: LEDChip[];
 }
 
-export class RGBWLED extends CSpace implements IRGBWLED {
+export class RGBWLED extends CSpaceR implements IRGBWLED {
   private _LED: LEDChip[];
   private _name: string;
   private _gamutContour: CSpace[];
@@ -78,6 +78,7 @@ export class RGBWLED extends CSpace implements IRGBWLED {
     this.setLuminance(b * this.maxLuminance);
   }
 
+  // eslint-disable-next-line @typescript-eslint/naming-convention, camelcase
   public setLuminance(Y: number): number {
     Y = this.checkLuminance(Y);
     this.setAlpha(this._unitAlpha.map(a => a*Y));
@@ -120,9 +121,9 @@ export class RGBWLED extends CSpace implements IRGBWLED {
       /* istanbul ignore next */
       throw e;
     }
-    this.x = c1.x;
-    this.y = c1.y;
-    this.Y = Y;
+    this.a_internal()[0] = c1.x;
+    this.a_internal()[1] = c1.y;
+    this.a_internal()[2] = Y;
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     this.setAlpha((Y === 0)? alpha.map(a => 0) : alpha);
     this._setupUnitAlpha(alpha, c1.Y);
@@ -213,15 +214,15 @@ export class RGBWLED extends CSpace implements IRGBWLED {
     this._setup();
   }
 
-  public setAlpha(alpha: number[]) {
+  public setAlpha(alpha: number[]): void {
     alpha = normalize(alpha);
     const xyY: CSpace = this.alpha2Color(alpha);
     if (xyY.Y > qSmall) {
-      this.x = xyY.x;
-      this.y = xyY.y;
-      this.Y = xyY.Y;
+      this.a_internal()[0] = xyY.x;
+      this.a_internal()[1] = xyY.y;
+      this.a_internal()[2] = xyY.Y;
     } else {
-      this.Y =0;
+      this.a_internal()[2] =0;
     }
     this._setupUnitAlpha(alpha, this.Y);
   }
@@ -251,11 +252,13 @@ export class RGBWLED extends CSpace implements IRGBWLED {
     }
   }
 
+  // eslint-disable-next-line @typescript-eslint/naming-convention, camelcase
   private _setupUnitAlpha(alpha: number[], Y: number) {
     if (Y !== 0)
       this._unitAlpha = alpha.map(a => a/Y);
   }
 
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   private _setup(): boolean {
     function makeXYZMat(lList: LEDChip[]): number[][] {
       const aa: number[][] = new Array(lList.length) as number[][];
@@ -286,6 +289,7 @@ export class RGBWLED extends CSpace implements IRGBWLED {
     return true;
   }
 
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   private checkLuminance(Y: number): number {
     if (Y < 0) Y = 0;
     if (Y > this.maxLuminance) Y = this.maxLuminance;

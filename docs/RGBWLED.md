@@ -27,7 +27,7 @@ export interface IRGBWLED {
   readonly nLED: number;
 }
 
-export class RGBWLED extends CSpace implements IRGBWLED;
+export class RGBWLED extends CSpaceR implements IRGBWLED;
 
 ```
 
@@ -38,7 +38,7 @@ It is possible to have LEDs with a same color.
 LEDs are stored as an array.
 
 For more than 5 LEDs we need to solve it using linear programming (LP).
-Since LP is a heavy computation, operations that involve LP are asynchronous.
+Since LP is a heavy computation, operations that involve LP are asynchronous. Asynchronous functions are suffixed ...Async().
 
 ### Luminance and brightness
 
@@ -114,7 +114,9 @@ Set brightness. Resulting brightness may be less that the input, when it is satu
 
 Set the color of `RGBWLED` to the given color `c`. If `c` is not inside the gamut, it is fit into the gamut using `xyFit2Gamut()`.
 
-If type of `c` is `'xyY'` or `'XYZ'`, the `Y` component of `c` is used as the new luminance. In other cases, it maintains the current luminance. However, depending on the new color to represent and its maximum luminance, the resulting luminance can be darker than input.
+If type of `c` is `'xyY'` or `'XYZ'`, the `Y` component of `c` is used as the new luminance.
+In other cases, it maintains the current luminance.
+Depending on the new color to represent and its maximum luminance, the resulting luminance can be darker than input.
 
 ##### setLuminanceAsync(Y: number): Promise\<number\>
 
@@ -166,11 +168,7 @@ Gamut contour is the outermost polygon made by colors in `cList`.
 You need to provide at least 3 different colors in `cList`.
 Order of colors does not matter.
 
-Returned array has the first color at the end of array also so that it can be used by `xyFit2Gamut()` and `xyIsInGamut()`.
-
-### To do
-
-- Populate pop() and other array manipulation functions.
+Returned array has the first color at the end of array so that it can be used by `xyFit2Gamut()` and `xyIsInGamut()`.
 
 # License
 
