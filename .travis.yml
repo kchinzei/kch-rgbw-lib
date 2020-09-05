@@ -27,6 +27,12 @@
 # https://github.com/kchinzei/kch-rgbw-lib
 #
 ---
+branches:
+  only:
+    - master
+    - hotfix
+    - release
+
 language: node_js
 node_js:
   - 10 # NAPI_VERSION > 5
