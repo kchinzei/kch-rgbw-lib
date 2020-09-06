@@ -35,7 +35,7 @@ import { LEDChip } from './LEDChip';
 import { xyIsInGamut, xyFit2Gamut } from './waveLength';
 import { makeSolverMatrix, alpha2XYZ, XYZ2Alpha, normalize } from './solver';
 import { simplexIsOK } from 'linear-program-solver';
-import { GamutError } from '../src/GamutError';
+import { GamutError } from './GamutError';
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
 const D65White: number[] = [ 0.3127, 0.3290, 0 ] ; // ITU Rec. 709 D65 White; https://en.wikipedia.org/wiki/SRGB
