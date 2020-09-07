@@ -79,6 +79,20 @@ describe.each([
 });
 
 
+describe.each([
+  [ 'LED_r' ],
+  [ 'LED_G ' ],
+  [ 'LED_w' ],
+  [ ' LED_other' ]
+])('', (typ) => {
+  test(`${i++}. typo of LEDChipTypes should fail`, () => {
+    expect(() => {
+      const led: LEDChip = new LEDChip(typ as LEDChipTypes, { x: 0.3, y: 0.6, maxLuminance: 100 });
+      led.brightness = 100;
+    }).toThrow();
+  });
+});
+
 test(`${i++}. inistantiate LEDChip by CIE(x,y)`, () => {
   expect(() => {
     const led: LEDChip = new LEDChip('LED_G', { x: 0.3, y: 0.6, maxLuminance: 100 });
