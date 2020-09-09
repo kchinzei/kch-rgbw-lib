@@ -1,0 +1,39 @@
+{
+  "comment": "Number is in string, v.v.",
+  "LEDChip": [
+    {
+      "type": "LED_R",
+      "waveLength": "680",
+      "maxLuminance": 30.6,
+      "maxW": 1,
+      "name": "Typical R"
+    },
+    {
+      "type": 3.14,
+      "x": 0.2002,
+      "y": 0.6976,
+      "maxLuminance": 67.2,
+      "maxW": 1,
+      "name": "Typical G"
+    },
+    {
+      "type": "LED_B",
+      "x": 0.1417,
+      "y": 0.0618,
+      "maxLuminance": 8.2,
+      "maxW": 1,
+      "name": 3.14
+    },
+    {
+      "type": "LED_W",
+      "colorTemperature": "five thouthand 6 hundred",
+      "maxLuminance": 80.0,
+      "maxW": 1,
+      "name": "Typical W"
+    }
+  ],
+  "RGBWLED": {
+    "LED": ["Typical R", "Typical G", "Typical B", "Typical W"],
+    "name": "Sample RGBW"
+  }
+}

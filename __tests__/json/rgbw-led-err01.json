@@ -1,0 +1,41 @@
+{
+  "comment": "gramatical error of JSON",
+  "LEDChip": [
+    {
+      "type": "LED_R",
+      "x": 0.6857,
+      "y": 0.3143,
+      "maxLuminance": 30.6,
+      "maxW": 1,
+      "name": "Typical R"
+    },
+    {
+      "type": "LED_G",
+      "x": 0.2002,
+      "y": 0.6976,
+      "maxLuminance": 67.2,
+      "maxW": 1,
+      "name": "Typical G"
+    },
+    {
+      "type": "LED_B",
+      "x": 0.1417,
+      "y": 0.0618,
+      "maxLuminance": 8.2,
+      "maxW": 1,
+      "name": "Typical B"
+    },
+    {
+      "type": "LED_W",
+      "x": 0.3816,
+      "y": 0.3678,
+      "maxLuminance": 80.0,
+      "maxW": 1,
+      "name": "Typical W"
+    }
+  ]
+  "RGBWLED": {
+    "LED": ["Typical R", "Typical G", "Typical B", "Typical W"],
+    "name": "Sample RGBW"
+  }
+}
