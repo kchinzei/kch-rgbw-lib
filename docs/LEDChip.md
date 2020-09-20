@@ -11,8 +11,6 @@ In TypeScript/ES2015:
 ```TypeScript
 import { LEDChip, LEDChipTypes } from 'kch-rgbw-lib';
 import { LEDChipTypR, LEDChipTypG, LEDChipTypB, LEDChipTypW } from 'kch-rgbw-lib';
-import { LEDChipEpistarR, LEDChipEpistarG, LEDChipEpistarB, } from 'kch-rgbw-lib';
-import { LEDChipEpistarWW, LEDChipEpistarCW } from 'kch-rgbw-lib';
 
 ```
 
@@ -109,20 +107,26 @@ Similarly, other types return a copy of corresponding typical LEDs.
 
 Copy constructor.
 
+### Related Functions
+
+##### async function parseLEDChipAsync(obj: any): Promise\<LEDChip\>
+
+##### async function parseLEDChipArrayAsync(obj: any): Promise\<LEDChip[]\>
+
+Parse and generate an `LEDChip` or an array of `LEDChip`. These are part of JSON object parser. See [Parse.md](https://github.com/kchinzei/kch-rgbw-lib/docs/Parse.md) for more information.
+
 ### Constants
 
 ##### export LEDChipTypR, LEDChipTypG, LEDChipTypB, LEDChipTypW;
 
 These are typical color/white LEDs, CREE MCE4CT-A2-0000-00A4AAAB1.
 
-##### export LEDChipEpistarR, LEDChipEpistarG, LEDChipEpistarB, LEDChipEpistarWW, LEDChipEpistarCW;
-
-Another example of LEDChip, parameters referenced from LC-S5050-04004-RGBW, Epistar.
-
+<!--
 ### To do
 
 - Constructor will be rewritten to accept JSON object so that `LEDChip` can be instantiated from it.
 - Once JSON instantiation is implemented, static instance such as `LEDChipTypR` will be removed.
+-->
 
 ### Reference
 

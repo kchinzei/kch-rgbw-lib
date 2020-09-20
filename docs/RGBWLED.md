@@ -160,6 +160,20 @@ You should check if number of LEDs to set `RGBWLED` class not exceeding this num
 
 ## Related Functions
 
+##### async function parseJSONFileAsync(filename: string): Promise\<RGBWLED\>
+
+Parse a given JSON format file and generate an `RGBWLED`.
+
+##### async function parseJSONStringAsync(str: string): Promise\<RGBWLED\>
+
+Parse a given JSON format string and generate an `RGBWLED`.
+
+##### async function parseRGBWLEDAsync(obj: any, sourceLEDs: LEDChip[]): Promise\<RGBWLED\>
+
+Parse and generate an `RGBWLED`. These are part of JSON object parser.
+
+See [Parse.md](https://github.com/kchinzei/kch-rgbw-lib/docs/Parse.md) for more information.
+
 ##### function makeGamutContour(cList: CSpace[]): CSpace[]
 
 Returns a list of CSpace that forms the gamut contour.

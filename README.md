@@ -20,9 +20,9 @@ It is intended to use with [homebridge-raspi-rgbw-led](https://github.com/kchinz
 
 ### Many-LED problem
 
-Many-LED problem is a mathematical and engineering problem to determine the mix ratio of R-G-B or more LED light sources to produce an arbitrary color and luminosity. While a color and luminosity is given by 3 parameters (for example, x-y chromaticity and luminance), many-LED problem has 3 or more LEDs to determine the mix ratio. This problem is generally indeterminate and needs additional constraint.
+Many-LED problem is a mathematical and engineering problem to determine the mix ratio of R-G-B or more LED light sources to produce an arbitrary color and luminosity. While a color and luminosity is given by 3 parameters (for example, x-y chromaticity and luminance), many-LED problem has 3 or more LEDs to determine the mix ratio. This problem is generally indeterminate and needs additional constraint to solve.
 
-For 3 LEDs, it is determinate problem. For 4 or more, minimizing power consumption is introduced as the constraint. For 4 LEDs, it is solved as a single parameter inequality. For more than 5 LEDs we need to solve it using linear programming (LP).
+For 3 LEDs, it is determinate problem. For 4 or more, minimizing power consumption is a useful constraint. For 4 LEDs, it is solved as a single parameter inequality. For more than 5 LEDs we need to solve it using linear programming (LP).
 
 In detail, see [Solve RGB+ LEDs PWM from Chromaticity](./docs/rgbw_solver.pdf).
 
