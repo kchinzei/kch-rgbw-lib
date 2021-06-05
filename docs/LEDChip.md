@@ -1,4 +1,4 @@
-## LEDChip
+# LEDChip
 
 It is a part of [kch-rgbw-lib](https://github.com/kchinzei/kch-rgbw-lib).
 See [README.md](https://github.com/kchinzei/kch-rgbw-lib/#README.md)
@@ -48,7 +48,7 @@ An LED has wavelength or temperature.
 LEDs are classified to color LED and white LED.
 A color LED has wavelength, and white LED has color temperature. `LEDChipTypes` is used to distinguish them.
 
-Currently `wavelength` is limited to 405-700 nm as in WaveLength library, and color temperature is limited to 1000-20000 k as in ColorTemperature library. This means you cannot represent NIR or UV LEDs using `LEDChip`.
+Currently `wavelength` is limited to 405-700 nm as in WaveLength library, and color temperature is limited to 1000-20000 k as in ColorTemperature library. It's not intended to represent NIR or UV LEDs.
 
 Internally both types are represented by `CSpace` in 'xyY' colorspace. 'Y' is used as the rated (max) brightness.
 For this purpose, class `LEDChip` is derived from `CSpaceR`, which is a read only CSpace.

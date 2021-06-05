@@ -1,4 +1,4 @@
-## RGBWLED
+# RGBWLED
 
 It is a part of [kch-rgbw-lib](https://github.com/kchinzei/kch-rgbw-lib).
 See [README.md](https://github.com/kchinzei/kch-rgbw-lib/#README.md)

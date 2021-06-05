@@ -1,4 +1,4 @@
-## LEDChip / RGBWLED Parser
+# LEDChip / RGBWLED Parser
 
 It is a part of [kch-rgbw-lib](https://github.com/kchinzei/kch-rgbw-lib).
 See [README.md](https://github.com/kchinzei/kch-rgbw-lib/#README.md)
@@ -10,13 +10,23 @@ In TypeScript/ES2015:
 
 ```TypeScript
 import { LEDChip, RGBWLED } from 'kch-rgbw-lib';
-import { ???????????????? } from 'kch-rgbw-lib';
+import { parseJSONFileAsync } from 'kch-rgbw-lib';
+
+let rgbw!: RGBWLED;
+try {
+  rgbw = await parseJSONFileAsync(myfile);
+  ...
+} catch (e) {
+  rgbw = ...
+}
 
 ```
 
 ## API
 
 ### Functions
+
+Thoese functions throw exceptions when grammatical or format error found in the input.
 
 ##### async function parseJSONFileAsync(filename: string): Promise\<RGBWLED\>
 
@@ -47,18 +57,33 @@ Parse and generate an `RGBWLED`. These are part of `parseJSONStringAsync()`.
       "waveLength": 680,
       "maxLuminance": 30.6,
       "maxW": 1,
-      "name": "Typical R"
+      "name": "my Red LED"
     },
     ...
   ],
   "RGBWLED": {
-    "LED": ["Typical R", ...],
+    "LED": ["my Red LED", ...],
     "name": "Sample RGBW"
   }
 }
 ```
 
-JSON string
+#### Tokens
+
+- `LEDChip` : list of `LEDChip` class
+- `type` : `LEDChipTypes` (required)
+- `x`, `y` : chromaticity in CIE1931 coordinate (1)
+- `waveLength` : wave length in nm (2)
+- `colorTemperature` : color temperature of white light (3)
+- `maxLuminance` : maximum luminance (required)
+- `maxW` : maximum wattage (default = 1)
+- `name` : name of this `LEDChip` (required, unique in the list of `RGBWLED`)
+
+One and only one of tokens (1) - (3) is required. These agree to `LEDChipDefByCIExy`, `LEDChipDefByWaveLength`, `LEDChipDefByColorTemperature` respectively. See [LEDChip.md](https://github.com/kchinzei/kch-rgbw-lib/#LEDChip.md) for more information.
+
+- `RGBWLED` : `RGBWLED` class
+- `LED` : list of `name` of `LEDChip` (required)
+- `name` : name of this `RGBWLED` (optional)
 
 # License
 

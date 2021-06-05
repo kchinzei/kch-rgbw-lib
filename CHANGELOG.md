@@ -5,13 +5,16 @@ Versioning policy is based on [Semantic Versioning](https://semver.org/spec/v2.0
 
 ## Unrelased
 
-To avoid heavy computation (of linear programming),
+To avoid heavy computation due to linear programming (LP),
 
 - LED properties parsed from JSON format.
-- Solve `RGBWLED` composite color by linear interpolation of alpha[].
-- Function to load a lookup table of alpha[].
+- Solve `RGBWLED` composite color by linear interpolation of pre-computed alpha[].
+- Function to load a lookup table of pre-computed alpha[].
+- Utility to generate the lookup table.
 
 Solution of linear programming in case a solution including brightness > 1 is not necessarily optimized in the sense that value exceeding 1 is not a 'best effort' to make it close to 1. Function to obtain optimum solution will be provided.
+
+Solution of small alpha, smaller than the resolution of PWM step (e.g, 1/256 for 8 bit PWM) may result sudden change from 0 (turn off) to turn on, or vice versa. By forcing small alpha to null when solving the LP, this issue may be improved (but not always).
 
 Sample and utility node scripts
 
