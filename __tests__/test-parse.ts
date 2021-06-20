@@ -31,8 +31,9 @@ THE SOFTWARE.
 */
 // @ts-ignore: TS6133 List all available items for future tests
 import { RGBWLED } from '../src/RGBWLED';
+import { LEDChip } from '../src/LEDChip';
 // @ts-ignore: TS6133 List all available items for future tests
-import { parseJSONFileAsync } from '../src/parse';
+import { parseRGBWLEDfromJSONFileAsync, parseLEDChipArrayfromJSONFileAsync } from '../src/parse';
 
 
 let i = 1;
@@ -43,8 +44,13 @@ describe.each([
   [ './__tests__/json/rgbw-led-02.json', 4 ]
 ])('', (json, N) => {
   test(`${i++}. parseJson ${json} should success)`, () => {
-    return parseJSONFileAsync(json).then(l => {
+    return parseRGBWLEDfromJSONFileAsync(json).then(l => {
       expect(l.LED.length).toBe(N);
+    });
+  });
+  test(`${i++}. parseJson ${json} should success)`, () => {
+    return parseLEDChipArrayfromJSONFileAsync(json).then(l => {
+      expect(l.length).toBe(N);
     });
   });
 });
@@ -59,8 +65,22 @@ describe.each([
   [ './__tests__/json/rgbw-led-err07.json', 2 ]
 ])('', (json, N) => {
   test(`${i++}. parseJson ${json} should fail)`, async () => {
-    const parsePromise: Promise<RGBWLED> =  parseJSONFileAsync(json);
+    const parsePromise: Promise<RGBWLED> =  parseRGBWLEDfromJSONFileAsync(json);
     await expect(parsePromise).rejects.toThrow();
   });
 });
 
+describe.each([
+  [ './__tests__/json/rgbw-led-err01.json', 4 ],
+  [ './__tests__/json/rgbw-led-err02.json', 4 ],
+  // [ './__tests__/json/rgbw-led-err03.json', 4 ],
+  [ './__tests__/json/rgbw-led-err04.json', 4 ],
+  [ './__tests__/json/rgbw-led-err05.json', 4 ],
+  [ './__tests__/json/rgbw-led-err06.json', 4 ],
+  // [ './__tests__/json/rgbw-led-err07.json', 2 ]
+])('', (json, N) => {
+  test(`${i++}. parseJson ${json} should fail)`, async () => {
+    const parsePromise: Promise<LEDChip[]> =  parseLEDChipArrayfromJSONFileAsync(json);
+    await expect(parsePromise).rejects.toThrow();
+  });
+});

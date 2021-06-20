@@ -201,13 +201,9 @@ export function xy2nm(x: CSpace|number, y?: number): number {
   return ret.q;
 }
 
-export function xyFit2Gamut(xy: CSpace, xyList: CSpace[] = waveLengthTable): CSpace {
-  return xyProjection2Gamut(xy, false, xyList);
-}
+export const xyFit2Gamut = (xy: CSpace, xyList: CSpace[] = waveLengthTable): CSpace => xyProjection2Gamut(xy, false, xyList);
 
-export function xyMap2Gamut(xy: CSpace, xyList: CSpace[] = waveLengthTable): CSpace {
-  return xyProjection2Gamut(xy, true, xyList);
-}
+export const xyMap2Gamut = (xy: CSpace, xyList: CSpace[] = waveLengthTable): CSpace => xyProjection2Gamut(xy, true, xyList);
 
 /*
   Project (x, y) to the polygon made of points in xyList,

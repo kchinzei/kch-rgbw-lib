@@ -91,13 +91,8 @@ export class RGBWLED extends CSpaceR implements IRGBWLED {
   }
 
   public async setColorAsync(c: CSpace): Promise<void> {
-    // 1. Convert c to xyY or xy.
-    let c1: CSpace;
-    if (c.type === 'xy') {
-      c1 = new CSpace('xyY', c.a);
-    } else {
-      c1 = c.xyY();
-    }
+    // 1. Convert c to extended xyY.
+    let c1 = xyY(c);
 
     // 2. Fit c1 to the gamut.
     c1 = xyFit2Gamut(c1, this._gamutContour);
@@ -129,14 +124,25 @@ export class RGBWLED extends CSpaceR implements IRGBWLED {
     this._setupUnitAlpha(alpha, c1.Y);
   }
 
+  public isInGamut(c: CSpace): boolean {
+    // 1. Convert c to extended xyY.
+    const c1 = xyY(c);
+
+    // 2. Is c1 in the gamut?
+    return xyIsInGamut(c1, this._gamutContour);
+  }
+
+  public fit2Gamut(c: CSpace): CSpace {
+    // 1. Convert c to extended xyY.
+    const c1 = xyY(c);
+
+    // 2. Fit c into the gamut if it's outside.
+    return xyFit2Gamut(c1, this._gamutContour);
+  }
+
   public async maxLuminanceAtAsync(c: CSpace): Promise<number> {
-    // 1. Convert c to xyY
-    let c1: CSpace;
-    if (c.type === 'xy') {
-      c1 = new CSpace('xyY', c.a);
-    } else {
-      c1 = c.xyY();
-    }
+    // 1. Convert c to extended xyY.
+    const c1 = xyY(c);
 
     // 2. Is c1 in the gamut?
     if (xyIsInGamut(c1, this._gamutContour) === false)
@@ -149,7 +155,7 @@ export class RGBWLED extends CSpaceR implements IRGBWLED {
     let alpha!: number[];
     try {
       alpha = await this.color2AlphaAsync(c1);
-    } catch(e) {
+    } catch (e) {
       /* istanbul ignore next */
       throw e;
     }
@@ -216,11 +222,11 @@ export class RGBWLED extends CSpaceR implements IRGBWLED {
 
   public setAlpha(alpha: number[]): void {
     alpha = normalize(alpha);
-    const xyY: CSpace = this.alpha2Color(alpha);
-    if (xyY.Y > qSmall) {
-      this.a_internal()[0] = xyY.x;
-      this.a_internal()[1] = xyY.y;
-      this.a_internal()[2] = xyY.Y;
+    const c: CSpace = this.alpha2Color(alpha);
+    if (c.Y > qSmall) {
+      this.a_internal()[0] = c.x;
+      this.a_internal()[1] = c.y;
+      this.a_internal()[2] = c.Y;
     } else {
       this.a_internal()[2] =0;
     }
@@ -305,6 +311,20 @@ function getMaxLED(): number {
     return Number.MAX_SAFE_INTEGER;
   else
     return 4;
+}
+
+/*
+  Convert CSpace to 'xyY'.
+  If c is 'xy', make a new CSpace assuming c.a's third element has Y.
+*/
+function xyY(c: CSpace): CSpace {
+  let c1: CSpace;
+  if (c.type === 'xy') {
+    c1 = new CSpace('xyY', c.a);
+  } else {
+    c1 = c.xyY();
+  }
+  return c1;
 }
 
 /*

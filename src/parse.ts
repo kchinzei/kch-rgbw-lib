@@ -6,14 +6,32 @@ import { LEDChip, LEDChipTypes, LEDChipDefByWaveLength, LEDChipDefByColorTempera
 
 const readFileAsync = promisify(readFile);
 
-export async function parseJSONFileAsync(filename: string): Promise<RGBWLED> {
+export async function parseRGBWLEDfromJSONFileAsync(filename: string): Promise<RGBWLED> {
   const str = await readFileAsync(filename, 'utf8');
-  const rgbw = await parseJSONStringAsync(str);
+  const rgbw = await parseRGBWLEDfromJSONStringAsync(str);
   return rgbw;
 }
 
+export async function parseLEDChipArrayfromJSONFileAsync(filename: string): Promise<LEDChip[]> {
+  const str = await readFileAsync(filename, 'utf8');
+  const leds = await parseLEDChipArrayfromJSONStringAsync(str);
+  return leds;
+}
+
+export async function parseLEDChipArrayfromJSONStringAsync(str: string): Promise<LEDChip[]> {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment
+    const obj = JSON.parse(str);
+
+    const sourceLEDs: LEDChip[] = await parseLEDChipArrayfromObjectAsync(obj);
+    return sourceLEDs;
+  } catch (err) {
+    throw err;
+  }
+}
+
 // eslint-disable-next-line prefer-arrow/prefer-arrow-functions, @typescript-eslint/explicit-module-boundary-types
-export async function parseLEDChipAsync(obj: any): Promise<LEDChip> {
+export async function parseLEDChipfromObjectAsync(obj: any): Promise<LEDChip> {
   return new Promise((resolve, reject) => {
     try {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
@@ -43,14 +61,14 @@ export async function parseLEDChipAsync(obj: any): Promise<LEDChip> {
 }
 
 // eslint-disable-next-line prefer-arrow/prefer-arrow-functions, @typescript-eslint/explicit-module-boundary-types
-export async function parseLEDChipArrayAsync(obj: any): Promise<LEDChip[]> {
+async function parseLEDChipArrayfromObjectAsync(obj: any): Promise<LEDChip[]> {
   try {
     const sourceLEDs: LEDChip[] = [];
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
     const objLEDList = obj.LEDChip;
 
     for (const objLED of objLEDList) {
-      const LED: LEDChip = await parseLEDChipAsync(objLED);
+      const LED: LEDChip = await parseLEDChipfromObjectAsync(objLED);
       sourceLEDs.push(LED);
     }
     return sourceLEDs;
@@ -60,7 +78,7 @@ export async function parseLEDChipArrayAsync(obj: any): Promise<LEDChip[]> {
 }
 
 // eslint-disable-next-line prefer-arrow/prefer-arrow-functions, @typescript-eslint/explicit-module-boundary-types
-export async function parseRGBWLEDAsync(obj: any, sourceLEDs: LEDChip[]): Promise<RGBWLED> {
+async function parseRGBWLEDfromObjectAsync(obj: any, sourceLEDs: LEDChip[]): Promise<RGBWLED> {
   return new Promise<RGBWLED>((resolve, reject) => {
     try {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
@@ -91,13 +109,13 @@ export async function parseRGBWLEDAsync(obj: any, sourceLEDs: LEDChip[]): Promis
   });
 }
 
-export async function parseJSONStringAsync(str: string): Promise<RGBWLED> {
+export async function parseRGBWLEDfromJSONStringAsync(str: string): Promise<RGBWLED> {
   try {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment
     const obj = JSON.parse(str);
 
-    const sourceLEDs: LEDChip[] = await parseLEDChipArrayAsync(obj);
-    const rgbwLED: RGBWLED = await parseRGBWLEDAsync(obj, sourceLEDs);
+    const sourceLEDs: LEDChip[] = await parseLEDChipArrayfromObjectAsync(obj);
+    const rgbwLED: RGBWLED = await parseRGBWLEDfromObjectAsync(obj, sourceLEDs);
     return rgbwLED;
   } catch (err) {
     throw err;

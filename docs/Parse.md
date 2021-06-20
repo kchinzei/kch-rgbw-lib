@@ -1,5 +1,6 @@
 # LEDChip / RGBWLED Parser
 
+Parse `LEDChip` array and `RGBWLED` object from a json file.
 It is a part of [kch-rgbw-lib](https://github.com/kchinzei/kch-rgbw-lib).
 See [README.md](https://github.com/kchinzei/kch-rgbw-lib/#README.md)
 for general information.
@@ -22,30 +23,27 @@ try {
 
 ```
 
-## API
-
-### Functions
+## API Functions
 
 Thoese functions throw exceptions when grammatical or format error found in the input.
 
-##### async function parseJSONFileAsync(filename: string): Promise\<RGBWLED\>
+### `async function parseRGBWLEDfromJSONFileAsync(filename: string): Promise<RGBWLED>`
+
+Parse a given JSON format file `filename` and generate an `RGBWLED`.
+It internally calls `parseRGBWLEDfromJSONStringAsync()`.
+
+### `async function parseRGBWLEDfromJSONStringAsync(str: string): Promise<RGBWLED>`
+
+Parse a given JSON format string `str` and generate an `RGBWLED`.
+
+### `async function parseLEDChipArrayfromJSONFileAsync(filename: string): Promise<LEDChip[]>`
 
 Parse a given JSON format file `filename` and generate an `RGBWLED`.
 It internally calls `parseJSONStringAsync()`.
 
-##### async function parseJSONStringAsync(str: string): Promise\<RGBWLED\>
+### `async function parseLEDChipArrayJSONStringAsync(str: string): Promise<LEDChip[]>`
 
 Parse a given JSON format string `str` and generate an `RGBWLED`.
-
-##### async function parseLEDChipAsync(obj: any): Promise\<LEDChip\>
-
-##### async function parseLEDChipArrayAsync(obj: any): Promise\<LEDChip[]\>
-
-Parse and generate an `LEDChip` or an array of `LEDChip`. These are part of `parseJSONStringAsync()`.
-
-##### async function parseRGBWLEDAsync(obj: any, sourceLEDs: LEDChip[]): Promise\<RGBWLED\>
-
-Parse and generate an `RGBWLED`. These are part of `parseJSONStringAsync()`.
 
 ## JSON file/string format
 
