@@ -3,7 +3,7 @@
 It is a part of [kch-rgbw-lib](https://github.com/kchinzei/kch-rgbw-lib).
 See [README.md](https://github.com/kchinzei/kch-rgbw-lib/blob/master/README.md)
 for general information.
-Functions in this documents are in CIE 1931 chromaticity for `(x, y)` and in Kalvin for blackbody temperature `k`.
+Functions in this documents are in CIE 1931 chromaticity for `(x, y)` and in Kelvin for blackbody temperature `k`.
 
 ### Code snippet
 
