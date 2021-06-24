@@ -7,7 +7,6 @@ Versioning policy is based on [Semantic Versioning](https://semver.org/spec/v2.0
 
 To avoid heavy computation due to linear programming (LP),
 
-- LED properties parsed from JSON format.
 - Solve `RGBWLED` composite color by linear interpolation of pre-computed alpha[].
 - Function to load a lookup table of pre-computed alpha[].
 - Utility to generate the lookup table.
@@ -18,9 +17,27 @@ Solution of small alpha, smaller than the resolution of PWM step (e.g, 1/256 for
 
 Sample and utility node scripts
 
-- Sample script to compute alpha[] (LED's PWM) from a color, or v.v.
+- Utility to visualize gamut contour.
 - Utility to generate lookup table of alpha[] from given set of LED.
-- Utility to compute chromaticity and luminosity of an LED from spectroscopic measurement data obtained by [SparkFun Triad Spectroscopy Sensor AS7265x](https://github.com/sparkfun/SparkFun_AS7265x_Arduino_Library).
+- Utility to compute chromaticity and luminance of an LED from spectroscopic measurement data obtained by such as [SparkFun Triad Spectroscopy Sensor AS7265x](https://github.com/sparkfun/SparkFun_AS7265x_Arduino_Library).
+
+### [2.1.0](https://github.com/kchinzei/kch-rgbw-lib/releases/tag/2.1.0) - 2021-06-27
+
+`LEDChip` and `RGBWLED` can be parsed from JSON format string and file.
+Snippets added for jump start.
+
+### Added
+
+- JSON parser
+
+  - `parseRGBWLEDfromJSONFileAsync()`, `parseRGBWLEDfromJSONStringAsync()`
+  - `parseLEDChipArrayfromJSONFileAsync()`, `parseLEDChipArrayfromJSONStringAsync()`
+
+- `RGBWLED`
+
+  - `isInGamut()`, `fit2Gamut()`
+
+- Snippets
 
 ### [2.0.0](https://github.com/kchinzei/kch-rgbw-lib/releases/tag/2.0.0) - 2020-09-05
 

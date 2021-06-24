@@ -29,7 +29,7 @@ If you don't know `maxLuminance`, you can set 1 to all LEDs.
 
 ## Ex03 : Populate a `RGBWLED`
 
-`RGBWLED` class represents a compsote LED that has 3 or more `LEDChip`. You can populate a `RGBWLED` by:
+`RGBWLED` class represents a compsote LED that has 3 or more component `LEDChip`. You can populate a `RGBWLED` by:
 
 ```Typescript
 import { LEDChip, RGBWLED } from 'kch-rgbw-lib';
@@ -84,15 +84,17 @@ const c = new CSpace('xyY', [0.32, 0.4, 20]);
 const brightness: number[] = await rgb.color2AlphaAsync(c);
 ```
 
+It's an asyncronous process because it can be a heavy computation involving a linear programming solution.
+
 Note it does not update `rgb` itself. To do so, you use `setColorAsync()`.
 
 ```Typescript
 // (after instantiating rgb in Ex03)
 const c = new CSpace('xyY', [0.32, 0.4, 20]);
-await rgb.setColorAsync(c);
+await rgb.setColorAsync(c); // rgb updated
 ```
 
-## Ex06 Compute brightness of LEDs for composite color, using RGB color
+## Ex06 Compute brightness of component LEDs
 
 If you compute array of brightness of LEDs from RGB color, you need to specify luminance independently.
 This example follows the snippet of Ex03.
@@ -106,15 +108,36 @@ const brightness: number[] = await rgb.color2AlphaAsync(c1);
 ```
 
 It is also the case for HSV color space, even it has brightness in V.
-You may wonder why we don't use brigtness component of RGB or HSV space.
-It's because the brightness of these color spaces is relative to full brigtness,
-but it's unclear what is full brightness for these color spaces.
-Please refer to ['Luminance and brightness' of `kch-rgbw-lib`](https://github.com/kchinzei/kch-rgbw-lib/blob/master/docs/RGBWLED.md#luminance-and-brightness).
 
-Not giving luminance will also give you correct answer, but it may give you very dark composite color.
-When this happens, you may magnify `brightness_array` to get meaningful brightness.
-It usually gives the same result as doing so in Ex06.
-It can be different, when there is
+### Why setting luminance?
+
+You may wonder why we don't use brigtness property of RGB or HSV space.
+It's because the brightness of these color spaces is relative to full brigtness,
+but it's unclear what is full brightness for these color spaces when luminance distribution of component LEDs is not uniform across the gamut.
+Please refer to ['Luminance and brightness' of `kch-rgbw-lib`](./RGBWLED.md#luminance-and-brightness).
+
+Not giving luminance is equivalent to compute it using luminance between 0 and 1. It will still give you correct color, but it can be very dark if your component LEDs have larger luminance (e.g. maxLuminance = 100).
+
+When this happens, you may magnify `brightness` array.
+It usually gives the same result as doing so like Ex06.
+It can be different under situation where one or more component LEDs reach to saturation (brightness = 1).
+In such case, linear programming of `RGBWLED` tries to avoid saturation using redundant LEDs if there are.
+
+## Ex07 Compute color from brightness of component LEDs
+
+You can compute composite color from brightness of component LEDs. Assume you have an array `brightness` as brightness of component LEDs :
+
+```Typescript
+// (after instantiating rgb in Ex03)
+import { CSpace } from 'kch-rgbw-lib';
+const brightness = [0.003, 0.004, 0.008];
+const c: CSpace = rgb.alpha2Color(brightness);
+const hsv: CSpace = c.hsv();
+```
+
+This example gives an answer [ 222.6, 0.39, 0.94 ] in HSV space. Again, obtained brightness (V = 0.94) is calculated for luminance between 0 and 1.
+
+Note it does not update rgb itself. To update `rgb`, you use `setAlpta()`.
 
 # License
 

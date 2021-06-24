@@ -116,12 +116,7 @@ export class RGBWLED extends CSpaceR implements IRGBWLED {
       /* istanbul ignore next */
       throw e;
     }
-    this.a_internal()[0] = c1.x;
-    this.a_internal()[1] = c1.y;
-    this.a_internal()[2] = Y;
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    this.setAlpha((Y === 0)? alpha.map(a => 0) : alpha);
-    this._setupUnitAlpha(alpha, c1.Y);
+    this.setAlpha(alpha);
   }
 
   public isInGamut(c: CSpace): boolean {
