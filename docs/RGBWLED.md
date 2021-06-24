@@ -31,7 +31,7 @@ export class RGBWLED extends CSpaceR implements IRGBWLED;
 
 ```
 
-Class `RGBWLED` represents a composite LED with at least 3 different colors of componet LEDs.
+Class `RGBWLED` represents a composite LED with at least 3 different colors of component LEDs.
 
 Although the name of the class may imply that it has R-G-B-W 4 LEDs, `RGBWLED` can have any number of component LEDs from 3 different colors.
 It is possible to have some of component LEDs with a same color.
@@ -61,7 +61,7 @@ Therefor length of `alpha[]` should always match to number of component LEDs.
 
 Range of color represented by a set of color source is called **(color) gamut**.
 `RGBWLED` assumes there are at least three different colors that forms a triangle gamut.
-By adding color soources, the gamut can be extended.
+By adding color sources, the gamut can be extended.
 `RGBWLED` maintains an array of component LEDs that form the gamut, **gamut contour**.
 
 You can construct a gamut contour using `makeGamutContour()`.
@@ -97,7 +97,7 @@ Return the maximum luminance obtained when turning on all LEDs.
 
 ### `.LED: LEDChip[]`
 
-Return the array of conponent LEDs.
+Return the array of component LEDs.
 Modifying `LEDChip` in this array will result in unexpected behavior.
 
 ### Setter
@@ -118,8 +118,8 @@ Depending on the new color to represent and its maximum luminance, the resulting
 
 ### `setAlpha(alpha: number[]): void`
 
-Set the color of `RGBLED` using the given `alpha[]` as the brightness of component LEDs.
-It checks the brightness is in range of [0,1], limits to 0 or 1 when exeeding [0, 1].
+Set the color of `RGBWLED` using the given `alpha[]` as the brightness of component LEDs.
+It checks the brightness is in range of [0,1], limits to 0 or 1 when exceeding [0, 1].
 `alpha.length` should match the number of component LEDs, that is `RGBWLED.LED.length`.
 Otherwise it throws an exception.
 
@@ -145,7 +145,7 @@ If `c` is outside the gamut defined by this `RGBWLED`, they return -1.
 
 ### `alpha2Color(alpha: number[]): CSpace`
 
-Return the composite color as a maxture of component LEDs those brightness is in `alpha`.
+Return the composite color as a mixture of component LEDs those brightness is in `alpha`.
 It does not check the brightness is in range of [0,1].
 `alpha.length` should match the number of component LEDs, that is `RGBWLED.LED.length`.
 Otherwise it throws an exception.

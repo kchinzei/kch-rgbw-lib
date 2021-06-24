@@ -73,7 +73,7 @@ Some additional npm packages will be installed.
 - [CIE 1931 color space](https://en.wikipedia.org/wiki/CIE_1931_color_space) / Wikipedia
 - [HSL and HSV](https://en.wikipedia.org/wiki/HSL_and_HSV) / Wikipedia
 - [sRGB](https://en.wikipedia.org/wiki/SRGB) / Wikipedia
-- [Blackbody color temperature datafile](http://www.vendian.org/mncharity/dir3/blackbody/)
+- [Blackbody color temperature data file](http://www.vendian.org/mncharity/dir3/blackbody/)
   / Mitchell Charity
 - [新しいカラーマネージメントの方法](http://www.nakamura.enveng.titech.ac.jp/story/pdf/colormanagement.pdf)
   / 中村芳樹

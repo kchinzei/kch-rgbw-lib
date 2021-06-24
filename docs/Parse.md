@@ -25,7 +25,7 @@ try {
 
 ## API Functions
 
-Thoese functions throw exceptions when grammatical or format error found in the input.
+These functions throw exceptions when grammatical or format error found in the input.
 
 ### `async function parseRGBWLEDfromJSONFileAsync(filename: string): Promise<RGBWLED>`
 
@@ -77,7 +77,7 @@ Parse a given JSON format string `str` and generate an `RGBWLED`.
 - `maxW` : maximum wattage (default = 1)
 - `name` : name of this `LEDChip` (required, unique in the list of `RGBWLED`)
 
-One and only one of tokens (1) - (3) is required. These agree to `LEDChipDefByCIExy`, `LEDChipDefByWaveLength`, `LEDChipDefByColorTemperature` respectively. See [LEDChip.md](https://github.com/kchinzei/kch-rgbw-lib/#LEDChip.md) for more information.
+One and only one of tokens (1) - (3) is required. These agree to `LEDChipDefByCIExy`, `LEDChipDefByWaveLength`, `LEDChipDefByColorTemperature` respectively. See [LEDChip.md](./LEDChip.md) for more information.
 
 - `RGBWLED` : `RGBWLED` class
 - `LED` : list of `name` of `LEDChip` (required)

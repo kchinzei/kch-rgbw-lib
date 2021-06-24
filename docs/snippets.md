@@ -29,7 +29,7 @@ If you don't know `maxLuminance`, you can set 1 to all LEDs.
 
 ## Ex03 : Populate a `RGBWLED`
 
-`RGBWLED` class represents a compsote LED that has 3 or more component `LEDChip`. You can populate a `RGBWLED` by:
+`RGBWLED` class represents a composite LED that has 3 or more component `LEDChip`. You can populate a `RGBWLED` by:
 
 ```Typescript
 import { LEDChip, RGBWLED } from 'kch-rgbw-lib';
@@ -84,7 +84,7 @@ const c = new CSpace('xyY', [0.32, 0.4, 20]);
 const brightness: number[] = await rgb.color2AlphaAsync(c);
 ```
 
-It's an asyncronous process because it can be a heavy computation involving a linear programming solution.
+It's an asynchronous process because it can be a heavy computation involving a linear programming solution.
 
 Note it does not update `rgb` itself. To do so, you use `setColorAsync()`.
 
@@ -111,10 +111,10 @@ It is also the case for HSV color space, even it has brightness in V.
 
 ### Why setting luminance?
 
-You may wonder why we don't use brigtness property of RGB or HSV space.
-It's because the brightness of these color spaces is relative to full brigtness,
+You may wonder why we don't use brightness property of RGB or HSV space.
+It's because the brightness of these color spaces is relative to full brightness,
 but it's unclear what is full brightness for these color spaces when luminance distribution of component LEDs is not uniform across the gamut.
-Please refer to ['Luminance and brightness' of `kch-rgbw-lib`](./RGBWLED.md#luminance-and-brightness).
+Please refer to ['Luminance and brightness'](./RGBWLED.md#luminance-and-brightness).
 
 Not giving luminance is equivalent to compute it using luminance between 0 and 1. It will still give you correct color, but it can be very dark if your component LEDs have larger luminance (e.g. maxLuminance = 100).
 
@@ -137,7 +137,7 @@ const hsv: CSpace = c.hsv();
 
 This example gives an answer [ 222.6, 0.39, 0.94 ] in HSV space. Again, obtained brightness (V = 0.94) is calculated for luminance between 0 and 1.
 
-Note it does not update rgb itself. To update `rgb`, you use `setAlpta()`.
+Note it does not update rgb itself. To update `rgb`, you use `setAlpha()`.
 
 # License
 
