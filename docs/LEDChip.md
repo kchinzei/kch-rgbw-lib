@@ -1,4 +1,4 @@
-## LEDChip
+# LEDChip
 
 It is a part of [kch-rgbw-lib](https://github.com/kchinzei/kch-rgbw-lib).
 See [README.md](https://github.com/kchinzei/kch-rgbw-lib/#README.md)
@@ -11,8 +11,6 @@ In TypeScript/ES2015:
 ```TypeScript
 import { LEDChip, LEDChipTypes } from 'kch-rgbw-lib';
 import { LEDChipTypR, LEDChipTypG, LEDChipTypB, LEDChipTypW } from 'kch-rgbw-lib';
-import { LEDChipEpistarR, LEDChipEpistarG, LEDChipEpistarB, } from 'kch-rgbw-lib';
-import { LEDChipEpistarWW, LEDChipEpistarCW } from 'kch-rgbw-lib';
 
 ```
 
@@ -50,9 +48,9 @@ An LED has wavelength or temperature.
 LEDs are classified to color LED and white LED.
 A color LED has wavelength, and white LED has color temperature. `LEDChipTypes` is used to distinguish them.
 
-Currently `wavelength` is limited to 405-700 nm as in WaveLength library, and color temperature is limited to 1000-20000 k as in ColorTemperature library. This means you cannot represent NIR or UV LEDs using `LEDChip`.
+Currently `wavelength` is limited to 405-700 nm as in WaveLength library, and color temperature is limited to 1000-20000 k as in ColorTemperature library. It's not intended to represent NIR or UV LEDs.
 
-Internally both types are represented by `CSpace` in 'xyY' colorspace. 'Y' is used as the rated (max) brightness.
+Internally both types are represented by `CSpace` in 'xyY' color space. 'Y' is used as the rated (max) brightness.
 For this purpose, class `LEDChip` is derived from `CSpaceR`, which is a read only CSpace.
 
 Most of parameters of `LEDChip` are read only, except `brightness`, `maxW` and `name`.
@@ -109,20 +107,26 @@ Similarly, other types return a copy of corresponding typical LEDs.
 
 Copy constructor.
 
+### Related Functions
+
+##### async function parseLEDChipAsync(obj: any): Promise\<LEDChip\>
+
+##### async function parseLEDChipArrayAsync(obj: any): Promise\<LEDChip[]\>
+
+Parse and generate an `LEDChip` or an array of `LEDChip`. These are part of JSON object parser. See [Parse.md](https://github.com/kchinzei/kch-rgbw-lib/docs/Parse.md) for more information.
+
 ### Constants
 
 ##### export LEDChipTypR, LEDChipTypG, LEDChipTypB, LEDChipTypW;
 
 These are typical color/white LEDs, CREE MCE4CT-A2-0000-00A4AAAB1.
 
-##### export LEDChipEpistarR, LEDChipEpistarG, LEDChipEpistarB, LEDChipEpistarWW, LEDChipEpistarCW;
-
-Another example of LEDChip, parameters referenced from LC-S5050-04004-RGBW, Epistar.
-
+<!--
 ### To do
 
 - Constructor will be rewritten to accept JSON object so that `LEDChip` can be instantiated from it.
 - Once JSON instantiation is implemented, static instance such as `LEDChipTypR` will be removed.
+-->
 
 ### Reference
 

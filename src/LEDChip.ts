@@ -117,18 +117,19 @@ export class LEDChip extends CSpaceR implements ILEDChip {
   */
   constructor(typeOrLED: (LEDChipTypes | LEDChip), arg?: (LEDChipDefByWaveLength | LEDChipDefByColorTemperature | LEDChipDefByCIExy)) {
     if (typeof(typeOrLED) === 'string') {
+      const type: LEDChipTypes = checkLEDChipTypes(typeOrLED);
       if (typeof(arg) !== 'undefined') {
         let x!: number;
         let y!: number;
         let t: number | undefined;
         let w: number | undefined;
 
-        if (isLEDChipDefByWaveLength(arg) && typeOrLED !== 'LED_W') {
+        if (isLEDChipDefByWaveLength(arg) && type !== 'LED_W') {
           // c1: waveLength specified in arg1
           w = checkWaveLength(arg.waveLength);
           x = nm2x(w);
           y = nm2y(w);
-        } else if (isLEDChipDefByColorTemperature(arg) && typeOrLED === 'LED_W') {
+        } else if (isLEDChipDefByColorTemperature(arg) && type === 'LED_W') {
           // c2: colorTemperature given in arg1.
           t = checkColorTemperature(arg.colorTemperature);
           x = k2x(t);
@@ -136,7 +137,7 @@ export class LEDChip extends CSpaceR implements ILEDChip {
         } else if (isLEDChipDefByCIExy(arg)) {
           x = checkCIEx(arg.x);
           y = checkCIEy(arg.y);
-          switch (typeOrLED) {
+          switch (type) {
             case 'LED_W':
               t = xy2k(x, y);
 	      break;
@@ -148,14 +149,13 @@ export class LEDChip extends CSpaceR implements ILEDChip {
           throw new Error('Class LEDChip: Unexpected contructor parameters, wrong combination of LEDChipTypes and LEDChipDefByXXXX');
         }
         super('xyY', [x, y, checkNonNegative(arg.maxLuminance)]);
-        this._LEDChipType = typeOrLED;
+        this._LEDChipType = type;
         this._waveLength = w;
         this._colorTemperature = t;
         this._brightness = 0;
         this._maxW = checkNonNegative((arg.maxW === undefined)? 1 : arg.maxW);
         this._name = initName(arg.name);
       } else {
-        const type: LEDChipTypes = typeOrLED;
         let l!: LEDChip;
         switch (type) {
           case 'LED_R':
@@ -220,4 +220,12 @@ function checkNonNegative(b: number): number {
   // It can be any nonzero positive.
   if (b <= 0) b = 1.0;
   return b;
+}
+
+function checkLEDChipTypes(t: string | LEDChipTypes): LEDChipTypes {
+  // TypeScript does not care about runtime error.
+  if (t === 'LED_R' || t === 'LED_G' || t === 'LED_B' || t === 'LED_W' || t === 'LED_Other')
+    return t;
+  else
+    throw new Error('No matching string in LEDChipTypes');
 }

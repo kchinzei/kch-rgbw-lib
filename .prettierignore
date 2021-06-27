@@ -71,3 +71,6 @@ typings/
 .next
 dist/
 declarations/
+
+# For this project specific; an intentional error
+rgbw-led-err01.json

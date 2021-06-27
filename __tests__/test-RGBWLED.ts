@@ -72,6 +72,7 @@ const defaultIDList = [
 let i = 1;
 
 
+
 describe.each([
   [ [] ],
   [ [3] ],
@@ -288,6 +289,40 @@ describe.each([
   });
 });
 
+
+
+// --------------------------------- isInGamut / fit2Gamut test -----------------------------------
+
+describe.each([
+  // [x, y, [idToUse], isIn, xfit, yfit]
+  [0.1731, 0.0045, 0.1457, 0.0636, false, [0, 1, 2], 4],
+  [0.4766, 0.4793, 0.4766, 0.4793, true,  [0, 1, 2], 4],
+  [0.0750, 0.7750, 0.2002, 0.6976, false, [0, 1, 2], 4],
+  [0.3817, 0.1300, 0.3652, 0.1655, false, [0, 1, 2], 4],
+  [0.3817, 0.1300, 0.3817, 0.1300, true,  [0, 1, 2, 5, 6], 4],
+  [0.0500, 0.2500, 0.1463, 0.2476, false, [0, 1, 2, 5, 6], 4],
+])('[CIE(%f, %f) => CIE(%f, %f) : In/out %d]', (x, y, rx, ry, isInside, lIDList, precision) => {
+  const N = lIDList.length;
+  if (N <= RGBWLED.maxLEDNumber) {
+    const lList: idLED[] = new Array(N) as idLED[];
+    for (let j=0; j<N; j++) {
+      const val = lIDList[j];
+      lList[j] = idLEDs[val];
+    }
+    const l = new RGBWLED('sample', lList);
+    const c = new CSpace('xy', [ x, y ]);
+
+    test(`${i++}. isInGamut(${x}, ${y}): should return ${isInside}`, () => {
+      expect(l.isInGamut(c)).toBe(isInside);
+    });
+  
+    test(`${i++}. fit2Gamut(${x}, ${y}): should return (${rx}, ${ry})`, () => {
+      const c1 = l.fit2Gamut(c);
+      expect(c1.x).toBeCloseTo(rx, precision);
+      expect(c1.y).toBeCloseTo(ry, precision);
+    });
+  }
+});
 
 
 

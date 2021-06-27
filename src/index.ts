@@ -36,3 +36,4 @@ export * from './colorTemperature';
 export * from './LEDChip';
 export * from './RGBWLED';
 export * from './GamutError';
+export * from './parse';

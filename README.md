@@ -7,10 +7,10 @@
 
 RGB/RGBW LED class library in typescript. It provides following classes and functions,
 
-- Composite LED class `RGBWLED` for multi-color LED. In addition to R-G-B (3 LEDs), R-G-B-W (4 LEDs), it can have **unlimited many number of LEDs**.
+- Composite LED class `RGBWLED` for multi-color LED. In addition to R-G-B (3 LEDs), R-G-B-W (4 LEDs), it can have **unlimited many number of component LEDs**.
 - Mathematically clear solution for many-LED problem.
 - Conversions between
-  - Composite color <=> Each LEDs mix ratio (e.g. PWM).
+  - Composite color <=> Each component LEDs mix ratio (e.g. PWM).
   - RGB, HSV and CIE 1931 Chromaticity (XYZ, xy+Y) colorspace
   - Color temperature <=> chromaticity (experimental)
   - Wavelength <=> CIE
@@ -20,9 +20,10 @@ It is intended to use with [homebridge-raspi-rgbw-led](https://github.com/kchinz
 
 ### Many-LED problem
 
-Many-LED problem is a mathematical and engineering problem to determine the mix ratio of R-G-B or more LED light sources to produce an arbitrary color and luminosity. While a color and luminosity is given by 3 parameters (for example, x-y chromaticity and luminance), many-LED problem has 3 or more LEDs to determine the mix ratio. This problem is generally indeterminate and needs additional constraint.
+Many-LED problem is a mathematical and engineering problem to determine the mix ratio of R-G-B or more LED light sources (component LEDs) to produce an intermediate color and luminosity. While a color and luminosity is given by 3 parameters (for example, x-y chromaticity and luminance), many-LED problem is to determine the mix ratio of 3 or more component LEDs.
 
-For 3 LEDs, it is determinate problem. For 4 or more, minimizing power consumption is introduced as the constraint. For 4 LEDs, it is solved as a single parameter inequality. For more than 5 LEDs we need to solve it using linear programming (LP).
+For 3 LEDs, it is a determinate problem. For 4 or more, this problem is indeterminate and needs additional constraint(s) to solve.
+Minimizing power consumption is a useful constraint. For 4 LEDs, it is solved as a single parameter inequality. For more than 5 LEDs we need to solve it using linear programming (LP).
 
 In detail, see [Solve RGB+ LEDs PWM from Chromaticity](./docs/rgbw_solver.pdf).
 
@@ -56,6 +57,11 @@ Some additional npm packages will be installed.
 - [WaveLength](./docs/WaveLength.md)
   : Functions for CIE 1931 chromaticity and wave length.
 
+## Code snippets
+
+- Code snippets [here](./docs/snippets.md).
+  Typescript snippets in [src/snippets](./src/snippets)
+
 ## More to read
 
 - [Solve RGB+ LEDs PWM from Chromaticity](./docs/rgbw_solver.pdf)
@@ -67,7 +73,7 @@ Some additional npm packages will be installed.
 - [CIE 1931 color space](https://en.wikipedia.org/wiki/CIE_1931_color_space) / Wikipedia
 - [HSL and HSV](https://en.wikipedia.org/wiki/HSL_and_HSV) / Wikipedia
 - [sRGB](https://en.wikipedia.org/wiki/SRGB) / Wikipedia
-- [Blackbody color temperature datafile](http://www.vendian.org/mncharity/dir3/blackbody/)
+- [Blackbody color temperature data file](http://www.vendian.org/mncharity/dir3/blackbody/)
   / Mitchell Charity
 - [新しいカラーマネージメントの方法](http://www.nakamura.enveng.titech.ac.jp/story/pdf/colormanagement.pdf)
   / 中村芳樹
