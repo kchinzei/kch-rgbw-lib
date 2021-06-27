@@ -34,22 +34,22 @@
   ],
   "bundleDependencies": false,
   "dependencies": {
-    "mathjs": "^7.0.0",
-    "svd-js": "^1.1.0",
+    "mathjs": "^9.4.3",
+    "svd-js": "^1.1.1",
     "linear-program-parser": "^1.0.11",
-    "linear-program-solver": "^1.1.0"
+    "linear-program-solver": "^1.2.0"
   },
   "deprecated": false,
   "devDependencies": {
-    "@types/jest": "^25.2.1",
-    "@types/node": "^13.11.1",
-    "jest": "^25.3.0",
-    "ts-jest": "^25.3.1",
+    "@types/jest": "^26.0.23",
+    "@types/node": "^15.12.4",
+    "jest": "^27.0.5",
+    "ts-jest": "^27.0.3",
     "tslint": "^6.1.1",
-    "typescript": "^3.8.3",
-    "eslint": "^6.8.0",
+    "typescript": "^4.3.4",
+    "eslint": "^7.29.0",
     "npm-run-all": "^4.1.5",
-    "prettier": "^2.0.4",
+    "prettier": "^2.3.2",
     "agh.sprintf": "^0.0.11"
   },
   "engines": {
