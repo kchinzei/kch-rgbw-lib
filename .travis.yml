@@ -35,10 +35,9 @@ branches:
 
 language: node_js
 node_js:
-  - 10 # NAPI_VERSION > 5
-  - 12 # NAPI_VERSION > 5
-  - 13 # NAPI_VERSION > 5
-  - 14 # NAPI_VERSION > 5
+  - 12
+  - 14
+  - 16
 os:
   - linux
   - osx

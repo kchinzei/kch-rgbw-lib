@@ -5,6 +5,7 @@ declarations/**
 dist/**
 node_modules/**
 __tests__/**
+src/snippets/**
 .eslintrc.js
 jest.config.js
 prettier.config.js
