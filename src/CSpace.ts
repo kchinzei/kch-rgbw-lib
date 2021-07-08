@@ -153,7 +153,7 @@ export class CSpace implements ICSpace {
       return;
     }
     // Never should come here. Wrong combination of parameters.
-    throw new Error('Class CSpace: Unexpected contructor parameters');
+    throw new Error('Class CSpace: Unexpected constructor parameters');
   }
 
   public copy(from: CSpace): CSpace {

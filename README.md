@@ -57,10 +57,11 @@ Some additional npm packages will be installed.
 - [WaveLength](./docs/WaveLength.md)
   : Functions for CIE 1931 chromaticity and wave length.
 
-## Code snippets
+## Code snippets / example
 
 - Code snippets [here](./docs/snippets.md).
   Typescript snippets in [src/snippets](./src/snippets)
+- Sample tools using `kch-rgbw-lib` : [src/examples/calc](./src/examples/calc)
 
 ## More to read
 
