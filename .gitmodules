@@ -1,6 +1,6 @@
 [submodule "docs/more"]
 	path = docs/more
 	url = https://github.com/kchinzei/kch-rgbw-docs-more.git
-[submodule "src/examples"]
+[submodule "src/examples/calc"]
 	path = src/examples/calc
 	url = https://github.com/kchinzei/kch-rgbw-calc.git
