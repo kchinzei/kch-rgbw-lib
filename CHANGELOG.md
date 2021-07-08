@@ -17,9 +17,13 @@ Solution of small alpha, smaller than the resolution of PWM step (e.g, 1/256 for
 
 Sample and utility node scripts
 
-- Utility to visualize gamut contour.
-- Utility to generate lookup table of alpha[] from given set of LED.
+- Web utility to visualize gamut contour.
+- Web utility to generate lookup table of alpha[] from given set of LED.
 - Utility to compute chromaticity and luminance of an LED from spectroscopic measurement data obtained by such as [SparkFun Triad Spectroscopy Sensor AS7265x](https://github.com/sparkfun/SparkFun_AS7265x_Arduino_Library).
+
+Other plan
+
+- Github default branch will be 'main'.
 
 ### [2.1.0](https://github.com/kchinzei/kch-rgbw-lib/releases/tag/2.1.0) - 2021-06-27
 
