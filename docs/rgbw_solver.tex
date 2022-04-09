@@ -1,4 +1,4 @@
-\documentclass[dvipdfmx,uplatex,a4paper]{article}
+\documentclass[dvipdfmx,a4paper]{article}
 \def\vector#1{\mbox{\boldmath $#1$}}
 \usepackage[hiresbb]{graphicx}
 \usepackage{amsmath}
@@ -32,7 +32,7 @@ urlcolor=blue, citecolor=blue]{hyperref}
 \maketitle
 
 \begin{abstract}
-This article\footnote{To cite, please refer to https://github.com/kchinzei/kch-rgbw-lib/docs/rgbw\_solver.pdf} is a private note to develop \texttt{kch-rgbw-lib}, a TypeScript library in \href{https://github.com/kchinzei/kch-rgbw-lib}{github} and \href{https://www.npmjs.com/package/kch-rgbw-lib}{npm}. \texttt{Kch-rgbw-lib} provides classes and functions for multicolor LED, including color space conversions between HSV, RGB, XYZ and xyY and calculation of accurate color composition. This article gives a general solution of multi-number (more than R-G-B) LEDs to represent composite colors. It is not intended to carry new, comprehensive, or most efficient ideas. This document is granted under MIT License.
+This article\footnote{To cite: https://github.com/kchinzei/kch-rgbw-lib/blob/master/docs/rgbw\_solver.pdf} is a private note to develop \texttt{kch-rgbw-lib}, a TypeScript library in \href{https://github.com/kchinzei/kch-rgbw-lib}{github} and \href{https://www.npmjs.com/package/kch-rgbw-lib}{npm}. \texttt{Kch-rgbw-lib} provides classes and functions for multicolor LED, including color space conversions between HSV, RGB, XYZ and xyY and calculation of accurate color composition. This article gives a general solution of multi-number (more than R-G-B) LEDs to represent composite colors. It is not intended to carry new, comprehensive, or most efficient ideas. This document is granted under MIT License.
 \end{abstract}
 
 \section{Define the Problem}
@@ -345,7 +345,7 @@ In $N = 4$ case, we have only one variable $\beta$ therefore we can optimize onl
 
 
 \bibliographystyle{unsrt}
-\bibliography{rgbw}
+\bibliography{./rgbw_solver.bib}
 
 \section*{MIT License}
 
